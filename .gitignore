@@ -1,0 +1,13 @@
+# Wallust writes these targets out of whatever wallpaper is up, so they describe
+# the current desktop rather than the rice, and every wallpaper change rewrites
+# the lot. The templates they come from live in wallust/ and stay tracked;
+# rice-switch.sh runs combined_wallust.sh on every switch, so a fresh clone
+# fills these in before anything reads them.
+hypr/wallust/
+rofi/wallust/
+swaync/wallust/
+waybar/wallust/
+kitty/kitty-themes/01-Wallust.conf
+
+# Cut from the tracked crown-angels.jpg by the same script, for the sigil.
+fastfetch/assets/crown-angels-styled.png
