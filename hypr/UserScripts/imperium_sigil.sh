@@ -11,18 +11,22 @@ set -uo pipefail
 source "$HOME/.config/hypr/UserScripts/lib/wallust_env.sh"
 
 ASSETS="$HOME/.config/fastfetch/assets"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/imperium"
 INTERVAL=1
 
 RS=$(rs)
 BD=$(bold)
-E_TITLE=$(fg "$wc_15")
 E_ACCENT=$(fg "$wc_12")
 E_LABEL=$(fg "$wc_7")
 E_TIME=$(fg "$wc_15")
 E_MUTED=$(fg "$(mix "$wc_bg" "$wc_fg" 40)")
 E_RULE=$(fg "$(mix "$wc_bg" "$wc_12" 75)")
 
-trap 'printf "\033[?25h\033[0m\n"' EXIT INT TERM
+# Kitty graphics placements outlive an erase-screen, so a resize would otherwise
+# leave the previous, differently-sized sigil layered over the live block.
+clear_images() { printf '\033_Ga=d,d=A\033\\'; }
+
+trap 'clear_images; printf "\033[?25h\033[0m\n"' EXIT INT TERM
 
 # --- Sigil artwork ----------------------------------------------------------
 
@@ -39,6 +43,49 @@ pick_sigil() {
             return
         }
     done
+}
+
+# Recolour the artwork into the live palette: luminance drives a ramp from the
+# panel background up to the accent, so the sigil reads as part of whatever
+# wallpaper is driving wallust rather than as a fixed gold plate.
+#
+# Two corrections keep it legible at panel size. The accent is lifted most of
+# the way towards color15, because palettes usually put color12 mid-dark and a
+# ramp topping out there sinks the crown and filigree. The gamma lift then
+# raises the midtones, where nearly all of this painting's detail lives; gamma
+# leaves the endpoints alone, so the darkest areas still match the panel
+# background and the art keeps its borderless edge.
+#
+# The result is cached under XDG_CACHE_HOME, not in the repo: it is a derived
+# artifact and there is one per wallpaper.
+SIGIL_GAMMA=2.0
+SIGIL_LIFT=75
+
+tint_sigil() {
+    local src=$1 hi key out
+    [[ -n $src ]] || return
+    command -v magick >/dev/null 2>&1 || {
+        printf '%s' "$src"
+        return
+    }
+
+    hi=$(mix "$wc_12" "$wc_15" "$SIGIL_LIFT")
+    key=$(printf '%s|%s|%s|%s|%s' "$src" "$(stat -c %Y "$src" 2>/dev/null)" \
+        "$wc_bg" "$hi" "$SIGIL_GAMMA" | cksum | cut -d' ' -f1)
+    out="$CACHE/sigil-$key.png"
+
+    if [[ ! -s $out ]]; then
+        mkdir -p "$CACHE" 2>/dev/null
+        magick "$src" -colorspace Gray -auto-level -gamma "$SIGIL_GAMMA" \
+            \( -size 1x256 gradient:"#${wc_bg}"-"#${hi}" \) -clut \
+            -resize '700x>' -strip PNG24:"$out" 2>/dev/null || {
+            printf '%s' "$src"
+            return
+        }
+        # One cached tint per palette is enough; the rest are last wallpaper's.
+        find "$CACHE" -maxdepth 1 -name 'sigil-*.png' ! -name "${out##*/}" -delete 2>/dev/null
+    fi
+    printf '%s' "$out"
 }
 
 # --- Latin calendar ---------------------------------------------------------
@@ -123,16 +170,21 @@ rule() { L "${E_RULE}${RULE}${RS}"; }
 # Static chrome plus the artwork; only redrawn on resize.
 draw_static() {
     local sigil title="I M P E R I V M"
+    clear_images
     printf '\033[2J\033[H'
     printf '  %s%s%s%s\033[K\n' "$E_ACCENT" "$BD" "$(center "✠ $title ✠" $((${#title} + 4)))" "$RS"
     printf '  %s%s%s\033[K\n' "$E_RULE" "$RULE" "$RS"
 
-    sigil=$(pick_sigil)
+    sigil=$(tint_sigil "$(pick_sigil)")
     if [[ -n $sigil ]] && command -v chafa >/dev/null 2>&1; then
-        printf '\033[%d;3H' "$IMG_TOP"
+        # Start at column 1 and hand chafa the full width. Its centring is
+        # measured against the whole view rather than --size, so indenting the
+        # cursor first shifted the art right by exactly that indent. Aligning to
+        # the top likewise stops it padding down over the live block.
+        printf '\033[%d;1H' "$IMG_TOP"
         chafa --format kitty --animate off --polite on --scale max \
-            --bg "#${wc_bg}" --align center,center \
-            --size "${W}x${IMG_ROWS}" "$sigil" 2>/dev/null
+            --bg "#${wc_bg}" --align top,center \
+            --size "${COLS}x${IMG_ROWS}" "$sigil" 2>/dev/null
     fi
 }
 
@@ -147,9 +199,10 @@ draw_live() {
 
     # The live wallust palette, rendered as its own swatch strip.
     local i strip="" name
+    # Two cells per swatch, so the strip is the 32 columns swatch_pad assumes.
     for i in {0..15}; do
         name="wc_$i"
-        strip+="$(bg "${!name}") "
+        strip+="$(bg "${!name}")  "
     done
     strip+="$RS"
     local swatch_pad=$(((W - 32) / 2))
