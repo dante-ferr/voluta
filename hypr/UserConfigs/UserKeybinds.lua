@@ -77,55 +77,28 @@ hl.bind("XF86MonBrightnessUp", hl.dsp.exec_cmd("brightnessctl set +5%"), { locke
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl set 5%-"), { locked = true, repeating = true })
 
 -- 8. Move focus with arrow keys / HJKL
+-- Each combo must be bound exactly once. Hyprland resolves keysyms case-insensitively
+-- and then runs every bind that matches, so a "Left" + "left" pair moves focus twice
+-- per keypress. "Left" alone already matches both cases.
 hl.bind("SUPER + Left",  hl.dsp.focus({ direction = "left" }))
 hl.bind("SUPER + Right", hl.dsp.focus({ direction = "right" }))
 hl.bind("SUPER + Up",    hl.dsp.focus({ direction = "up" }))
 hl.bind("SUPER + Down",  hl.dsp.focus({ direction = "down" }))
-
-hl.bind("SUPER + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind("SUPER + right", hl.dsp.focus({ direction = "right" }))
-hl.bind("SUPER + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind("SUPER + down",  hl.dsp.focus({ direction = "down" }))
-
-hl.bind("SUPER + code:113", hl.dsp.focus({ direction = "left" }))
-hl.bind("SUPER + code:114", hl.dsp.focus({ direction = "right" }))
-hl.bind("SUPER + code:111", hl.dsp.focus({ direction = "up" }))
-hl.bind("SUPER + code:116", hl.dsp.focus({ direction = "down" }))
 
 hl.bind("ALT + Left",  hl.dsp.focus({ direction = "left" }))
 hl.bind("ALT + Right", hl.dsp.focus({ direction = "right" }))
 hl.bind("ALT + Up",    hl.dsp.focus({ direction = "up" }))
 hl.bind("ALT + Down",  hl.dsp.focus({ direction = "down" }))
 
-hl.bind("ALT + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind("ALT + right", hl.dsp.focus({ direction = "right" }))
-hl.bind("ALT + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind("ALT + down",  hl.dsp.focus({ direction = "down" }))
-
-hl.bind("ALT + code:113", hl.dsp.focus({ direction = "left" }))
-hl.bind("ALT + code:114", hl.dsp.focus({ direction = "right" }))
-hl.bind("ALT + code:111", hl.dsp.focus({ direction = "up" }))
-hl.bind("ALT + code:116", hl.dsp.focus({ direction = "down" }))
-
 hl.bind("SUPER + H", hl.dsp.focus({ direction = "left" }))
 hl.bind("SUPER + L", hl.dsp.focus({ direction = "right" }))
 hl.bind("SUPER + K", hl.dsp.focus({ direction = "up" }))
 hl.bind("SUPER + J", hl.dsp.focus({ direction = "down" }))
 
-hl.bind("SUPER + h", hl.dsp.focus({ direction = "left" }))
-hl.bind("SUPER + l", hl.dsp.focus({ direction = "right" }))
-hl.bind("SUPER + k", hl.dsp.focus({ direction = "up" }))
-hl.bind("SUPER + j", hl.dsp.focus({ direction = "down" }))
-
 hl.bind("ALT + H", hl.dsp.focus({ direction = "left" }))
 hl.bind("ALT + L", hl.dsp.focus({ direction = "right" }))
 hl.bind("ALT + K", hl.dsp.focus({ direction = "up" }))
 hl.bind("ALT + J", hl.dsp.focus({ direction = "down" }))
-
-hl.bind("ALT + h", hl.dsp.focus({ direction = "left" }))
-hl.bind("ALT + l", hl.dsp.focus({ direction = "right" }))
-hl.bind("ALT + k", hl.dsp.focus({ direction = "up" }))
-hl.bind("ALT + j", hl.dsp.focus({ direction = "down" }))
 
 -- 9. Window Resizing (Continuous Keyboard Resizing for Floating & Tiled)
 -- Direct keybinds: Super + Shift + Arrows
@@ -133,17 +106,6 @@ hl.bind("SUPER + SHIFT + Left", function() resize_active(-60, 0) end, { repeatin
 hl.bind("SUPER + SHIFT + Right", function() resize_active(60, 0) end, { repeating = true })
 hl.bind("SUPER + SHIFT + Up", function() resize_active(0, -60) end, { repeating = true })
 hl.bind("SUPER + SHIFT + Down", function() resize_active(0, 60) end, { repeating = true })
-
-hl.bind("SUPER + SHIFT + left", function() resize_active(-60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + right", function() resize_active(60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + up", function() resize_active(0, -60) end, { repeating = true })
-hl.bind("SUPER + SHIFT + down", function() resize_active(0, 60) end, { repeating = true })
-
--- Keycodes for Arrow Keys: 113 (Left), 114 (Right), 111 (Up), 116 (Down)
-hl.bind("SUPER + SHIFT + code:113", function() resize_active(-60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + code:114", function() resize_active(60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + code:111", function() resize_active(0, -60) end, { repeating = true })
-hl.bind("SUPER + SHIFT + code:116", function() resize_active(0, 60) end, { repeating = true })
 
 -- Ergonomic Ctrl + Arrow & Ctrl + HJKL resizing
 hl.bind("SUPER + CTRL + Left", function() resize_active(-60, 0) end, { repeating = true })
@@ -191,20 +153,32 @@ hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })
 hl.bind("SUPER + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 -- 12. Workspaces (1-10)
+-- Bound by keysym name only: this Hyprland build silently drops "code:NN" binds.
 for i = 1, 10 do
     local num = tostring(i == 10 and 0 or i)
-    local code = 9 + i
     hl.bind("SUPER + " .. num, hl.dsp.focus({ workspace = tostring(i) }))
     hl.bind("SUPER + SHIFT + " .. num, hl.dsp.window.move({ workspace = tostring(i) }))
-    hl.bind("SUPER + code:" .. code, hl.dsp.focus({ workspace = tostring(i) }))
-    hl.bind("SUPER + SHIFT + code:" .. code, hl.dsp.window.move({ workspace = tostring(i) }))
 end
 
--- Keypad Workspaces
-local keypad_codes = { [1]=87, [2]=88, [3]=89, [4]=83, [5]=84, [6]=85, [7]=79, [8]=80, [9]=81, [10]=90 }
-for ws, code in pairs(keypad_codes) do
-    hl.bind("SUPER + code:" .. code, hl.dsp.focus({ workspace = tostring(ws) }))
-    hl.bind("SUPER + SHIFT + code:" .. code, hl.dsp.window.move({ workspace = tostring(ws) }))
+-- Keypad workspaces. A keypad key emits a different keysym depending on NumLock (and
+-- Shift inverts it), so both names are bound for each workspace to cover every state.
+local keypad_keys = {
+    [1]  = { "KP_1", "KP_End" },
+    [2]  = { "KP_2", "KP_Down" },
+    [3]  = { "KP_3", "KP_Next" },
+    [4]  = { "KP_4", "KP_Left" },
+    [5]  = { "KP_5", "KP_Begin" },
+    [6]  = { "KP_6", "KP_Right" },
+    [7]  = { "KP_7", "KP_Home" },
+    [8]  = { "KP_8", "KP_Up" },
+    [9]  = { "KP_9", "KP_Prior" },
+    [10] = { "KP_0", "KP_Insert" },
+}
+for ws, keys in pairs(keypad_keys) do
+    for _, key in ipairs(keys) do
+        hl.bind("SUPER + " .. key, hl.dsp.focus({ workspace = tostring(ws) }))
+        hl.bind("SUPER + SHIFT + " .. key, hl.dsp.window.move({ workspace = tostring(ws) }))
+    end
 end
 
 -- Mouse scroll workspace cycling
