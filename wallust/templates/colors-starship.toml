@@ -1,0 +1,151 @@
+# /* wallust template - colors-starship */
+# Starship Prompt - Dynamic Wallust Palette (Roman Imperium Cyber-Sacred Rice)
+#
+# NOTE: the separators/icons are Nerd Font glyphs, several of them in the
+# private use area. Editors that strip those codepoints will silently gut the
+# powerline caps, so regenerate this file rather than retyping the symbols.
+
+add_newline = true
+command_timeout = 5000
+continuation_prompt = "[▸▸ ](bold fg:{{color5}})"
+
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$git_state\
+$conda\
+$python\
+$nodejs\
+$rust\
+$golang\
+$lua\
+$c\
+$fill\
+$cmd_duration\
+$time\
+$line_break\
+$character"""
+
+# Rule joining the left insignia to the right chronometer
+[fill]
+symbol = "─"
+style = "fg:{{color6}}"
+
+# Prompt Symbols
+[character]
+success_symbol = "[ SPQR](bold fg:{{color1}})[ ❯](bold fg:{{color15}})"
+error_symbol = "[󰞇 SPQR](bold fg:{{color15}})[ ❯](bold fg:{{color1}})"
+vimcmd_symbol = "[󰊠 SPQR](bold fg:{{color7}})[ ❯](bold fg:{{color15}})"
+
+# User & Host
+[username]
+show_always = false
+style_user = "bold fg:{{background}} bg:{{color3}}"
+style_root = "bold fg:{{color15}} bg:{{color3}}"
+format = "[](fg:{{color3}})[ 󰀘 $user ]($style)[](fg:{{color3}}) "
+disabled = false
+
+[hostname]
+ssh_only = true
+style = "bold fg:{{background}} bg:{{color3}}"
+format = "[](fg:{{color3}})[ 󰒋 $hostname ]($style)[](fg:{{color3}}) "
+disabled = false
+
+# Directory / Arx
+[directory]
+truncation_length = 4
+truncation_symbol = "…/"
+home_symbol = " ~"
+read_only = "󰌾 "
+read_only_style = "bold fg:{{background}} bg:{{color1}}"
+style = "bold fg:{{background}} bg:{{color1}}"
+format = "[](fg:{{color1}})[ $path ]($style)[$read_only]($read_only_style)[](fg:{{color1}}) "
+
+[directory.substitutions]
+"Desktop" = " Desktop"
+"Documents" = " Documents"
+"Downloads" = " Downloads"
+"Music" = " Music"
+"Pictures" = " Pictures"
+"Videos" = " Videos"
+
+# Git Branch / Cohors
+[git_branch]
+symbol = ""
+style = "bold fg:{{color15}} bg:{{color5}}"
+format = "[](fg:{{color5}})[ $symbol $branch ]($style)"
+
+# Git Status / Tactical Military & Archival Indicators
+# The closing cap lives here so the branch pill stays sealed on clean trees.
+[git_status]
+style = "bold fg:{{color1}} bg:{{color5}}"
+format = '([](fg:{{color7}} bg:{{color5}})[ $all_status$ahead_behind]($style))[](fg:{{color5}}) '
+conflicted = " ${count} "
+ahead = "⇡${count} "
+behind = "⇣${count} "
+diverged = "⇡${ahead_count} ⇣${behind_count} "
+untracked = "◈ ${count} "
+modified = " ${count} "
+staged = " ${count} "
+renamed = "» ${count} "
+deleted = " ${count} "
+stashed = " ${count} "
+
+[git_state]
+style = "bold fg:{{background}} bg:{{color2}}"
+format = '[](fg:{{color2}})[ $state( $progress_current/$progress_total) ]($style)[](fg:{{color2}}) '
+
+# Command Duration / Celeritas
+[cmd_duration]
+min_time = 2000
+style = "bold fg:{{background}} bg:{{color3}}"
+format = "[](fg:{{color3}})[ 󰔟 $duration ]($style)[](fg:{{color3}}) "
+
+# Chronometer / Horologium
+[time]
+disabled = false
+time_format = "%H:%M"
+style = "bold fg:{{color15}} bg:{{color6}}"
+format = "[](fg:{{color6}})[ 󰥔 $time ]($style)[](fg:{{color6}})"
+
+# Package / Languages
+[package]
+disabled = true
+
+[conda]
+symbol = "󰆧"
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $environment ](fg:{{color7}}) "
+
+[lua]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "
+
+[python]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "
+
+[nodejs]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "
+
+[golang]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "
+
+[rust]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "
+
+[c]
+symbol = ""
+style = "bold fg:{{color1}}"
+format = "[$symbol]($style)[ $version ](fg:{{color7}}) "

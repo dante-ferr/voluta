@@ -1,0 +1,80 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "kitty",
+    "source": "/home/dante/dotfiles-imperium/fastfetch/assets/crown-angels.jpg",
+    "position": "left",
+    "height": 13,
+    "padding": {
+      "top": 0,
+      "left": 0,
+      "right": 3
+    }
+  },
+  "display": {
+    "separator": " ☩ "
+  },
+  "modules": [
+    {
+      "type": "custom",
+      "format": "\u001b[1;33m╔══════════════ ✠  \u001b[1;31mREGNUM ATQUE ORDO\u001b[1;33m  ✠ ══════════════╗\u001b[0m"
+    },
+    {
+      "type": "title",
+      "key": " 󰀘 Imperator",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "os",
+      "key": "  Regnum",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "host",
+      "key": " 󰍹 Arx",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "kernel",
+      "key": " 󰒋 Nucleus",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "wm",
+      "key": " 󱂬 Curia",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "shell",
+      "key": " 󰞷 Interpres",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "terminal",
+      "key": "  Terminalis",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "uptime",
+      "key": " 󰅐 Aevum",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "memory",
+      "key": " 󰍛 Memoria",
+      "keyColor": "yellow"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[1;33m╠══════════════════════════════════════════════════════╣\u001b[0m"
+    },
+    {
+      "type": "colors",
+      "symbol": "circle"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[1;33m╚══════════════════════════════════════════════════════╝\u001b[0m"
+    }
+  ]
+}

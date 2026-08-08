@@ -1,0 +1,123 @@
+{
+    "output": "HDMI-A-2",
+    "layer": "top",
+    "position": "top",
+    "exclusive": true,
+    "passthrough": false,
+    "gtk-layer-shell": true,
+    "height": 32,
+    "modules-left": [
+        "hyprland/window",
+        "mpris"
+    ],
+    "modules-center": [
+        "hyprland/workspaces",
+        "clock"
+    ],
+    "modules-right": [
+        "custom/swaync",
+        "tray",
+        "temperature",
+        "pulseaudio",
+        "battery",
+        "custom/power"
+    ],
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 32,
+        "separate-outputs": false,
+        "rewrite": {
+            "^$": ""
+        }
+    },
+    "mpris": {
+        "format": "󰎆 {title}",
+        "format-paused": "󰏤 <i>{title}</i>",
+        "on-click": "playerctl play-pause",
+        "on-click-right": "playerctl next",
+        "on-click-middle": "playerctl previous",
+        "max-length": 25,
+        "tooltip": true
+    },
+    "hyprland/workspaces": {
+        "active-only": false,
+        "all-outputs": true,
+        "disable-scroll": false,
+        "on-click": "activate",
+        "format": "{icon}",
+        "format-icons": {
+            "1": "I",
+            "2": "II",
+            "3": "III",
+            "4": "IV",
+            "5": "V",
+            "6": "VI",
+            "7": "VII",
+            "8": "VIII",
+            "9": "IX",
+            "10": "X",
+            "default": "·"
+        },
+        "tooltip": false
+    },
+    "clock": {
+        "format": "󰅐 {:%H:%M:%S  ·  %a, %b %d}",
+        "interval": 1,
+        "tooltip": false
+    },
+    "custom/swaync": {
+        "tooltip": true,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂚<sup></sup>",
+            "none": "󰂚",
+            "dnd-notification": "󰂛<sup></sup>",
+            "dnd-none": "󰂛"
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    },
+    "tray": {
+        "icon-size": 13,
+        "spacing": 8
+    },
+    "temperature": {
+        "critical-threshold": 80,
+        "format": "{icon}",
+        "format-icons": ["󰔏", "󱃂", "󰔐"],
+        "tooltip": true,
+        "tooltip-format": "{temperatureC}°C"
+    },
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-muted": "󰝟",
+        "format-icons": {
+            "default": ["󰕿", "󰖀", "󰕾"]
+        },
+        "on-click": "pavucontrol-qt || pavucontrol",
+        "tooltip": true,
+        "tooltip-format": "Volume: {volume}%"
+    },
+    "battery": {
+        "states": {
+            "good": 95,
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": "󰂄 {capacity}%",
+        "format-plugged": "󰂄 {capacity}%",
+        "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+        "tooltip": true,
+        "tooltip-format": "{timeTo}"
+    },
+    "custom/power": {
+        "format": "󰐥",
+        "on-click": "wlogout",
+        "tooltip": false
+    }
+}

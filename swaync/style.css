@@ -1,0 +1,53 @@
+/* SwayNC Imperium Cyber-Sacred Style (Opaque, Sharp 0px Edges) */
+
+@import "wallust/colors-wallust.css";
+
+* {
+    font-family: "JetBrains Mono", "FiraCode Nerd Font", monospace;
+    font-weight: bold;
+    border-radius: 0px; /* Sharp 90-degree corners */
+}
+
+.notification-row {
+    outline: none;
+}
+
+.notification {
+    border-radius: 0px;
+    margin: 6px 12px;
+    box-shadow: none;
+    padding: 0;
+    border: 1px solid @accent;
+    background: #0B0B0E;
+}
+
+.notification-content {
+    background: #0B0B0E;
+    padding: 10px;
+    border-radius: 0px;
+    color: @text;
+}
+
+.close-button {
+    background: #7A0016;
+    color: white;
+    border-radius: 0px;
+}
+
+.control-center {
+    background: #0B0B0E;
+    border: 2px solid @accent;
+    border-radius: 0px;
+    padding: 14px;
+}
+
+.widget-title {
+    color: @accent;
+    font-size: 1.3rem;
+}
+
+.widget-dnd {
+    background: #16161D;
+    border: 1px solid @accent;
+    border-radius: 0px;
+}

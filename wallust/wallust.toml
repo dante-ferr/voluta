@@ -1,0 +1,64 @@
+# wallust configuration - for wallust version 4.0
+
+# How the image is parsed, in order to get the colors:
+# full - resized - wal - thumb - fastresize
+backend = "thumb"
+
+# NOTE: Wallust v4 uses palette, style, and tuning to configure color generation.
+# Palette generation method: salience (prominent colors), ansi (tty layout), or kmeans (centroids)
+palette = "salience"
+
+# Theme style: dark or light
+style = "dark"
+
+# Tuning options for salience palette
+# sampling: high, balanced, distributed, low
+# intensity: normal, pastel, vibrant
+salience = { sampling = "balanced", intensity = "pastel" }
+
+# Color saturation adjustment (1 - 100). Higher values make colors brighter and more vibrant.
+saturation = 20
+
+# Ensures readable contrast against the background color.
+check_contrast = true
+
+# Difference between similar colors (1 - 100), used inside the colorspace.
+# Higher threshold creates more distinct colors (more contrast between them).
+threshold = 11
+
+[templates]
+cava.template = 'colors-cava'
+cava.target = '~/.config/cava/config'
+
+hypr.template = 'colors-hyprland.conf'
+hypr.target = '~/.config/hypr/wallust/wallust-hyprland.conf'
+
+rofi.template = 'colors-rofi.rasi'
+rofi.target = '~/.config/rofi/wallust/colors-rofi.rasi'
+
+waybar.template = 'colors-waybar.css'
+waybar.target = '~/.config/waybar/wallust/colors-waybar.css'
+
+kitty.template = 'colors-kitty.conf'
+kitty.target = '~/.config/kitty/kitty-themes/01-Wallust.conf'
+
+starship.template = 'colors-starship.toml'
+starship.target = '~/.config/starship.toml'
+
+quickshell.template = 'qml_color.json'
+quickshell.target = '~/.config/quickshell/qml_color.json'
+
+shell.template = 'colors-shell.sh'
+shell.target = '~/.config/hypr/wallust/colors-shell.sh'
+
+#swaync.template = 'colors-swaync.css'
+#swaync.target = '~/.config/swaync/wallust/colors-wallust.css'
+
+#macchina.template = 'colors-macchina.toml'
+#macchina.target = '~/.config/macchina/themes/wallust.toml'
+
+#wezterm.template = 'colors-wezterm.toml'
+#wezterm.target = '~/.config/wezterm/colors/wallust.toml'
+
+#zathura.template = 'colors-zathura'
+#zathura.target = '~/.config/zathura/zathurarc'
