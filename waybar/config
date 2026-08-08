@@ -5,14 +5,16 @@
     "exclusive": true,
     "passthrough": false,
     "gtk-layer-shell": true,
-    "height": 32,
+    "height": 34,
     "modules-left": [
         "hyprland/window",
         "mpris"
     ],
     "modules-center": [
+        "custom/angel-left",
         "hyprland/workspaces",
-        "clock"
+        "clock",
+        "custom/angel-right"
     ],
     "modules-right": [
         "custom/swaync",
@@ -39,6 +41,18 @@
         "max-length": 25,
         "tooltip": true
     },
+    "custom/angel-left": {
+        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
+        "return-type": "json",
+        "restart-interval": 5,
+        "tooltip": false
+    },
+    "custom/angel-right": {
+        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
+        "return-type": "json",
+        "restart-interval": 5,
+        "tooltip": false
+    },
     "hyprland/workspaces": {
         "active-only": false,
         "all-outputs": true,
@@ -61,7 +75,7 @@
         "tooltip": false
     },
     "clock": {
-        "format": "󰅐 {:%H:%M:%S  ·  %a, %b %d}",
+        "format": "󰅐  {:%H:%M:%S  ·  %a, %b %d}",
         "interval": 1,
         "tooltip": false
     },

@@ -52,14 +52,74 @@ window#waybar.empty #window,
 }
 
 /* ====================================================
-   CENTER: ANIMATED WORKSPACES & CLOCK
+   CENTER: FLANKING ANGELS, ANIMATED WORKSPACES & CLOCK
    ==================================================== */
 
+/* The two angels bear the central tablet between them. They are carved in the
+   same stone as the plates: assets/angel-*.svg use the #0A0A0E body and the
+   #2A2A38 contour set below, so keep the three in step if the plates change. */
+#custom-angel-left,
+#custom-angel-right {
+    min-width: 22px;
+    padding: 0px;
+    margin: 0px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    /* Sized explicitly: GTK scales the image to cover the box, which crops the
+       wingtips and the hem. Keep the 225:376 ratio of the padded artwork. */
+    background-size: 20px 34px;
+    border: none;
+    box-shadow: none;
+}
+
+#custom-angel-left {
+    background-image: url("assets/angel-left.svg");
+    background-position: right center;
+    margin-left: 6px;
+}
+
+#custom-angel-right {
+    background-image: url("assets/angel-right.svg");
+    background-position: left center;
+    margin-right: 6px;
+}
+
+/* scripts/angel-flare.py adds .flare on every workspace switch. Only the
+   contour ignites, in the wallust accent, so the bodies stay plate-coloured. */
+@keyframes angel-flare-left {
+    0% {
+        background-image: url("wallust/angel-left-lit.svg");
+    }
+    100% {
+        background-image: url("assets/angel-left.svg");
+    }
+}
+
+@keyframes angel-flare-right {
+    0% {
+        background-image: url("wallust/angel-right-lit.svg");
+    }
+    100% {
+        background-image: url("assets/angel-right.svg");
+    }
+}
+
+#custom-angel-left.flare {
+    animation: angel-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#custom-angel-right.flare {
+    animation: angel-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Workspaces and clock share one uninterrupted slab so the angels read as
+   holding a single tablet rather than two loose plates. */
 #workspaces {
     padding: 0px;
-    margin: 4px 3px;
+    margin: 4px 0px;
     background-color: #0A0A0E;
     border: 1px solid #2A2A38;
+    border-right: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
@@ -103,6 +163,11 @@ window#waybar.empty #window,
     box-shadow: inset 0 0 0 1px #0A0A0E;
 }
 
+/* The clock supplies the seam on this side of the slab */
+#workspaces button:last-child {
+    border-right: none;
+}
+
 #workspaces button:hover {
     background-color: #1E1E2C;
     color: #FFFFFF;
@@ -113,19 +178,33 @@ window#waybar.empty #window,
     color: #FFFFFF;
 }
 
-/* Monumental Clock Plate */
+/* Monumental Clock Plate.
+
+   Cinzel's figures are proportional, so a 1 is narrower than an 8 and the
+   plate changed width on almost every tick, dragging the workspaces, both
+   angels and the whole centre cluster sideways with it. The clock is the one
+   module whose text changes every second, so it takes the monospaced face and
+   keeps a fixed advance per digit; the rest of the bar stays on Cinzel. */
 #clock {
     padding: 3px 14px;
-    margin: 4px 3px 4px 0px;
+    margin: 4px 0px;
     background-color: #0A0A0E;
     color: @foreground;
     border: 1px solid #2A2A38;
+    border-left: 1px solid #22222E;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    font-family: "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
+    letter-spacing: 0.4px;
 }
 
 /* ====================================================
-   RIGHT: UNIFIED MERGED STATUS CLUSTER (1PX PERIMETER)
+   RIGHT: TWO MERGED STATUS PLATES (1PX PERIMETER)
+
+   Reading outward: notifications, tray, temperature and volume share the
+   first plate; battery and power sit on their own. Each plate is built from
+   the shared rule below, with the module at either end overriding its outer
+   border back to the perimeter colour.
    ==================================================== */
 
 #custom-swaync,
@@ -146,7 +225,7 @@ window#waybar.empty #window,
     transition: all 0.15s ease-in-out;
 }
 
-/* Left outer edge of right cluster */
+/* Left outer edge of the first plate */
 #custom-swaync {
     border-left: 1px solid #2A2A38;
     color: @color1;
@@ -160,10 +239,13 @@ window#waybar.empty #window,
     color: #FFFFFF;
 }
 
-/* PulseAudio (Icon Only) */
+/* PulseAudio (Icon Only) - right outer edge of the first plate */
 #pulseaudio {
+    border-right: 1px solid #2A2A38;
+    margin-right: 5px;
     color: @color1;
     font-size: 13px;
+    padding-right: 11px;
 }
 
 #pulseaudio:hover {
@@ -181,8 +263,10 @@ window#waybar.empty #window,
     color: #FFFFFF;
 }
 
-/* Battery (Always Visible) */
+/* Battery (Always Visible) - left outer edge of the power plate */
 #battery {
+    border-left: 1px solid #2A2A38;
+    padding-left: 11px;
     color: @foreground;
 }
 
@@ -205,7 +289,7 @@ window#waybar.empty #window,
     padding: 2px 6px;
 }
 
-/* Right outer edge of right cluster */
+/* Right outer edge of the power plate */
 #custom-power {
     border-right: 1px solid #2A2A38;
     margin-right: 6px;

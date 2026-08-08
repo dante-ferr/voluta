@@ -39,6 +39,14 @@ rofi.target = '~/.config/rofi/wallust/colors-rofi.rasi'
 waybar.template = 'colors-waybar.css'
 waybar.target = '~/.config/waybar/wallust/colors-waybar.css'
 
+# Lit twins of waybar/assets/angel-*.svg, shown for the flare on workspace
+# switch: same plate-coloured body, contour picked out in the accent
+angel_left_lit.template = 'angel-left-lit.svg'
+angel_left_lit.target = '~/.config/waybar/wallust/angel-left-lit.svg'
+
+angel_right_lit.template = 'angel-right-lit.svg'
+angel_right_lit.target = '~/.config/waybar/wallust/angel-right-lit.svg'
+
 kitty.template = 'colors-kitty.conf'
 kitty.target = '~/.config/kitty/kitty-themes/01-Wallust.conf'
 

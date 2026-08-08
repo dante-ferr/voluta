@@ -35,7 +35,22 @@ hl.config({
         inactive_opacity = 1.0,
         fullscreen_opacity = 1.0,
         blur = {
-            enabled = false, -- Disabled blur for crisp legibility
+            enabled = true,
+            size = 8,
+            passes = 3,
+            new_optimizations = true,
+            -- Windows are opaque by rule, so this only ever reaches surfaces that
+            -- ask for alpha themselves — kitty being the one that does.
+            xray = false,
+            ignore_opacity = false,
+            popups = true,
+            -- Darkened and desaturated: a bright wallpaper behind a translucent
+            -- terminal otherwise washes out the foreground text.
+            brightness = 0.72,
+            contrast = 1.05,
+            vibrancy = 0.15,
+            vibrancy_darkness = 0.4,
+            noise = 0.012,
         },
         shadow = {
             enabled = true,
