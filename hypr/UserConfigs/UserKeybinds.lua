@@ -5,7 +5,13 @@ local home = os.getenv("HOME") or "/home/dante"
 local scriptsDir = home .. "/.config/hypr/scripts"
 local UserScripts = home .. "/.config/hypr/UserScripts"
 
--- -- Helper for active window resizing (works for both floating & tiled windows; no-ops if maximized/fullscreen)
+-- Pixels added or removed per resize keypress; holding the key repeats it.
+local RESIZE_STEP = 120
+-- The Super + R resize submap steps in finer increments, doubled while SHIFT is held.
+local RESIZE_STEP_FINE = 80
+
+-- Helper for active window resizing (works for both floating & tiled windows; no-ops if maximized/fullscreen).
+-- Must use hl.dsp.window.resize: hl.dsp.exec_raw accepts any string but never runs it.
 local function resize_active(dx, dy)
     local win = hl.get_active_window()
     if not win then return end
@@ -15,7 +21,7 @@ local function resize_active(dx, dy)
     if win.fullscreen_client and win.fullscreen_client ~= 0 and win.fullscreen_client ~= false then
         return
     end
-    hl.dispatch(hl.dsp.exec_raw(string.format("resizeactive %d %d", dx, dy)))
+    hl.dispatch(hl.dsp.window.resize({ x = dx, y = dy, relative = true }))
 end
 
 -- 1. App Launchers
@@ -26,6 +32,20 @@ hl.bind("SUPER + W", hl.dsp.exec_cmd("waypaper"))
 hl.bind("SUPER + D", hl.dsp.exec_cmd("pkill rofi || rofi -show drun -theme " .. home .. "/.config/rofi/dashboard.rasi"))
 -- Launcher plus its flanking sigil and telemetry panels.
 hl.bind("SUPER + CTRL + Return", hl.dsp.exec_cmd(UserScripts .. "/command_deck.sh"))
+hl.bind("SUPER + I", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
+hl.bind("SUPER + CTRL + T", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
+hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("kitty --class system-monitor -e btop"))
+hl.bind("SUPER + G", hl.dsp.exec_cmd(UserScripts .. "/pixel-widget.sh"))
+hl.bind("SUPER + KP_Add", hl.dsp.exec_cmd("bash -c 'obs-cmd recording toggle && notify-send \"OBS Studio\" \"Recording Toggled\"'"))
+
+-- Config shortcuts
+hl.bind("CTRL + SUPER + Slash", hl.dsp.exec_cmd("xdg-open ~/.config/illogical-impulse/config.json"))
+hl.bind("CTRL + SUPER + ALT + Slash", hl.dsp.exec_cmd("xdg-open ~/.config/hypr/UserConfigs/UserKeybinds.lua"))
+
+-- Display layout profiles (nwg-displays)
+hl.bind("SUPER + F1", hl.dsp.exec_cmd("nwg-displays-apply -p Horizontal"))
+hl.bind("SUPER + F2", hl.dsp.exec_cmd("nwg-displays-apply -p Vertical"))
+hl.bind("SUPER + F3", hl.dsp.exec_cmd("nwg-displays-apply -p Notebook"))
 
 -- 2. Window State Operations
 hl.bind("SUPER + Q", hl.dsp.window.close())
@@ -102,36 +122,36 @@ hl.bind("ALT + J", hl.dsp.focus({ direction = "down" }))
 
 -- 9. Window Resizing (Continuous Keyboard Resizing for Floating & Tiled)
 -- Direct keybinds: Super + Shift + Arrows
-hl.bind("SUPER + SHIFT + Left", function() resize_active(-60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + Right", function() resize_active(60, 0) end, { repeating = true })
-hl.bind("SUPER + SHIFT + Up", function() resize_active(0, -60) end, { repeating = true })
-hl.bind("SUPER + SHIFT + Down", function() resize_active(0, 60) end, { repeating = true })
+hl.bind("SUPER + SHIFT + Left", function() resize_active(-RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + SHIFT + Right", function() resize_active(RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + SHIFT + Up", function() resize_active(0, -RESIZE_STEP) end, { repeating = true })
+hl.bind("SUPER + SHIFT + Down", function() resize_active(0, RESIZE_STEP) end, { repeating = true })
 
 -- Ergonomic Ctrl + Arrow & Ctrl + HJKL resizing
-hl.bind("SUPER + CTRL + Left", function() resize_active(-60, 0) end, { repeating = true })
-hl.bind("SUPER + CTRL + Right", function() resize_active(60, 0) end, { repeating = true })
-hl.bind("SUPER + CTRL + Up", function() resize_active(0, -60) end, { repeating = true })
-hl.bind("SUPER + CTRL + Down", function() resize_active(0, 60) end, { repeating = true })
-hl.bind("SUPER + CTRL + H", function() resize_active(-60, 0) end, { repeating = true })
-hl.bind("SUPER + CTRL + L", function() resize_active(60, 0) end, { repeating = true })
-hl.bind("SUPER + CTRL + K", function() resize_active(0, -60) end, { repeating = true })
-hl.bind("SUPER + CTRL + J", function() resize_active(0, 60) end, { repeating = true })
+hl.bind("SUPER + CTRL + Left", function() resize_active(-RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + CTRL + Right", function() resize_active(RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + CTRL + Up", function() resize_active(0, -RESIZE_STEP) end, { repeating = true })
+hl.bind("SUPER + CTRL + Down", function() resize_active(0, RESIZE_STEP) end, { repeating = true })
+hl.bind("SUPER + CTRL + H", function() resize_active(-RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + CTRL + L", function() resize_active(RESIZE_STEP, 0) end, { repeating = true })
+hl.bind("SUPER + CTRL + K", function() resize_active(0, -RESIZE_STEP) end, { repeating = true })
+hl.bind("SUPER + CTRL + J", function() resize_active(0, RESIZE_STEP) end, { repeating = true })
 
 -- Dedicated Resize Submap (Super + R)
 hl.define_submap("resize", function()
-    hl.bind("Right", function() resize_active(40, 0) end, { repeating = true })
-    hl.bind("Left", function() resize_active(-40, 0) end, { repeating = true })
-    hl.bind("Up", function() resize_active(0, -40) end, { repeating = true })
-    hl.bind("Down", function() resize_active(0, 40) end, { repeating = true })
-    hl.bind("l", function() resize_active(40, 0) end, { repeating = true })
-    hl.bind("h", function() resize_active(-40, 0) end, { repeating = true })
-    hl.bind("k", function() resize_active(0, -40) end, { repeating = true })
-    hl.bind("j", function() resize_active(0, 40) end, { repeating = true })
+    hl.bind("Right", function() resize_active(RESIZE_STEP_FINE, 0) end, { repeating = true })
+    hl.bind("Left", function() resize_active(-RESIZE_STEP_FINE, 0) end, { repeating = true })
+    hl.bind("Up", function() resize_active(0, -RESIZE_STEP_FINE) end, { repeating = true })
+    hl.bind("Down", function() resize_active(0, RESIZE_STEP_FINE) end, { repeating = true })
+    hl.bind("l", function() resize_active(RESIZE_STEP_FINE, 0) end, { repeating = true })
+    hl.bind("h", function() resize_active(-RESIZE_STEP_FINE, 0) end, { repeating = true })
+    hl.bind("k", function() resize_active(0, -RESIZE_STEP_FINE) end, { repeating = true })
+    hl.bind("j", function() resize_active(0, RESIZE_STEP_FINE) end, { repeating = true })
 
-    hl.bind("SHIFT + Right", function() resize_active(80, 0) end, { repeating = true })
-    hl.bind("SHIFT + Left", function() resize_active(-80, 0) end, { repeating = true })
-    hl.bind("SHIFT + Up", function() resize_active(0, -80) end, { repeating = true })
-    hl.bind("SHIFT + Down", function() resize_active(0, 80) end, { repeating = true })
+    hl.bind("SHIFT + Right", function() resize_active(RESIZE_STEP_FINE * 2, 0) end, { repeating = true })
+    hl.bind("SHIFT + Left", function() resize_active(-RESIZE_STEP_FINE * 2, 0) end, { repeating = true })
+    hl.bind("SHIFT + Up", function() resize_active(0, -RESIZE_STEP_FINE * 2) end, { repeating = true })
+    hl.bind("SHIFT + Down", function() resize_active(0, RESIZE_STEP_FINE * 2) end, { repeating = true })
 
     hl.bind("Escape", hl.dsp.submap("reset"))
     hl.bind("Return", hl.dsp.submap("reset"))
@@ -139,14 +159,14 @@ end)
 hl.bind("SUPER + R", hl.dsp.submap("resize"))
 
 -- 10. Window Moving (Super + Alt + Arrows & Super + Shift + HJKL)
-hl.bind("SUPER + ALT + Left", hl.dsp.exec_raw("movewindow l"))
-hl.bind("SUPER + ALT + Right", hl.dsp.exec_raw("movewindow r"))
-hl.bind("SUPER + ALT + Up", hl.dsp.exec_raw("movewindow u"))
-hl.bind("SUPER + ALT + Down", hl.dsp.exec_raw("movewindow d"))
-hl.bind("SUPER + SHIFT + H", hl.dsp.exec_raw("swapwindow l"))
-hl.bind("SUPER + SHIFT + L", hl.dsp.exec_raw("swapwindow r"))
-hl.bind("SUPER + SHIFT + K", hl.dsp.exec_raw("swapwindow u"))
-hl.bind("SUPER + SHIFT + J", hl.dsp.exec_raw("swapwindow d"))
+hl.bind("SUPER + ALT + Left", hl.dsp.window.move({ direction = "left" }))
+hl.bind("SUPER + ALT + Right", hl.dsp.window.move({ direction = "right" }))
+hl.bind("SUPER + ALT + Up", hl.dsp.window.move({ direction = "up" }))
+hl.bind("SUPER + ALT + Down", hl.dsp.window.move({ direction = "down" }))
+hl.bind("SUPER + SHIFT + H", hl.dsp.window.swap({ direction = "left" }))
+hl.bind("SUPER + SHIFT + L", hl.dsp.window.swap({ direction = "right" }))
+hl.bind("SUPER + SHIFT + K", hl.dsp.window.swap({ direction = "up" }))
+hl.bind("SUPER + SHIFT + J", hl.dsp.window.swap({ direction = "down" }))
 
 -- 11. Mouse Window Moving & Resizing (Super + Left/Right Drag)
 hl.bind("SUPER + mouse:272", hl.dsp.window.drag(), { mouse = true })
@@ -194,8 +214,27 @@ hl.window_rule({
     opacity = "1.0 1.0",
 })
 
--- Command Deck: pinned wings flanking the centred app launcher. Sized off
--- monitor_w/monitor_h so the deck lays out identically on every output.
+-- Command Deck: pinned wings flanking the centred app launcher.
+--
+-- The launcher is a fixed pixel width, so the wings are measured from the space
+-- left over beside it rather than from a flat share of the monitor. A flat share
+-- breaks on scaled outputs: monitor_w is the *logical* width, so a display at
+-- scale 1.2 reports 1600 instead of 1920 while the launcher stays 720px wide.
+-- The launcher's share of the screen therefore grows as the scale goes up, until
+-- it runs into wings that were placed at a constant percentage. Anchoring the
+-- wings to the launcher's edges keeps the same clearance at any scale.
+--
+-- LAUNCHER_W must track `window { width: ... }` in rofi/dashboard.rasi.
+local LAUNCHER_W = 720
+local DECK_GUTTER = 24 -- clearance between a wing and the launcher, in px
+local DECK_MARGIN = 0.05 -- screen-edge margin, as a share of monitor width
+
+-- Hyprland splits size/move on whitespace, so the expressions carry none.
+local wing_size = ("((monitor_w-%d)/2-monitor_w*%s-%d) (monitor_h*0.62)")
+    :format(LAUNCHER_W, DECK_MARGIN, DECK_GUTTER)
+local sigil_move = ("(monitor_w*%s) (monitor_h*0.19)"):format(DECK_MARGIN)
+local telemetry_move = ("((monitor_w+%d)/2+%d) (monitor_h*0.19)"):format(LAUNCHER_W, DECK_GUTTER)
+
 local wallust = require("UserConfigs.wallust")
 local deck_border = wallust.get("color12", "rgb(D4AF37)") .. " " .. wallust.get("color4", "rgb(16161D)")
 
@@ -203,8 +242,8 @@ hl.window_rule({
     name = "imperium-deck-sigil",
     match = { class = "^(imperium-sigil)$" },
     float = true,
-    size = "(monitor_w*0.23) (monitor_h*0.62)",
-    move = "(monitor_w*0.04) (monitor_h*0.19)",
+    size = wing_size,
+    move = sigil_move,
     pin = true,
     no_initial_focus = true,
     rounding = 0,
@@ -216,8 +255,8 @@ hl.window_rule({
     name = "imperium-deck-telemetry",
     match = { class = "^(imperium-telemetry)$" },
     float = true,
-    size = "(monitor_w*0.25) (monitor_h*0.62)",
-    move = "(monitor_w*0.71) (monitor_h*0.19)",
+    size = wing_size,
+    move = telemetry_move,
     pin = true,
     no_initial_focus = true,
     rounding = 0,
