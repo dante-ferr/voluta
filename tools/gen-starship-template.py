@@ -2,6 +2,11 @@
 """Emit the wallust starship template with literal Nerd Font glyphs."""
 
 TARGET = "/home/dante/dotfiles-imperium/wallust/templates/colors-starship.toml"
+# The config carries no palette placeholders any more, so the template and the
+# live config are byte identical and this script can install both. Do not round
+# trip prompt edits through `wallust cs`: that reapplies whichever colourscheme
+# you name to every other target as well.
+LIVE = "/home/dante/.config/starship.toml"
 
 GLYPHS = {
     "@L@": "\ue0ba",          # slanted left cap
@@ -39,6 +44,11 @@ GLYPHS = {
 
 TEMPLATE = r'''# /* wallust template - colors-starship */
 # Starship Prompt - Dynamic Wallust Palette (Roman Imperium Cyber-Sacred Rice)
+#
+# Colours are ANSI palette indices, not hex, so the prompt follows the terminal
+# palette live: after a wallpaper change wallust pushes the new colours to kitty
+# and the whole scrollback recolours at once. Baked-in hex would leave every
+# prompt already on screen stuck on the previous theme.
 #
 # NOTE: the separators/icons are Nerd Font glyphs, several of them in the
 # private use area. Editors that strip those codepoints will silently gut the
@@ -82,15 +92,15 @@ vimcmd_symbol = "[@VIM@ SPQR](bold fg:{{color7}})[ <](bold fg:{{color15}})"
 # User & Host
 [username]
 show_always = false
-style_user = "bold fg:{{background}} bg:{{color3}}"
-style_root = "bold fg:{{color15}} bg:{{color3}}"
-format = "[@L@](fg:{{color3}})[ @USER@ $user ]($style)[@R@](fg:{{color3}}) "
+style_user = "bold fg:{{background}} bg:{{color2}}"
+style_root = "bold fg:{{background}} bg:{{color2}}"
+format = "[@L@](fg:{{color2}})[ @USER@ $user ]($style)[@R@](fg:{{color2}}) "
 disabled = false
 
 [hostname]
 ssh_only = true
-style = "bold fg:{{background}} bg:{{color3}}"
-format = "[@L@](fg:{{color3}})[ @HOST@ $hostname ]($style)[@R@](fg:{{color3}}) "
+style = "bold fg:{{background}} bg:{{color2}}"
+format = "[@L@](fg:{{color2}})[ @HOST@ $hostname ]($style)[@R@](fg:{{color2}}) "
 disabled = false
 
 # Directory / Arx
@@ -114,14 +124,14 @@ format = "[@L@](fg:{{color1}})[ $path ]($style)[$read_only]($read_only_style)[@R
 # Git Branch / Cohors
 [git_branch]
 symbol = "@BRANCH@"
-style = "bold fg:{{color15}} bg:{{color5}}"
-format = "[@L@](fg:{{color5}})[ $symbol $branch ]($style)"
+style = "bold fg:{{background}} bg:{{color2}}"
+format = "[@L@](fg:{{color2}})[ $symbol $branch ]($style)"
 
 # Git Status / Tactical Military & Archival Indicators
 # The closing cap lives here so the branch pill stays sealed on clean trees.
 [git_status]
-style = "bold fg:{{color1}} bg:{{color5}}"
-format = '([@SEP@](fg:{{color7}} bg:{{color5}})[ $all_status$ahead_behind]($style))[@R@](fg:{{color5}}) '
+style = "bold fg:{{background}} bg:{{color2}}"
+format = '([@SEP@](fg:{{color6}} bg:{{color2}})[ $all_status$ahead_behind]($style))[@R@](fg:{{color2}}) '
 conflicted = "X ${count} "
 ahead = "^ ${count} "
 behind = "v ${count} "
@@ -134,14 +144,14 @@ deleted = "- ${count} "
 stashed = "* ${count} "
 
 [git_state]
-style = "bold fg:{{background}} bg:{{color2}}"
-format = '[@L@](fg:{{color2}})[ $state( $progress_current/$progress_total) ]($style)[@R@](fg:{{color2}}) '
+style = "bold fg:{{background}} bg:{{color1}}"
+format = '[@L@](fg:{{color1}})[ $state( $progress_current/$progress_total) ]($style)[@R@](fg:{{color1}}) '
 
 # Command Duration / Celeritas
 [cmd_duration]
 min_time = 2000
-style = "bold fg:{{background}} bg:{{color3}}"
-format = "[@L@](fg:{{color3}})[ @TIMER@ $duration ]($style)[@R@](fg:{{color3}}) "
+style = "bold fg:{{background}} bg:{{color2}}"
+format = "[@L@](fg:{{color2}})[ @TIMER@ $duration ]($style)[@R@](fg:{{color2}}) "
 
 # Chronometer / Horologium
 [time]
@@ -213,6 +223,25 @@ TEXT_SYMBOLS = {
     'stashed = "* ': 'stashed = "@ARCHIVE@ ',
 }
 
+# Emit ANSI palette indices rather than letting wallust bake in hex. Hex is
+# absolute, so prompts already on screen keep their old colours forever and only
+# repaint on the next render; indices are resolved by the terminal, so a
+# `kitty @ set-colors` after a wallpaper change recolours the entire scrollback
+# at once, the same way the fetch banner does.
+PALETTE_TO_ANSI = {
+    "{{background}}": "0",
+    "{{foreground}}": "7",
+    "{{color0}}": "0",
+    "{{color1}}": "1",
+    "{{color2}}": "2",
+    "{{color3}}": "3",
+    "{{color4}}": "4",
+    "{{color5}}": "5",
+    "{{color6}}": "6",
+    "{{color7}}": "7",
+    "{{color15}}": "15",
+}
+
 out = TEMPLATE
 for token, glyph in TEXT_SYMBOLS.items():
     if token not in out:
@@ -220,7 +249,16 @@ for token, glyph in TEXT_SYMBOLS.items():
     out = out.replace(token, glyph)
 for token, glyph in GLYPHS.items():
     out = out.replace(token, glyph)
+for token, index in PALETTE_TO_ANSI.items():
+    out = out.replace(token, index)
+if "{{" in out:
+    raise SystemExit("unresolved template token: " + out[out.index("{{"):][:40])
 
-with open(TARGET, "w", encoding="utf-8") as fh:
-    fh.write(out)
-print("wrote", TARGET)
+import os
+
+for path in (TARGET, LIVE):
+    if path is LIVE and not os.path.exists(path):
+        continue
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(out)
+    print("wrote", path)

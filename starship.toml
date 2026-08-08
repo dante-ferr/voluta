@@ -1,13 +1,18 @@
 # /* wallust template - colors-starship */
 # Starship Prompt - Dynamic Wallust Palette (Roman Imperium Cyber-Sacred Rice)
 #
+# Colours are ANSI palette indices, not hex, so the prompt follows the terminal
+# palette live: after a wallpaper change wallust pushes the new colours to kitty
+# and the whole scrollback recolours at once. Baked-in hex would leave every
+# prompt already on screen stuck on the previous theme.
+#
 # NOTE: the separators/icons are Nerd Font glyphs, several of them in the
 # private use area. Editors that strip those codepoints will silently gut the
 # powerline caps, so regenerate this file rather than retyping the symbols.
 
 add_newline = true
 command_timeout = 5000
-continuation_prompt = "[▸▸ ](bold fg:#634C36)"
+continuation_prompt = "[▸▸ ](bold fg:5)"
 
 format = """
 $username\
@@ -32,26 +37,26 @@ $character"""
 # Rule joining the left insignia to the right chronometer
 [fill]
 symbol = "─"
-style = "fg:#4A3A34"
+style = "fg:6"
 
 # Prompt Symbols
 [character]
-success_symbol = "[ SPQR](bold fg:#9A684B)[ ❯](bold fg:#B4ADAB)"
-error_symbol = "[󰞇 SPQR](bold fg:#B4ADAB)[ ❯](bold fg:#9A684B)"
-vimcmd_symbol = "[󰊠 SPQR](bold fg:#796C68)[ ❯](bold fg:#B4ADAB)"
+success_symbol = "[ SPQR](bold fg:1)[ ❯](bold fg:15)"
+error_symbol = "[󰞇 SPQR](bold fg:15)[ ❯](bold fg:1)"
+vimcmd_symbol = "[󰊠 SPQR](bold fg:7)[ ❯](bold fg:15)"
 
 # User & Host
 [username]
 show_always = false
-style_user = "bold fg:#040402 bg:#774F3B"
-style_root = "bold fg:#B4ADAB bg:#774F3B"
-format = "[](fg:#774F3B)[ 󰀘 $user ]($style)[](fg:#774F3B) "
+style_user = "bold fg:0 bg:2"
+style_root = "bold fg:0 bg:2"
+format = "[](fg:2)[ 󰀘 $user ]($style)[](fg:2) "
 disabled = false
 
 [hostname]
 ssh_only = true
-style = "bold fg:#040402 bg:#774F3B"
-format = "[](fg:#774F3B)[ 󰒋 $hostname ]($style)[](fg:#774F3B) "
+style = "bold fg:0 bg:2"
+format = "[](fg:2)[ 󰒋 $hostname ]($style)[](fg:2) "
 disabled = false
 
 # Directory / Arx
@@ -60,9 +65,9 @@ truncation_length = 4
 truncation_symbol = "…/"
 home_symbol = " ~"
 read_only = "󰌾 "
-read_only_style = "bold fg:#040402 bg:#9A684B"
-style = "bold fg:#040402 bg:#9A684B"
-format = "[](fg:#9A684B)[ $path ]($style)[$read_only]($read_only_style)[](fg:#9A684B) "
+read_only_style = "bold fg:0 bg:1"
+style = "bold fg:0 bg:1"
+format = "[](fg:1)[ $path ]($style)[$read_only]($read_only_style)[](fg:1) "
 
 [directory.substitutions]
 "Desktop" = " Desktop"
@@ -75,14 +80,14 @@ format = "[](fg:#9A684B)[ $path ]($style)[$read_only]($read_only_style)[](
 # Git Branch / Cohors
 [git_branch]
 symbol = ""
-style = "bold fg:#B4ADAB bg:#634C36"
-format = "[](fg:#634C36)[ $symbol $branch ]($style)"
+style = "bold fg:0 bg:2"
+format = "[](fg:2)[ $symbol $branch ]($style)"
 
 # Git Status / Tactical Military & Archival Indicators
 # The closing cap lives here so the branch pill stays sealed on clean trees.
 [git_status]
-style = "bold fg:#9A684B bg:#634C36"
-format = '([](fg:#796C68 bg:#634C36)[ $all_status$ahead_behind]($style))[](fg:#634C36) '
+style = "bold fg:0 bg:2"
+format = '([](fg:6 bg:2)[ $all_status$ahead_behind]($style))[](fg:2) '
 conflicted = " ${count} "
 ahead = "⇡${count} "
 behind = "⇣${count} "
@@ -95,21 +100,21 @@ deleted = " ${count} "
 stashed = " ${count} "
 
 [git_state]
-style = "bold fg:#040402 bg:#88643F"
-format = '[](fg:#88643F)[ $state( $progress_current/$progress_total) ]($style)[](fg:#88643F) '
+style = "bold fg:0 bg:1"
+format = '[](fg:1)[ $state( $progress_current/$progress_total) ]($style)[](fg:1) '
 
 # Command Duration / Celeritas
 [cmd_duration]
 min_time = 2000
-style = "bold fg:#040402 bg:#774F3B"
-format = "[](fg:#774F3B)[ 󰔟 $duration ]($style)[](fg:#774F3B) "
+style = "bold fg:0 bg:2"
+format = "[](fg:2)[ 󰔟 $duration ]($style)[](fg:2) "
 
 # Chronometer / Horologium
 [time]
 disabled = false
 time_format = "%H:%M"
-style = "bold fg:#B4ADAB bg:#4A3A34"
-format = "[](fg:#4A3A34)[ 󰥔 $time ]($style)[](fg:#4A3A34)"
+style = "bold fg:15 bg:6"
+format = "[](fg:6)[ 󰥔 $time ]($style)[](fg:6)"
 
 # Package / Languages
 [package]
@@ -117,35 +122,35 @@ disabled = true
 
 [conda]
 symbol = "󰆧"
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $environment ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $environment ](fg:7) "
 
 [lua]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
 
 [python]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
 
 [nodejs]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
 
 [golang]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
 
 [rust]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
 
 [c]
 symbol = ""
-style = "bold fg:#9A684B"
-format = "[$symbol]($style)[ $version ](fg:#796C68) "
+style = "bold fg:1"
+format = "[$symbol]($style)[ $version ](fg:7) "
