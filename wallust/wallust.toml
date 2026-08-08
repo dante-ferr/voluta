@@ -51,8 +51,8 @@ quickshell.target = '~/.config/quickshell/qml_color.json'
 shell.template = 'colors-shell.sh'
 shell.target = '~/.config/hypr/wallust/colors-shell.sh'
 
-#swaync.template = 'colors-swaync.css'
-#swaync.target = '~/.config/swaync/wallust/colors-wallust.css'
+swaync.template = 'colors-swaync.css'
+swaync.target = '~/.config/swaync/wallust/colors-swaync.css'
 
 #macchina.template = 'colors-macchina.toml'
 #macchina.target = '~/.config/macchina/themes/wallust.toml'

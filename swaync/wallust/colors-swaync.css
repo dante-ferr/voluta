@@ -1,0 +1,24 @@
+ /* wallust template - colors-swaync */
+ /* Deliberately mirrors colors-waybar so both stylesheets share token names */
+
+ @define-color foreground #EAB5BB;
+ @define-color background #050402;
+ @define-color background-alt rgba(5,4,2,0.25);
+ @define-color cursor #D7A69E;
+
+ @define-color color0 #070603;
+ @define-color color1 #EB9F97;
+ @define-color color2 #83A978;
+ @define-color color3 #B88C82;
+ @define-color color4 #B18BB8;
+ @define-color color5 #C49076;
+ @define-color color6 #B6878D;
+ @define-color color7 #D8A5AB;
+ @define-color color8 #8F5058;
+ @define-color color9 #ECA69E;
+ @define-color color10 #8CAF82;
+ @define-color color11 #BD948B;
+ @define-color color12 #B793BD;
+ @define-color color13 #C89880;
+ @define-color color14 #BB8F95;
+ @define-color color15 #E7D0D2;

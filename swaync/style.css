@@ -1,53 +1,433 @@
-/* SwayNC Imperium Cyber-Sacred Style (Opaque, Sharp 0px Edges) */
+/* SwayNC Imperium Monumental Classical Style */
+/* Shares the waybar vocabulary: Cinzel lettering, sharp 0px edges, opaque basalt
+   slabs, darker 1px hairlines and the wallust accent for every gilded detail. */
 
-@import "wallust/colors-wallust.css";
+@import "wallust/colors-swaync.css";
 
 * {
-    font-family: "JetBrains Mono", "FiraCode Nerd Font", monospace;
-    font-weight: bold;
-    border-radius: 0px; /* Sharp 90-degree corners */
+    border-radius: 0px; /* Strict 0px sharp geometric corners */
+    font-family: "Cinzel", "JetBrainsMono Nerd Font", "FiraCode Nerd Font", serif, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-shadow: none;
+    box-shadow: none;
 }
 
+/* The compositor owns everything behind the panels */
+.blank-window,
+.floating-notifications,
+.floating-notifications.background {
+    background: transparent;
+}
+
+/* ====================================================
+   NOTIFICATIONS
+   ==================================================== */
+
 .notification-row {
+    background: none;
     outline: none;
 }
 
-.notification {
-    border-radius: 0px;
-    margin: 6px 12px;
-    box-shadow: none;
+.notification-row:focus .notification,
+.notification-row:hover .notification {
+    background: #101017;
+}
+
+.notification-row .notification-background {
+    padding: 4px 8px;
+}
+
+.notification-row .notification-background .notification {
     padding: 0;
-    border: 1px solid @accent;
-    background: #0B0B0E;
+    background: #0A0A0E; /* Opaque Basalt Slate */
+    border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
+    /* Gilded spine on the leading edge, echoing the active workspace numeral */
+    box-shadow: inset 3px 0 0 0 @color1, 0 2px 6px rgba(0, 0, 0, 0.7);
+    transition: background 0.15s ease-in-out;
+}
+
+.notification-row .notification-background .notification.critical {
+    box-shadow: inset 3px 0 0 0 #7A0016, 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.notification-row .notification-background .notification.low {
+    box-shadow: inset 3px 0 0 0 #2A2A38, 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.notification-row .notification-background .notification .notification-default-action {
+    padding: 6px 10px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    color: @foreground;
+}
+
+.notification-row .notification-background .notification .notification-default-action:hover {
+    background: #161622;
 }
 
 .notification-content {
-    background: #0B0B0E;
-    padding: 10px;
+    background: transparent;
+    padding: 0;
+}
+
+/* GTK4 applies a 50% opacity filter to these labels; clearing it keeps the body legible */
+.notification-content .text-box label {
+    filter: none;
+}
+
+.summary {
+    color: @color1;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    background: transparent;
+}
+
+.notification.critical .summary {
+    color: #FFFFFF;
+}
+
+.time {
+    color: @color8;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-right: 26px;
+    background: transparent;
+}
+
+.body {
+    color: @foreground;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+    background: transparent;
+}
+
+.notification-content .image,
+.notification-content .app-icon {
     border-radius: 0px;
-    color: @text;
+    margin: 4px 8px 4px 4px;
+}
+
+.body-image {
+    margin-top: 6px;
+    border: 1px solid #2A2A38;
 }
 
 .close-button {
-    background: #7A0016;
-    color: white;
-    border-radius: 0px;
+    padding: 0;
+    margin: 6px;
+    min-width: 20px;
+    min-height: 20px;
+    background: #101017;
+    color: @foreground;
+    border: 1px solid #2A2A38;
+    box-shadow: none;
+    transition: background 0.15s ease-in-out;
 }
+
+.close-button:hover {
+    background: #7A0016;
+    color: #FFFFFF;
+    border: 1px solid #7A0016;
+}
+
+/* Alternative actions below the body */
+.notification-alt-actions {
+    background: transparent;
+    padding: 0 6px 6px 6px;
+}
+
+.notification-action > button,
+.inline-reply-button {
+    margin: 2px;
+    padding: 3px 10px;
+    background: #101017;
+    color: @foreground;
+    border: 1px solid #2A2A38;
+}
+
+.notification-action > button:hover,
+.inline-reply-button:hover {
+    background: @color1;
+    color: #0A0A0E;
+}
+
+.inline-reply-entry {
+    background: #0A0A0E;
+    color: @foreground;
+    caret-color: @color1;
+    border: 1px solid #2A2A38;
+}
+
+/* Grouped notifications */
+.notification-group .notification-group-headers,
+.notification-group .notification-group-buttons {
+    margin: 0 14px;
+    color: @color1;
+    letter-spacing: 1.2px;
+}
+
+.notification-group .notification-group-headers .notification-group-icon {
+    color: @color1;
+}
+
+.notification-group.collapsed.not-expanded {
+    opacity: 0.45;
+}
+
+/* ====================================================
+   CONTROL CENTER
+   ==================================================== */
 
 .control-center {
-    background: #0B0B0E;
-    border: 2px solid @accent;
-    border-radius: 0px;
-    padding: 14px;
+    background: #0A0A0E;
+    color: @foreground;
+    padding: 10px;
+    border: 1px solid #2A2A38;
+    /* Gilded lintel across the top of the tablet */
+    box-shadow: inset 0 2px 0 0 @color1, 0 4px 14px rgba(0, 0, 0, 0.8);
 }
 
+/* GTK4 dresses lists and viewports in its own slabs; strip them back to the tablet */
+.control-center scrolledwindow,
+.control-center viewport,
+.control-center list,
+.control-center list row,
+.control-center .control-center-list {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+scrollbar,
+scrollbar trough {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+scrollbar slider {
+    background: #2A2A38;
+    border: none;
+    min-width: 4px;
+    min-height: 4px;
+}
+
+scrollbar slider:hover {
+    background: @color1;
+}
+
+.control-center .control-center-list-placeholder {
+    color: @color8;
+    opacity: 1;
+    letter-spacing: 1.4px;
+}
+
+.control-center .control-center-list .notification {
+    box-shadow: inset 3px 0 0 0 @color1;
+}
+
+.control-center .control-center-list .notification.critical {
+    box-shadow: inset 3px 0 0 0 #7A0016;
+}
+
+/* ====================================================
+   WIDGETS
+   ==================================================== */
+
+.widget {
+    margin: 5px 4px;
+    padding: 8px 10px;
+    background: #101017;
+    border: 1px solid #22222E;
+}
+
+/* Title */
 .widget-title {
-    color: @accent;
-    font-size: 1.3rem;
+    background: transparent;
+    border: none;
+    padding: 4px 6px;
+    margin-bottom: 0;
 }
 
-.widget-dnd {
-    background: #16161D;
-    border: 1px solid @accent;
-    border-radius: 0px;
+.widget-title > label {
+    color: @color1;
+    font-size: 15px;
+    letter-spacing: 2px;
+    margin-right: 8px;
+}
+
+.widget-title > button {
+    margin-left: 8px;
+    padding: 2px 12px;
+    background: #101017;
+    color: @foreground;
+    border: 1px solid #2A2A38;
+    transition: background 0.15s ease-in-out;
+}
+
+.widget-title > button:hover {
+    background: @color1;
+    color: #0A0A0E;
+}
+
+/* Do Not Disturb */
+.widget-dnd > label {
+    color: @foreground;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+}
+
+.widget-dnd > switch {
+    margin-left: 8px;
+    padding: 0;
+    background: #0A0A0E;
+    border: 1px solid #2A2A38;
+    min-width: 42px;
+    min-height: 18px;
+}
+
+.widget-dnd > switch:checked {
+    background: @color1;
+    border: 1px solid @color1;
+}
+
+.widget-dnd > switch slider {
+    background: #2A2A38;
+    border: none;
+    margin: 2px;
+    min-width: 16px;
+    min-height: 14px;
+}
+
+.widget-dnd > switch:checked slider {
+    background: #0A0A0E;
+}
+
+/* Buttons grid */
+.widget-buttons-grid {
+    padding: 6px;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button {
+    margin: 2px;
+    padding: 6px 0;
+    background: #0A0A0E;
+    color: @color1;
+    border: 1px solid #2A2A38;
+    font-size: 15px;
+    transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button label {
+    color: @color1;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button:hover,
+.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked {
+    background: @color1;
+    color: #0A0A0E;
+}
+
+.widget-buttons-grid > flowbox > flowboxchild > button:hover label,
+.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked label {
+    color: #0A0A0E;
+}
+
+/* Volume & backlight sliders */
+.widget-volume,
+.widget-backlight {
+    color: @foreground;
+}
+
+.widget-volume label,
+.widget-backlight label {
+    color: @color1;
+    font-size: 14px;
+}
+
+.widget-volume scale trough,
+.widget-backlight scale trough {
+    background: #0A0A0E;
+    border: 1px solid #2A2A38;
+    min-height: 8px;
+}
+
+.widget-volume scale highlight,
+.widget-backlight scale highlight {
+    background: @color1;
+    min-height: 8px;
+}
+
+.widget-volume scale slider,
+.widget-backlight scale slider {
+    background: @foreground;
+    border: 1px solid #0A0A0E;
+    min-width: 10px;
+    min-height: 10px;
+}
+
+.per-app-volume {
+    background: #0A0A0E;
+    border: 1px solid #22222E;
+    margin: 6px;
+    margin-bottom: 0;
+}
+
+/* Media player */
+.widget-mpris {
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.widget-mpris .widget-mpris-player {
+    margin: 5px 4px;
+    padding: 0;
+    background: #101017;
+    border: 1px solid #22222E;
+    box-shadow: none;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay {
+    padding: 10px;
+    background-color: rgba(10, 10, 14, 0.85);
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-album-art {
+    border: 1px solid #2A2A38;
+    box-shadow: none;
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-title {
+    color: @color1;
+    font-size: 13px;
+    letter-spacing: 1.2px;
+}
+
+.widget-mpris .widget-mpris-player .widget-mpris-subtitle {
+    color: @foreground;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button,
+.widget-mpris > box > button {
+    background: transparent;
+    color: @foreground;
+    border: none;
+}
+
+.widget-mpris .widget-mpris-player .mpris-overlay button:hover,
+.widget-mpris > box > button:hover {
+    background: @color1;
+    color: #0A0A0E;
+}
+
+.widget-mpris > box > button:disabled {
+    color: @color8;
 }
