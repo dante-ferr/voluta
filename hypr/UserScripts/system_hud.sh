@@ -9,8 +9,10 @@ fi
 
 clear
 # Display Fastfetch with Baroque Artwork & Latin Specs
+# --force because this window exists only to show the fetch: the size rule that
+# keeps it out of small shells would otherwise leave the HUD blank.
 if [[ -x "$HOME/.config/fastfetch/fetch.sh" ]]; then
-    "$HOME/.config/fastfetch/fetch.sh"
+    "$HOME/.config/fastfetch/fetch.sh" --force
 elif [[ -f "$HOME/.config/fastfetch/config.jsonc" ]]; then
     fastfetch --config "$HOME/.config/fastfetch/config.jsonc"
 else

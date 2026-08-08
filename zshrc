@@ -121,6 +121,19 @@ typeset -gi _IMPERIUM_SEEN_COLS=0 _IMPERIUM_SEEN_LINES=0
 # those rows instead of clearing the screen out from under the prompt.
 typeset -gi _IMPERIUM_BANNER_ROWS=0
 
+# Smallest window the banner is still readable in. The box the info sits in is 55
+# columns wide, and the whole block is 13 rows even with the logo dropped, so
+# anything under this wraps the box and pushes the prompt off the top. fetch.sh
+# enforces the same rule from the same two variables, and the thresholds have to
+# agree: a fetch.sh that printed nothing while we recorded a banner would leave
+# the first command clearing a screen that has the prompt on it.
+typeset -gi _IMPERIUM_BANNER_MIN_COLS=${IMPERIUM_FETCH_MIN_COLS:-60}
+typeset -gi _IMPERIUM_BANNER_MIN_LINES=${IMPERIUM_FETCH_MIN_LINES:-20}
+
+_imperium_banner_fits() {
+    (( COLUMNS >= _IMPERIUM_BANNER_MIN_COLS && LINES >= _IMPERIUM_BANNER_MIN_LINES ))
+}
+
 # Safe to ask the terminal where the cursor is only while zle is not reading, so
 # this is called from banner draw time and nowhere else.
 _imperium_cursor_row() {
@@ -136,6 +149,8 @@ _imperium_cursor_row() {
 }
 
 _imperium_draw_banner() {
+    # Never drawn means never onscreen, so every hook below stays a no-op.
+    _imperium_banner_fits || return 0
     if [[ -f "$HOME/.config/fastfetch/config.jsonc" ]]; then
         if [[ -x "$HOME/.config/fastfetch/fetch.sh" ]]; then
             "$HOME/.config/fastfetch/fetch.sh"
@@ -228,6 +243,8 @@ add-zsh-hook precmd _imperium_banner_catchup
 cleanfetch() {
     if (( _IMPERIUM_BANNER_ONSCREEN )); then
         _imperium_banner_lift
+    elif ! _imperium_banner_fits; then
+        print -u2 -- "cleanfetch: window too small for the banner, nothing was drawn"
     else
         print -n '\e_Ga=d,d=A\e\\'
         print -u2 -- "cleanfetch: banner no longer isolated; removed stray images only"
