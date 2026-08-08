@@ -40,6 +40,17 @@ window#waybar {
     font-weight: 700;
 }
 
+/* Waybar tags the bar with .empty when no window is focused */
+window#waybar.empty #window,
+#window.empty {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    opacity: 0;
+}
+
 /* ====================================================
    CENTER: ANIMATED WORKSPACES & CLOCK
    ==================================================== */
