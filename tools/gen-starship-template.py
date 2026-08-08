@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Emit the wallust starship template with literal Nerd Font glyphs."""
 
-TARGET = "/home/dante/dotfiles-imperium/wallust/templates/colors-starship.toml"
+TARGET = "/home/dante/imperivm-dotfiles/wallust/templates/colors-starship.toml"
 # The config carries no palette placeholders any more, so the template and the
 # live config are byte identical and this script can install both. Do not round
 # trip prompt edits through `wallust cs`: that reapplies whichever colourscheme

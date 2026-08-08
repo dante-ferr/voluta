@@ -8,7 +8,7 @@ RICE="${1:-toggle}"
 CURRENT_TARGET=$(readlink -f "$HOME/.config/hypr" 2>/dev/null || true)
 
 if [[ "$RICE" == "toggle" ]]; then
-    if [[ "$CURRENT_TARGET" == *"/dotfiles-imperium/"* ]]; then
+    if [[ "$CURRENT_TARGET" == *"/imperivm-dotfiles/"* ]]; then
         RICE="default"
     else
         RICE="imperium"
@@ -16,7 +16,7 @@ if [[ "$RICE" == "toggle" ]]; then
 fi
 
 if [[ "$RICE" == "imperium" ]]; then
-    TARGET_DIR="$HOME/dotfiles-imperium"
+    TARGET_DIR="$HOME/imperivm-dotfiles"
     echo "⚡ Switching to Imperium Cyber-Sacred rice..."
 elif [[ "$RICE" == "default" || "$RICE" == "main" ]]; then
     TARGET_DIR="$HOME/dotfiles"

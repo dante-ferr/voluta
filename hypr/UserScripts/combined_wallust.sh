@@ -29,7 +29,7 @@ if command -v magick >/dev/null 2>&1; then
     asset_dir="$HOME/.config/fastfetch/assets"
     mkdir -p "$asset_dir"
     source_img="$asset_dir/crown-angels.jpg"
-    [[ ! -f "$source_img" ]] && source_img="$HOME/dotfiles-imperium/fastfetch/assets/crown-angels.jpg"
+    [[ ! -f "$source_img" ]] && source_img="$HOME/imperivm-dotfiles/fastfetch/assets/crown-angels.jpg"
     
     if [[ -f "$source_img" ]]; then
         magick "$source_img" -fuzz 14% -transparent black "$asset_dir/crown-angels-styled.png" >/dev/null 2>&1 || true

@@ -24,7 +24,7 @@ if (( ! FORCE )) && (( TERM_COLS < MIN_COLS || TERM_LINES < MIN_LINES )); then
 fi
 
 CONFIG_FILE="$HOME/.config/fastfetch/config.jsonc"
-ORIGINAL_IMG="$HOME/dotfiles-imperium/fastfetch/assets/crown-angels.jpg"
+ORIGINAL_IMG="$HOME/imperivm-dotfiles/fastfetch/assets/crown-angels.jpg"
 [[ ! -f "$ORIGINAL_IMG" ]] && ORIGINAL_IMG="$HOME/.config/fastfetch/assets/crown-angels.jpg"
 
 # If terminal is narrower than 95 columns, disable image to prevent cramped/broken wrapping
