@@ -62,7 +62,7 @@ hl.bind("ALT + code:23", hl.dsp.window.cycle_next())
 hl.bind("ALT + SHIFT + code:23", hl.dsp.window.cycle_next({ prev = true }))
 
 -- 3. System Actions & Session Refresh (Super + Alt + R)
-hl.bind("SUPER + ALT + R", hl.dsp.exec_cmd("sh -c 'hyprctl reload; pkill -x waybar || true; sleep 0.1; waybar >/dev/null 2>&1 & swaync-client --reload-config 2>/dev/null || true; notify-send \"Desktop Refreshed\" \"Hyprland, Waybar, and SwayNC reloaded.\"'"))
+hl.bind("SUPER + ALT + R", hl.dsp.exec_cmd(scriptsDir .. "/Refresh.sh"))
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
 hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
 hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(scriptsDir .. "/LockScreen.sh"))

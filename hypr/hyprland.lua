@@ -3,11 +3,14 @@
 
 
 
+local hypr_dir = (os.getenv("HOME") or "/home/dante") .. "/.config/hypr"
+package.path = hypr_dir .. "/?.lua;" .. hypr_dir .. "/?/init.lua;" .. package.path
+
 local function load_module(mod_name)
     package.loaded[mod_name] = nil
     local ok, err = pcall(require, mod_name)
     if not ok then
-        print(string.format("[Hyprland.lua] Note on loading %s: %s", mod_name, tostring(err)))
+        print(string.format("[Hyprland.lua] Error loading %s: %s", mod_name, tostring(err)))
     end
 end
 
