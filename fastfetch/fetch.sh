@@ -24,8 +24,16 @@ if (( ! FORCE )) && (( TERM_COLS < MIN_COLS || TERM_LINES < MIN_LINES )); then
 fi
 
 CONFIG_FILE="$HOME/.config/fastfetch/config.jsonc"
-ORIGINAL_IMG="$HOME/imperivm-dotfiles/fastfetch/assets/crown-angels.jpg"
-[[ ! -f "$ORIGINAL_IMG" ]] && ORIGINAL_IMG="$HOME/.config/fastfetch/assets/crown-angels.jpg"
+# Prefer the tracked no-background asset next to the linked config so a clone
+# living somewhere other than ~/imperivm-dotfiles still finds the artwork.
+ASSET_DIR="$HOME/.config/fastfetch/assets"
+ORIGINAL_IMG="$ASSET_DIR/crown-angels-transparent.png"
+if [[ ! -f "$ORIGINAL_IMG" ]]; then
+    ORIGINAL_IMG="$ASSET_DIR/crown-angels-clean.png"
+fi
+if [[ ! -f "$ORIGINAL_IMG" ]]; then
+    ORIGINAL_IMG="$ASSET_DIR/crown-angels.jpg"
+fi
 
 # Widest line the modules draw, which is the box rule in config.jsonc, and the
 # gap that config keeps between the logo and it. The image gets the columns left

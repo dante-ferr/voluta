@@ -11,3 +11,5 @@ kitty/kitty-themes/01-Wallust.conf
 
 # Cut from the tracked crown-angels.jpg by the same script, for the sigil.
 fastfetch/assets/crown-angels-styled.png
+# Scratch output left beside the fetch runner; not part of the rice.
+fastfetch/current_styled.png

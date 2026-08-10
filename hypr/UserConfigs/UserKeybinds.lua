@@ -52,8 +52,9 @@ hl.bind("SUPER + Q", hl.dsp.window.close())
 hl.bind("SUPER + C", hl.dsp.window.close())
 hl.bind("SUPER + T", hl.dsp.window.float({ action = "toggle" }))
 hl.bind("SUPER + SPACE", hl.dsp.window.float({ action = "toggle" }))
-hl.bind("SUPER + F", hl.dsp.window.fullscreen())
-hl.bind("SUPER + SHIFT + F", hl.dsp.window.fullscreen())
+-- Maximized keeps gaps_out and reserved space (waybar); real fullscreen covers everything.
+hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind("SUPER + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }))
 
 -- Cycle windows (Alt+Tab)
 hl.bind("ALT + Tab", hl.dsp.window.cycle_next())

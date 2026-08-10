@@ -5,10 +5,15 @@ set -e
 
 RICE="${1:-toggle}"
 
+# This script lives in the imperium rice; resolve it so clones outside
+# ~/imperivm-dotfiles still switch correctly.
+IMPERIUM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_DIR="${IMPERIUM_DEFAULT_DIR:-$HOME/dotfiles}"
+
 CURRENT_TARGET=$(readlink -f "$HOME/.config/hypr" 2>/dev/null || true)
 
 if [[ "$RICE" == "toggle" ]]; then
-    if [[ "$CURRENT_TARGET" == *"/imperivm-dotfiles/"* ]]; then
+    if [[ "$CURRENT_TARGET" == "$IMPERIUM_DIR/hypr" || "$CURRENT_TARGET" == *"/imperivm-dotfiles/"* ]]; then
         RICE="default"
     else
         RICE="imperium"
@@ -16,10 +21,10 @@ if [[ "$RICE" == "toggle" ]]; then
 fi
 
 if [[ "$RICE" == "imperium" ]]; then
-    TARGET_DIR="$HOME/imperivm-dotfiles"
+    TARGET_DIR="$IMPERIUM_DIR"
     echo "⚡ Switching to Imperium Cyber-Sacred rice..."
 elif [[ "$RICE" == "default" || "$RICE" == "main" ]]; then
-    TARGET_DIR="$HOME/dotfiles"
+    TARGET_DIR="$DEFAULT_DIR"
     echo "🔄 Switching to Default rice..."
 else
     echo "Usage: $0 [imperium | default | toggle]"
@@ -49,6 +54,8 @@ link_config "rofi"
 link_config "wallust"
 link_config "fastfetch"
 link_config "swaync"
+link_config "waypaper"
+link_config "wlogout"
 link_config "starship.toml"
 
 # Trigger wallpaper/wallust refresh and components reload

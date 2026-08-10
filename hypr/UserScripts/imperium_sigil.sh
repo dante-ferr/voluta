@@ -11,6 +11,11 @@ set -uo pipefail
 source "$HOME/.config/hypr/UserScripts/lib/wallust_env.sh"
 
 ASSETS="$HOME/.config/fastfetch/assets"
+# If ~/.config/fastfetch is a symlink into the rice, follow it so a machine that
+# cloned the repo somewhere other than ~/imperivm-dotfiles still finds the art.
+if [[ -L "$HOME/.config/fastfetch" ]]; then
+    ASSETS="$(readlink -f "$HOME/.config/fastfetch")/assets"
+fi
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/imperium"
 INTERVAL=1
 
