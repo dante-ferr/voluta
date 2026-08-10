@@ -283,13 +283,13 @@ eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
 eval "$(starship init zsh)"
 # opencode
-export PATH=/home/dante/.opencode/bin:$PATH
+export PATH=$HOME/.opencode/bin:$PATH
 
 # >>> conda initialize >>>
-if [ -f "/home/dante/miniconda3/etc/profile.d/conda.sh" ]; then
-    . "/home/dante/miniconda3/etc/profile.d/conda.sh"
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    . "$HOME/miniconda3/etc/profile.d/conda.sh"
 else
-    export PATH="/home/dante/miniconda3/bin:$PATH"
+    export PATH="$HOME/miniconda3/bin:$PATH"
 fi
 # <<< conda initialize <<<
 
@@ -322,7 +322,7 @@ export MOZ_ENABLE_WAYLAND=1
 
 
 # Added by Antigravity CLI installer
-export PATH="/home/dante/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 alias fix-blue="bluetoothctl remove 99:2A:36:72:03:D6 && echo 'Coloque o fone no modo de pareamento agora...' && sleep 3 && timeout 7 bluetoothctl scan on >/dev/null 2>&1; bluetoothctl pair 99:2A:36:72:03:D6 && bluetoothctl trust 99:2A:36:72:03:D6 && bluetoothctl connect 99:2A:36:72:03:D6"
 

@@ -9,6 +9,8 @@ RICE="${1:-toggle}"
 # ~/imperivm-dotfiles still switch correctly.
 IMPERIUM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_DIR="${IMPERIUM_DEFAULT_DIR:-$HOME/dotfiles}"
+DEPS_FILE="$IMPERIUM_DIR/deps/arch.txt"
+FLOORP_FLATPAK="one.ablaze.floorp"
 
 CURRENT_TARGET=$(readlink -f "$HOME/.config/hypr" 2>/dev/null || true)
 
@@ -30,6 +32,121 @@ else
     echo "Usage: $0 [imperium | default | toggle]"
     exit 1
 fi
+
+# --- Imperium dependency bootstrap ------------------------------------------
+
+pkg_installed() {
+    pacman -Q "$1" >/dev/null 2>&1
+}
+
+collect_missing_pkgs() {
+    local line pkg alts installed chosen
+    MISSING_PKGS=()
+    [[ -r "$DEPS_FILE" ]] || return 0
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line%%#*}"
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -z "$line" ]] && continue
+        installed=0
+        chosen=""
+        IFS='|' read -r -a alts <<<"$line"
+        for pkg in "${alts[@]}"; do
+            pkg="${pkg#"${pkg%%[![:space:]]*}"}"
+            pkg="${pkg%"${pkg##*[![:space:]]}"}"
+            [[ -z "$pkg" ]] && continue
+            [[ -z "$chosen" ]] && chosen=$pkg
+            if pkg_installed "$pkg"; then
+                installed=1
+                break
+            fi
+        done
+        if ((installed == 0)) && [[ -n "$chosen" ]]; then
+            MISSING_PKGS+=("$chosen")
+        fi
+    done <"$DEPS_FILE"
+}
+
+floorp_present() {
+    command -v floorp >/dev/null 2>&1 && return 0
+    command -v flatpak >/dev/null 2>&1 && flatpak info "$FLOORP_FLATPAK" >/dev/null 2>&1
+}
+
+ensure_imperium_deps() {
+    local missing_pkgs=() need_floorp=0 installer
+
+    collect_missing_pkgs
+    missing_pkgs=("${MISSING_PKGS[@]+"${MISSING_PKGS[@]}"}")
+
+    if ! floorp_present; then
+        need_floorp=1
+    fi
+
+    if ((${#missing_pkgs[@]} == 0)) && ((need_floorp == 0)); then
+        echo "📦 Imperium dependencies already satisfied."
+        return 0
+    fi
+
+    if ((${#missing_pkgs[@]} > 0)); then
+        echo "📦 Missing packages: ${missing_pkgs[*]}"
+        if ! command -v paru >/dev/null 2>&1; then
+            echo "⚠️  paru not found; skipping package install. Install manually: ${missing_pkgs[*]}"
+            notify-send "Imperium Rice" "paru missing; install: ${missing_pkgs[*]}" 2>/dev/null || true
+        else
+            installer=$(mktemp /tmp/imperium-deps-XXXXXX.sh)
+            {
+                echo '#!/usr/bin/env bash'
+                echo 'set -e'
+                echo 'echo "Installing Imperium packages with paru..."'
+                printf 'paru -S --needed --noconfirm'
+                printf ' %q' "${missing_pkgs[@]}"
+                echo
+                echo 'echo'
+                echo 'echo "Done. Press Enter to close."'
+                echo 'read -r'
+            } >"$installer"
+            chmod +x "$installer"
+            if command -v kitty >/dev/null 2>&1; then
+                kitty --class imperium-deps --title "Imperium deps" -e bash "$installer" || true
+            else
+                bash "$installer" || true
+            fi
+            rm -f "$installer"
+        fi
+    fi
+
+    if ((need_floorp)); then
+        echo "📦 Floorp not found; installing Flatpak $FLOORP_FLATPAK..."
+        if ! command -v flatpak >/dev/null 2>&1; then
+            echo "⚠️  flatpak not found; install Floorp manually (Flatpak: $FLOORP_FLATPAK)."
+            notify-send "Imperium Rice" "flatpak missing; install Floorp ($FLOORP_FLATPAK)" 2>/dev/null || true
+        else
+            installer=$(mktemp /tmp/imperium-floorp-XXXXXX.sh)
+            {
+                echo '#!/usr/bin/env bash'
+                echo 'set -e'
+                echo 'flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo'
+                echo "flatpak install -y flathub $FLOORP_FLATPAK"
+                echo 'echo'
+                echo 'echo "Done. Press Enter to close."'
+                echo 'read -r'
+            } >"$installer"
+            chmod +x "$installer"
+            if command -v kitty >/dev/null 2>&1; then
+                kitty --class imperium-deps --title "Imperium Floorp" -e bash "$installer" || true
+            else
+                bash "$installer" || true
+            fi
+            rm -f "$installer"
+        fi
+    fi
+}
+
+if [[ "$RICE" == "imperium" ]]; then
+    ensure_imperium_deps
+fi
+
+# --- Config linking ---------------------------------------------------------
 
 link_config() {
     local name="$1"

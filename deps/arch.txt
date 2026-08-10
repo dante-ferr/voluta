@@ -1,0 +1,48 @@
+# Imperium rice Arch packages. One name (or alt1|alt2) per line.
+# Comments and blanks ignored. A line is satisfied if any alternative is installed.
+# Installed via: paru -S --needed --noconfirm <first missing name per line>
+# Floorp is handled separately (Flatpak: one.ablaze.floorp).
+
+# Compositor & session
+hyprland
+hypridle
+hyprlock
+hyprsunset
+
+# Shell UI
+waybar
+swaync
+wlogout
+kitty
+rofi
+
+# Wallpaper & theming
+waypaper-git|waypaper
+wallust-git|wallust
+awww|swww
+imagemagick
+
+# Clipboard, screenshots, media
+cliphist
+wl-clipboard
+grim
+slurp
+playerctl
+brightnessctl
+
+# Apps assumed by keybinds / HUD
+nautilus
+btop
+rofimoji
+obs-cmd
+nwg-displays
+jq
+
+# Audio stack (wpctl)
+pipewire
+wireplumber
+
+# Fonts (waybar / hyprlock / rofi)
+ttf-jetbrains-mono
+ttf-jetbrains-mono-nerd
+ttf-firacode-nerd
