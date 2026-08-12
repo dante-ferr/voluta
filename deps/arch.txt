@@ -22,6 +22,10 @@ wallust-git|wallust
 awww|swww
 imagemagick
 
+# Fetch banner & sigil art (terminal image, command deck panels)
+fastfetch
+chafa
+
 # Clipboard, screenshots, media
 cliphist
 wl-clipboard

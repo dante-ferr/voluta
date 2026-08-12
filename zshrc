@@ -54,9 +54,13 @@ _pokefetch() {
     local r=$'\e[31m' g=$'\e[32m' y=$'\e[33m' b=$'\e[34m' m=$'\e[35m' c=$'\e[36m' w=$'\e[37m'
     typeset -a kc=("$y" "$c" "$m" "$b" "$g" "$r" "$c" "$m")
 
-    # Get sprite
+    # Get sprite, but only if the fetcher exists: this fallback runs precisely
+    # on machines too bare to have it, and a missing command must not spew an
+    # error over the box below.
     local tmp_spr; tmp_spr=$(mktemp /tmp/pokefetch_spr.XXXXXX)
-    pokemon-colorscripts --no-title -s -r > "$tmp_spr"
+    if command -v pokemon-colorscripts >/dev/null 2>&1; then
+        pokemon-colorscripts --no-title -s -r > "$tmp_spr"
+    fi
     local height; height=$(wc -l < "$tmp_spr")
 
     # Draw closed box to temp file
@@ -74,8 +78,11 @@ _pokefetch() {
         echo "╚${div}╝"
     } > "$tmp_box"
 
-    # Side-by-side (small sprite) or stacked (large sprite)
-    if (( height <= 14 )); then
+    # Side-by-side (small sprite) or stacked (large sprite); no sprite at all
+    # still leaves the info box worth showing on its own.
+    if (( height == 0 )); then
+        cat "$tmp_box"
+    elif (( height <= 14 )); then
         python3 - "$tmp_spr" "$tmp_box" << 'PYEOF'
 import sys, re
 
@@ -279,7 +286,8 @@ count_loc_clean() {
 	(git submodule foreach --quiet 'echo "$path: $(git ls-files -- "*.py" | xargs -r cat | grep -cve "^\s*#\|^\s*$")"' && echo "Total: $(git ls-files --recurse-submodules -- "*.py" | xargs -r cat | grep -cve "^\s*#\|^\s*$")")
 }
 
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+# Not every machine has linuxbrew; unguarded, this eval errors on every shell.
+[[ -x /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
 eval "$(starship init zsh)"
 # opencode
@@ -315,7 +323,11 @@ load-conda-env
 
 # Force VA-API for hardware video decoding
 export MOZ_DISABLE_RDD_SANDBOX=1
-export LIBVA_DRIVER_NAME=nvidia # Change to 'i915' for Intel or 'radeonsi' for AMD
+# Forcing the NVIDIA driver on Intel/AMD machines breaks their VA-API setup, so
+# only export it where an NVIDIA GPU is actually present.
+if lspci 2>/dev/null | grep -qi nvidia; then
+    export LIBVA_DRIVER_NAME=nvidia
+fi
 
 # Force Wayland usage (if applicable)
 export MOZ_ENABLE_WAYLAND=1

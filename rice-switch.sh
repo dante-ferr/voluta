@@ -162,6 +162,24 @@ link_config() {
     fi
 }
 
+# Same treatment for dotfiles that live in $HOME rather than ~/.config. The
+# shell rc is the one that matters here: left unlinked, a git pull on another
+# machine never reaches its shell, so fetch fixes like the fastfetch migration
+# silently fail to propagate.
+link_home() {
+    local name="$1"
+    local src="$TARGET_DIR/$name"
+    local dest="$HOME/.$name"
+
+    if [[ -f "$src" ]]; then
+        if [[ -L "$dest" || -e "$dest" ]]; then
+            rm -rf "$dest"
+        fi
+        ln -s "$src" "$dest"
+        echo "  Linked ~/.$name -> $src"
+    fi
+}
+
 mkdir -p "$HOME/.config"
 
 link_config "hypr"
@@ -174,6 +192,8 @@ link_config "swaync"
 link_config "waypaper"
 link_config "wlogout"
 link_config "starship.toml"
+
+link_home "zshrc"
 
 # Trigger wallpaper/wallust refresh and components reload
 if [[ -f "$HOME/.config/hypr/UserScripts/combined_wallust.sh" ]]; then
