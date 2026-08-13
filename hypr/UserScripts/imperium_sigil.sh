@@ -3,7 +3,9 @@
 #
 # Renders the rice's sigil artwork through the kitty graphics protocol, then a
 # live clock with a Latin/Roman date, the active wallust palette, the wallpaper
-# currently driving that palette, and whatever is playing.
+# currently driving that palette, and whatever is playing. While music plays,
+# the image frame swaps the sigil for the track's cover art, so the panel gains
+# the art without growing.
 
 set -uo pipefail
 
@@ -18,6 +20,10 @@ if [[ -L "$HOME/.config/fastfetch" ]]; then
 fi
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/imperium"
 INTERVAL=1
+
+# Artwork currently occupying the image frame: the track's cover while music
+# plays, the tinted sigil otherwise. draw_art resolves the fallback itself.
+ART_IMG=""
 
 RS=$(rs)
 BD=$(bold)
@@ -93,6 +99,82 @@ tint_sigil() {
     printf '%s' "$out"
 }
 
+# --- Album cover ------------------------------------------------------------
+
+# The frame belongs to whatever is actually playing. A paused browser tab or
+# an idle player still advertises art over MPRIS, and letting that through
+# evicts the sigil even though nothing is audible.
+playing_player() {
+    command -v playerctl >/dev/null 2>&1 || return 1
+    local p
+    while IFS= read -r p; do
+        if [[ $(playerctl -p "$p" status 2>/dev/null) == Playing ]]; then
+            printf '%s' "$p"
+            return 0
+        fi
+    done < <(playerctl -l 2>/dev/null)
+    return 1
+}
+
+url_decode() { local s=${1//%/\\x}; printf '%b' "$s"; }
+
+# Chafa rebuilds the frame at cell resolution, so art much smaller than this
+# turns into a smear once kitty stretches it across the panel; the sigil is
+# the better picture then.
+COVER_MIN_PX=300
+
+# playerctl reports the art as either a file:// path into the player's own
+# cache or an https URL. Both are resolved to a local file under the imperium
+# cache so chafa always reads from disk, and so a track that stays playing
+# only ever pays the copy/download once.
+cover_art() {
+    local player=${1:-$(playing_player)}
+    [[ -n $player ]] || return
+    local url
+    url=$(playerctl -p "$player" metadata mpris:artUrl 2>/dev/null) || return
+    [[ -n $url ]] || return
+
+    local key out
+    key=$(printf '%s' "$url" | cksum | cut -d' ' -f1)
+    out="$CACHE/cover-$key"
+    if [[ ! -s $out ]]; then
+        mkdir -p "$CACHE" 2>/dev/null
+        case $url in
+            file://*)
+                local path
+                path=$(url_decode "${url#file://}")
+                [[ -r $path ]] || return
+                cp "$path" "$out" 2>/dev/null || return
+                ;;
+            http://* | https://*)
+                command -v curl >/dev/null 2>&1 || return
+                curl -fsSL --max-time 4 -o "$out" "$url" 2>/dev/null || {
+                    rm -f "$out"
+                    return
+                }
+                ;;
+            *)
+                return
+                ;;
+        esac
+        # Covers rotate with every track; one cached cover is enough.
+        find "$CACHE" -maxdepth 1 -name 'cover-*' ! -name "${out##*/}" -delete 2>/dev/null
+    fi
+
+    # Reject corrupt or tiny art. Running the check on cache hits too is what
+    # lets a rejected cover stay cached without ever being fetched again.
+    if command -v magick >/dev/null 2>&1; then
+        local dim
+        dim=$(magick identify -format '%w %h' "$out" 2>/dev/null)
+        if [[ ! $dim =~ ^([0-9]+)\ ([0-9]+)$ ]]; then
+            rm -f "$out"
+            return
+        fi
+        ((BASH_REMATCH[1] >= COVER_MIN_PX && BASH_REMATCH[2] >= COVER_MIN_PX)) || return
+    fi
+    printf '%s' "$out"
+}
+
 # --- Latin calendar ---------------------------------------------------------
 
 LAT_DAYS=(SOLIS LVNAE MARTIS MERCVRII IOVIS VENERIS SATVRNI)
@@ -138,8 +220,14 @@ wallpaper_name() {
 
 now_playing() {
     command -v playerctl >/dev/null 2>&1 || return
-    local s
-    s=$(playerctl metadata --format '{{artist}} — {{title}}' 2>/dev/null) || return
+    # Prefer the playing player so the caption names the same track the frame
+    # shows; with nothing playing, fall back to playerctl's own pick as before.
+    local p=${1:-$(playing_player)} s
+    if [[ -n $p ]]; then
+        s=$(playerctl -p "$p" metadata --format '{{artist}} — {{title}}' 2>/dev/null)
+    else
+        s=$(playerctl metadata --format '{{artist}} — {{title}}' 2>/dev/null)
+    fi
     s=${s# — }
     [[ -n $s ]] && printf '%s' "$s"
 }
@@ -172,25 +260,33 @@ L() { FRAME+="  ${1-}"$'\033[K\n'; }
 
 rule() { L "${E_RULE}${RULE}${RS}"; }
 
+# The image frame: cover art while a track plays, the tinted sigil otherwise.
+# Kitty placements stack instead of replacing, so every (re)draw first drops
+# all placements — the frame only ever holds this one image.
+draw_art() {
+    local img=${ART_IMG:-${SIGIL_IMG:-}}
+    clear_images
+    [[ -n $img ]] || return
+    command -v chafa >/dev/null 2>&1 || return
+    # Start at column 1 and hand chafa the full width. Its centring is
+    # measured against the whole view rather than --size, so indenting the
+    # cursor first shifted the art right by exactly that indent. Aligning to
+    # the top likewise stops it padding down over the live block.
+    printf '\033[%d;1H' "$IMG_TOP"
+    chafa --format kitty --animate off --polite on --scale max \
+        --bg "#${wc_bg}" --align top,center \
+        --size "${COLS}x${IMG_ROWS}" "$img" 2>/dev/null
+}
+
 # Static chrome plus the artwork; only redrawn on resize.
 draw_static() {
-    local sigil title="I M P E R I V M"
-    clear_images
+    local title="I M P E R I V M"
     printf '\033[2J\033[H'
     printf '  %s%s%s%s\033[K\n' "$E_ACCENT" "$BD" "$(center "✠ $title ✠" $((${#title} + 4)))" "$RS"
     printf '  %s%s%s\033[K\n' "$E_RULE" "$RULE" "$RS"
 
-    sigil=$(tint_sigil "$(pick_sigil)")
-    if [[ -n $sigil ]] && command -v chafa >/dev/null 2>&1; then
-        # Start at column 1 and hand chafa the full width. Its centring is
-        # measured against the whole view rather than --size, so indenting the
-        # cursor first shifted the art right by exactly that indent. Aligning to
-        # the top likewise stops it padding down over the live block.
-        printf '\033[%d;1H' "$IMG_TOP"
-        chafa --format kitty --animate off --polite on --scale max \
-            --bg "#${wc_bg}" --align top,center \
-            --size "${COLS}x${IMG_ROWS}" "$sigil" 2>/dev/null
-    fi
+    SIGIL_IMG=$(tint_sigil "$(pick_sigil)")
+    draw_art
 }
 
 draw_live() {
@@ -237,11 +333,23 @@ draw_static
 trap 'measure; draw_static' WINCH
 
 # Both lookups spawn helper processes, so they run on their own slow cadence
-# rather than once per clock tick.
-CACHE_WP="" CACHE_NP="" tick=0
+# rather than once per clock tick. The playing player is resolved once per
+# pass so the caption and the cover can never come from two different ones.
+CACHE_WP="" CACHE_NP="" CACHE_ART="" tick=0 art="" player=""
 while :; do
     ((tick % 15 == 0)) && CACHE_WP=$(wallpaper_name)
-    ((tick % 2 == 0)) && CACHE_NP=$(now_playing)
+    if ((tick % 2 == 0)); then
+        player=$(playing_player)
+        CACHE_NP=$(now_playing "$player")
+        art=$(cover_art "$player")
+        # The frame repaints on a track change only: clearing and re-placing
+        # the image on every pass would flicker.
+        if [[ $art != "$CACHE_ART" ]]; then
+            CACHE_ART=$art
+            ART_IMG=$art
+            draw_art
+        fi
+    fi
     draw_live
     ((tick++))
     sleep "$INTERVAL"
