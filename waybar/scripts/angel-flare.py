@@ -11,9 +11,15 @@ import os
 import socket
 import sys
 import threading
+import time
 
 LABEL = " "
 HOLD_SECONDS = 0.5
+# GTK restarts a CSS animation only when the class is seen to leave and return,
+# and waybar coalesces lines written in the same idle pass into a single style
+# update, which would swallow the removal. This beat lets the removal land so a
+# fresh switch retriggers the animation even mid-flare.
+REARM_SECONDS = 0.05
 
 # Both of these move the highlight to a different numeral. Hyprland also emits
 # v2 variants of each, which are deliberately ignored so one switch flares once.
@@ -21,20 +27,39 @@ TRIGGERS = ("workspace>>", "focusedmon>>")
 
 _lock = threading.Lock()
 _timer = None
+_gen = 0
+
+
+def _write(css_class):
+    sys.stdout.write(json.dumps({"text": LABEL, "class": css_class}) + "\n")
+    sys.stdout.flush()
 
 
 def emit(css_class):
     with _lock:
-        sys.stdout.write(json.dumps({"text": LABEL, "class": css_class}) + "\n")
-        sys.stdout.flush()
+        _write(css_class)
+
+
+def clear(gen):
+    with _lock:
+        # A flare newer than this timer is already showing and its own timer
+        # will clear it; without the check an expiring timer could snuff out a
+        # flare that had just started.
+        if gen == _gen:
+            _write("")
 
 
 def flare():
-    global _timer
-    if _timer is not None:
-        _timer.cancel()
-    emit("flare")
-    _timer = threading.Timer(HOLD_SECONDS, emit, args=("",))
+    global _timer, _gen
+    with _lock:
+        if _timer is not None:
+            _timer.cancel()
+        _gen += 1
+        gen = _gen
+    _write("")
+    time.sleep(REARM_SECONDS)
+    _write("flare")
+    _timer = threading.Timer(HOLD_SECONDS, clear, args=(gen,))
     _timer.daemon = True
     _timer.start()
 
