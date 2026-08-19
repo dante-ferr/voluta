@@ -46,7 +46,7 @@ jq
 pipewire
 wireplumber
 
-# Fonts (waybar / hyprlock / rofi)
+# Fonts (waybar / hyprlock / rofi / sddm)
 ttf-jetbrains-mono
 ttf-jetbrains-mono-nerd
 ttf-firacode-nerd

@@ -130,7 +130,7 @@
     },
     "custom/power": {
         "format": "󰐥",
-        "on-click": "wlogout",
+        "on-click": "~/.config/hypr/scripts/Wlogout.sh",
         "tooltip": false
     }
 }

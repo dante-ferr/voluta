@@ -1,0 +1,24 @@
+ /* wallust template - colors-wlogout */
+ /* Same token names as waybar / swaync so the power tablet gilds with the rice. */
+
+ @define-color foreground {{foreground | lighten(0.30)}};
+ @define-color background {{background}};
+ @define-color veil rgba({{background | rgb}},0.78);
+ @define-color cursor {{cursor | lighten(0.30)}};
+
+ @define-color color0 {{color0}};
+ @define-color color1 {{color1 | lighten(0.30)}};
+ @define-color color2 {{color2 | lighten(0.30)}};
+ @define-color color3 {{color3 | lighten(0.30)}};
+ @define-color color4 {{color4 | lighten(0.30)}};
+ @define-color color5 {{color5 | lighten(0.30)}};
+ @define-color color6 {{color6 | lighten(0.30)}};
+ @define-color color7 {{color7 | lighten(0.30)}};
+ @define-color color8 {{color8}};
+ @define-color color9 {{color9 | lighten(0.35)}};
+ @define-color color10 {{color10 | lighten(0.35)}};
+ @define-color color11 {{color11 | lighten(0.35)}};
+ @define-color color12 {{color12 | lighten(0.35)}};
+ @define-color color13 {{color13 | lighten(0.35)}};
+ @define-color color14 {{color14 | lighten(0.35)}};
+ @define-color color15 {{color15 | lighten(0.35)}};

@@ -104,6 +104,12 @@ do_refresh() {
     if command -v cava >/dev/null 2>&1; then
         pkill -USR2 cava >/dev/null 2>&1 || true
     fi
+
+    if [[ -r $HOME/.config/wlogout/paint-icons.sh ]]; then
+        # shellcheck source=/dev/null
+        source "$HOME/.config/wlogout/paint-icons.sh"
+        paint_wlogout_icons
+    fi
 }
 
 # Drain PENDING until concurrent callers stop stacking requests.

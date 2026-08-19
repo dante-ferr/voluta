@@ -18,6 +18,9 @@ hl.config({
         repeat_rate = 35,
         follow_mouse = 1,
     },
+    cursor = {
+        no_hardware_cursors = true,
+    },
     binds = {
         focus_preferred_method = 1,
         window_direction_monitor_fallback = true,
@@ -25,5 +28,6 @@ hl.config({
     },
     misc = {
         vrr = 1,
+        allow_session_lock_restore = true,
     },
 })

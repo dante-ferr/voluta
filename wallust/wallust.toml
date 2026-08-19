@@ -62,6 +62,9 @@ shell.target = '~/.config/hypr/wallust/colors-shell.sh'
 swaync.template = 'colors-swaync.css'
 swaync.target = '~/.config/swaync/wallust/colors-swaync.css'
 
+wlogout.template = 'colors-wlogout.css'
+wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
+
 #macchina.template = 'colors-macchina.toml'
 #macchina.target = '~/.config/macchina/themes/wallust.toml'
 

@@ -23,5 +23,6 @@ hl.config({
     },
     misc = {
         vrr = 0,
+        allow_session_lock_restore = true,
     },
 })

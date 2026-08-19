@@ -27,7 +27,7 @@ end
 -- 1. App Launchers
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("kitty"))
 hl.bind("SUPER + E", hl.dsp.exec_cmd("nautilus"))
-hl.bind("SUPER + B", hl.dsp.exec_cmd("floorp"))
+hl.bind("SUPER + B", hl.dsp.exec_cmd("brave"))
 hl.bind("SUPER + W", hl.dsp.exec_cmd("waypaper"))
 hl.bind("SUPER + D", hl.dsp.exec_cmd("pkill rofi || rofi -show drun -theme " .. home .. "/.config/rofi/dashboard.rasi"))
 -- Launcher plus its flanking sigil and telemetry panels.
@@ -66,7 +66,7 @@ hl.bind("ALT + SHIFT + code:23", hl.dsp.window.cycle_next({ prev = true }))
 hl.bind("SUPER + ALT + R", hl.dsp.exec_cmd(scriptsDir .. "/Refresh.sh"))
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
 hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
-hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(scriptsDir .. "/LockScreen.sh"))
+hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(scriptsDir .. "/LockScreen.sh"), { locked = true })
 hl.bind("SUPER + ALT + E", hl.dsp.exec_cmd("pkill rofi || rofimoji"))
 hl.bind("SUPER + V", hl.dsp.exec_cmd("pkill rofi || cliphist list | rofi -dmenu | cliphist decode | wl-copy"))
 hl.bind("SUPER + ALT + K", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))

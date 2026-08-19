@@ -1,0 +1,113 @@
+/* Imperium power tablet.
+   Basalt slabs, Cinzel lettering, wallust gilding — the same stones as waybar.
+   Icons are 64px PNGs so GTK never scales the line art. */
+
+/* Fallback stones if wallust has not painted this session yet. */
+@define-color foreground #F4EDE4;
+@define-color background #0A0A0E;
+@define-color veil rgba(10, 10, 14, 0.78);
+@define-color color1 #C9A227;
+
+@import "wallust/colors-wlogout.css";
+
+* {
+    background-image: none;
+    box-shadow: none;
+    font-family: "Cinzel", "JetBrainsMono Nerd Font", serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+}
+
+window {
+    background-color: @veil;
+}
+
+button {
+    background-color: #0A0A0E;
+    color: @foreground;
+    border: 1px solid #2A2A38;
+    border-radius: 0;
+    outline-style: none;
+    background-repeat: no-repeat, no-repeat;
+    background-position: center 22px, center 94px;
+    background-size: 64px 64px, 48px 1px;
+    padding: 96px 14px 16px;
+    margin: 0;
+    min-width: 0;
+    min-height: 0;
+    text-shadow: none;
+    /* Gilded lintel, inner hairline recess, drop shadow — a small tablet. */
+    box-shadow: inset 0 2px 0 0 @color1,
+                inset 0 0 0 4px #0A0A0E,
+                inset 0 0 0 5px #2A2A38,
+                0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+button:focus,
+button:hover {
+    background-color: #161622;
+    border-color: @color1;
+    color: @color1;
+    box-shadow: inset 0 2px 0 0 @color1,
+                inset 0 0 0 4px #161622,
+                inset 0 0 0 5px @color1,
+                0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+button:active {
+    background-color: @color1;
+    border-color: @color1;
+    color: #0A0A0E;
+    box-shadow: inset 0 2px 0 0 #0A0A0E,
+                0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+#lock {
+    background-image: image(url("wallust/lock.png"), url("icons/lock.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#logout {
+    background-image: image(url("wallust/logout.png"), url("icons/logout.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#suspend {
+    background-image: image(url("wallust/suspend.png"), url("icons/suspend.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#hibernate {
+    background-image: image(url("wallust/hibernate.png"), url("icons/hibernate.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#reboot {
+    background-image: image(url("wallust/reboot.png"), url("icons/reboot.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#shutdown {
+    background-image: image(url("wallust/shutdown.png"), url("icons/shutdown.svg")),
+                      linear-gradient(@color1, @color1);
+}
+
+#shutdown:hover,
+#shutdown:focus {
+    background-color: #7A0016;
+    border-color: #7A0016;
+    color: #FFFFFF;
+    background-image: image(url("wallust/shutdown.png"), url("icons/shutdown.svg")),
+                      linear-gradient(#FFFFFF, #FFFFFF);
+    box-shadow: inset 0 2px 0 0 #FFFFFF,
+                inset 0 0 0 4px #7A0016,
+                inset 0 0 0 5px #9A1A2E,
+                0 2px 8px rgba(0, 0, 0, 0.75);
+}
+
+#shutdown:active {
+    background-color: #9A1A2E;
+    border-color: #9A1A2E;
+    color: #FFFFFF;
+}

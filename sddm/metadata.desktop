@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Imperium
+Description=Imperium login — ivory on basalt over Raphael's School of Athens
+Author=imperivm-dotfiles
+License=GPL-3.0-or-later
+Type=sddm-theme
+Version=1.0
+ConfigFile=theme.conf
+MainScript=Main.qml
+Theme-Id=imperium
+Theme-API=2.0
+QtVersion=6

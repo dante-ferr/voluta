@@ -195,6 +195,16 @@ link_config "starship.toml"
 
 link_home "zshrc"
 
+# SDDM lives under /usr/share; apply the Imperium greeter when we can.
+if [[ "$RICE" == "imperium" && -x "$TARGET_DIR/sddm/install.sh" ]]; then
+    if [[ -w /usr/share/sddm/themes ]]; then
+        echo "🏛️  Installing Imperium SDDM theme..."
+        "$TARGET_DIR/sddm/install.sh" || true
+    else
+        echo "🏛️  SDDM login theme: run  sudo $TARGET_DIR/sddm/install.sh  once, as root."
+    fi
+fi
+
 # Trigger wallpaper/wallust refresh and components reload
 if [[ -f "$HOME/.config/hypr/UserScripts/combined_wallust.sh" ]]; then
     echo "🎨 Refreshing Wallust colors and desktop components..."

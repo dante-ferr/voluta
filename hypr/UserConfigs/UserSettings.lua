@@ -9,6 +9,11 @@ hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("CLUTTER_BACKEND", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
+-- NVIDIA: required for a stable suspend/resume with hyprlock. Without these
+-- the lock greeter can freeze on the DRM reset and only a reboot recovers it.
+hl.env("LIBVA_DRIVER_NAME", "nvidia")
+hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+hl.env("NVD_BACKEND", "direct")
 
 hl.config({
     general = {
@@ -35,6 +40,9 @@ hl.config({
     },
     cursor = {
         no_warps = false,
+        -- Hardware cursors on NVIDIA often come back dead after suspend, and
+        -- the compositor then looks frozen on the lock screen.
+        no_hardware_cursors = true,
     },
     binds = {
         workspace_back_and_forth = false,
@@ -49,5 +57,8 @@ hl.config({
     misc = {
         vrr = 0,
         disable_hyprland_logo = true,
+        -- Lets Super+Alt+L spawn a fresh hyprlock if the previous one died
+        -- during resume ("Oopsie daisy") instead of wedging the session.
+        allow_session_lock_restore = true,
     },
 })
