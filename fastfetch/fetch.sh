@@ -23,10 +23,12 @@ if (( ! FORCE )) && (( TERM_COLS < MIN_COLS || TERM_LINES < MIN_LINES )); then
     exit 0
 fi
 
-CONFIG_FILE="$HOME/.config/fastfetch/config.jsonc"
-# Prefer the tracked no-background asset next to the linked config so a clone
-# living somewhere other than ~/imperivm-dotfiles still finds the artwork.
-ASSET_DIR="$HOME/.config/fastfetch/assets"
+# Follow this script, not ~/.config/fastfetch: rice-switch links that dir, but
+# a clone invoked by absolute path (or a host that never linked fastfetch)
+# still has the angels sitting next to fetch.sh itself.
+_FF_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+CONFIG_FILE="${_FF_DIR}/config.jsonc"
+ASSET_DIR="${_FF_DIR}/assets"
 ORIGINAL_IMG="$ASSET_DIR/crown-angels-transparent.png"
 if [[ ! -f "$ORIGINAL_IMG" ]]; then
     ORIGINAL_IMG="$ASSET_DIR/crown-angels-clean.png"

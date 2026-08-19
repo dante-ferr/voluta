@@ -1,29 +1,21 @@
 #!/usr/bin/env bash
 # imperium_sigil.sh - Heraldic panel of the Imperium Command Deck.
 #
-# Renders the rice's sigil artwork through the kitty graphics protocol, then a
-# live clock with a Latin/Roman date, the active wallust palette, the wallpaper
-# currently driving that palette, and whatever is playing. While music plays,
-# the image frame swaps the sigil for the track's cover art, so the panel gains
-# the art without growing.
+# Renders the rice's angels/sigil artwork through the kitty graphics protocol,
+# then a live clock with a Latin/Roman date, the active wallust palette, the
+# wallpaper currently driving that palette, and whatever is playing. The image
+# frame always holds the tinted sigil; cover art was too unstable to keep.
 
 set -uo pipefail
 
 # shellcheck source=lib/wallust_env.sh
 source "$HOME/.config/hypr/UserScripts/lib/wallust_env.sh"
+# shellcheck source=lib/rice_paths.sh
+source "$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
 
-ASSETS="$HOME/.config/fastfetch/assets"
-# If ~/.config/fastfetch is a symlink into the rice, follow it so a machine that
-# cloned the repo somewhere other than ~/imperivm-dotfiles still finds the art.
-if [[ -L "$HOME/.config/fastfetch" ]]; then
-    ASSETS="$(readlink -f "$HOME/.config/fastfetch")/assets"
-fi
+ASSETS=$(imperium_fastfetch_assets)
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/imperium"
 INTERVAL=1
-
-# Artwork currently occupying the image frame: the track's cover while music
-# plays, the tinted sigil otherwise. draw_art resolves the fallback itself.
-ART_IMG=""
 
 RS=$(rs)
 BD=$(bold)
@@ -44,15 +36,22 @@ trap 'clear_images; printf "\033[?25h\033[0m\n"' EXIT INT TERM
 # Portrait art first: the panel is tall and narrow, so a 9:16 sigil fills it
 # where the wide crown-angels painting would only occupy a thin band.
 pick_sigil() {
-    local c
-    for c in "${IMPERIUM_SIGIL:-}" \
-        "$ASSETS/imperium-sigil.png" \
-        "$ASSETS/crown-angels-styled.png" \
-        "$ASSETS/crown-angels.jpg"; do
-        [[ -n $c && -r $c ]] && {
-            printf '%s' "$c"
-            return
-        }
+    local dir c
+    # Walk the rice assets first, then ~/.config/fastfetch, so a clone that
+    # never linked fastfetch still shows the tracked angels painting.
+    for dir in "$ASSETS" "$HOME/.config/fastfetch/assets"; do
+        [[ -d $dir ]] || continue
+        for c in "${IMPERIUM_SIGIL:-}" \
+            "$dir/imperium-sigil.png" \
+            "$dir/crown-angels-styled.png" \
+            "$dir/crown-angels.jpg" \
+            "$dir/crown-angels-transparent.png" \
+            "$dir/crown-angels-clean.png"; do
+            [[ -n $c && -r $c ]] && {
+                printf '%s' "$c"
+                return
+            }
+        done
     done
 }
 
@@ -99,11 +98,8 @@ tint_sigil() {
     printf '%s' "$out"
 }
 
-# --- Album cover ------------------------------------------------------------
-
-# The frame belongs to whatever is actually playing. A paused browser tab or
-# an idle player still advertises art over MPRIS, and letting that through
-# evicts the sigil even though nothing is audible.
+# Prefer an actually-playing player so a paused browser tab does not caption
+# the panel with a track that is not audible.
 playing_player() {
     command -v playerctl >/dev/null 2>&1 || return 1
     local p
@@ -114,65 +110,6 @@ playing_player() {
         fi
     done < <(playerctl -l 2>/dev/null)
     return 1
-}
-
-url_decode() { local s=${1//%/\\x}; printf '%b' "$s"; }
-
-# Chafa rebuilds the frame at cell resolution, so art much smaller than this
-# turns into a smear once kitty stretches it across the panel; the sigil is
-# the better picture then.
-COVER_MIN_PX=300
-
-# playerctl reports the art as either a file:// path into the player's own
-# cache or an https URL. Both are resolved to a local file under the imperium
-# cache so chafa always reads from disk, and so a track that stays playing
-# only ever pays the copy/download once.
-cover_art() {
-    local player=${1:-$(playing_player)}
-    [[ -n $player ]] || return
-    local url
-    url=$(playerctl -p "$player" metadata mpris:artUrl 2>/dev/null) || return
-    [[ -n $url ]] || return
-
-    local key out
-    key=$(printf '%s' "$url" | cksum | cut -d' ' -f1)
-    out="$CACHE/cover-$key"
-    if [[ ! -s $out ]]; then
-        mkdir -p "$CACHE" 2>/dev/null
-        case $url in
-            file://*)
-                local path
-                path=$(url_decode "${url#file://}")
-                [[ -r $path ]] || return
-                cp "$path" "$out" 2>/dev/null || return
-                ;;
-            http://* | https://*)
-                command -v curl >/dev/null 2>&1 || return
-                curl -fsSL --max-time 4 -o "$out" "$url" 2>/dev/null || {
-                    rm -f "$out"
-                    return
-                }
-                ;;
-            *)
-                return
-                ;;
-        esac
-        # Covers rotate with every track; one cached cover is enough.
-        find "$CACHE" -maxdepth 1 -name 'cover-*' ! -name "${out##*/}" -delete 2>/dev/null
-    fi
-
-    # Reject corrupt or tiny art. Running the check on cache hits too is what
-    # lets a rejected cover stay cached without ever being fetched again.
-    if command -v magick >/dev/null 2>&1; then
-        local dim
-        dim=$(magick identify -format '%w %h' "$out" 2>/dev/null)
-        if [[ ! $dim =~ ^([0-9]+)\ ([0-9]+)$ ]]; then
-            rm -f "$out"
-            return
-        fi
-        ((BASH_REMATCH[1] >= COVER_MIN_PX && BASH_REMATCH[2] >= COVER_MIN_PX)) || return
-    fi
-    printf '%s' "$out"
 }
 
 # --- Latin calendar ---------------------------------------------------------
@@ -220,8 +157,6 @@ wallpaper_name() {
 
 now_playing() {
     command -v playerctl >/dev/null 2>&1 || return
-    # Prefer the playing player so the caption names the same track the frame
-    # shows; with nothing playing, fall back to playerctl's own pick as before.
     local p=${1:-$(playing_player)} s
     if [[ -n $p ]]; then
         s=$(playerctl -p "$p" metadata --format '{{artist}} — {{title}}' 2>/dev/null)
@@ -260,11 +195,10 @@ L() { FRAME+="  ${1-}"$'\033[K\n'; }
 
 rule() { L "${E_RULE}${RULE}${RS}"; }
 
-# The image frame: cover art while a track plays, the tinted sigil otherwise.
 # Kitty placements stack instead of replacing, so every (re)draw first drops
-# all placements — the frame only ever holds this one image.
+# all placements — the frame only ever holds the tinted sigil.
 draw_art() {
-    local img=${ART_IMG:-${SIGIL_IMG:-}}
+    local img=${SIGIL_IMG:-}
     clear_images
     [[ -n $img ]] || return
     command -v chafa >/dev/null 2>&1 || return
@@ -332,24 +266,12 @@ measure
 draw_static
 trap 'measure; draw_static' WINCH
 
-# Both lookups spawn helper processes, so they run on their own slow cadence
-# rather than once per clock tick. The playing player is resolved once per
-# pass so the caption and the cover can never come from two different ones.
-CACHE_WP="" CACHE_NP="" CACHE_ART="" tick=0 art="" player=""
+# Wallpaper and player lookups spawn helpers, so they run on their own slow
+# cadence rather than once per clock tick.
+CACHE_WP="" CACHE_NP="" tick=0
 while :; do
     ((tick % 15 == 0)) && CACHE_WP=$(wallpaper_name)
-    if ((tick % 2 == 0)); then
-        player=$(playing_player)
-        CACHE_NP=$(now_playing "$player")
-        art=$(cover_art "$player")
-        # The frame repaints on a track change only: clearing and re-placing
-        # the image on every pass would flicker.
-        if [[ $art != "$CACHE_ART" ]]; then
-            CACHE_ART=$art
-            ART_IMG=$art
-            draw_art
-        fi
-    fi
+    ((tick % 2 == 0)) && CACHE_NP=$(now_playing)
     draw_live
     ((tick++))
     sleep "$INTERVAL"

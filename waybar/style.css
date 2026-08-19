@@ -2,6 +2,8 @@
 /* 100% Transparent Bar Background, Sharp 0px Edges, Darker Consistent 1px Borders & Dynamic Workspace Switching Animations */
 
 @import "wallust/colors-waybar.css";
+@import "angel-paths.css";
+@import "wallust/angel-paths.css";
 
 * {
     border: none;
@@ -73,37 +75,18 @@ window#waybar.empty #window,
 }
 
 #custom-angel-left {
-    background-image: url("assets/angel-left.svg");
     background-position: right center;
     margin-left: 6px;
 }
 
 #custom-angel-right {
-    background-image: url("assets/angel-right.svg");
     background-position: left center;
     margin-right: 6px;
 }
 
-/* scripts/angel-flare.py adds .flare on every workspace switch. Only the
-   contour ignites, in the wallust accent, so the bodies stay plate-coloured. */
-@keyframes angel-flare-left {
-    0% {
-        background-image: url("wallust/angel-left-lit.svg");
-    }
-    100% {
-        background-image: url("assets/angel-left.svg");
-    }
-}
-
-@keyframes angel-flare-right {
-    0% {
-        background-image: url("wallust/angel-right-lit.svg");
-    }
-    100% {
-        background-image: url("assets/angel-right.svg");
-    }
-}
-
+/* scripts/angel-flare.py adds .flare on every workspace switch. Image URLs
+   live in angel-paths.css so GTK @import can override them with file://
+   paths on other machines. Only the contour ignites, in the wallust accent. */
 #custom-angel-left.flare {
     animation: angel-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
