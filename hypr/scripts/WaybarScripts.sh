@@ -8,7 +8,7 @@ if [[ -f "$HOME/.config/hypr/UserConfigs/01-UserDefaults.conf" ]]; then
 fi
 
 if [[ "$1" == "--network" ]] || [[ "$1" == "--net" ]]; then
-    nm-connection-editor || ${term:-kitty} nmtui
+    "$HOME/.config/hypr/scripts/RofiWifi.sh" || nm-connection-editor || ${term:-kitty} nmtui
 elif [[ "$1" == "--nmtui" ]]; then
     ${term:-kitty} nmtui
 elif [[ "$1" == "--btop" ]]; then

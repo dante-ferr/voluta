@@ -12,6 +12,16 @@ configuration {
 
 @import "wallust/colors-rofi.rasi"
 
+* {
+    accent: @active-background;
+    bg: @normal-background;
+    fg: @normal-foreground;
+    muted: @color8;
+    card-bg: @color0;
+    border-subtle: @color0;
+    engraved: @normal-background;
+}
+
 window {
     transparency: "real";
     location: center;
@@ -27,7 +37,7 @@ window {
     border: 2px solid;
     border-color: @accent;
     border-radius: 0px; /* Sharp 90-degree corners */
-    background-color: #0B0B0E; /* 100% Opaque Solid */
+    background-color: @bg;
     cursor: "default";
 }
 
@@ -49,7 +59,7 @@ inputbar {
     border: 1px solid;
     border-color: @accent;
     border-radius: 0px;
-    background-color: #16161D;
+    background-color: @card-bg;
     text-color: @foreground;
     children: [ "prompt", "entry" ];
 }
@@ -104,8 +114,13 @@ element {
 
 element selected.normal {
     background-color: @accent;
-    text-color: #0B0B0E;
+    text-color: @engraved;
     border-radius: 0px;
+}
+
+element selected.normal element-text {
+    text-color: @engraved;
+    font-weight: bold;
 }
 
 element-icon {

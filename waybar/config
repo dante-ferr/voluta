@@ -120,8 +120,8 @@
         "format-icons": [
             "󰤯", "󰤟", "󰤢", "󰤥", "󰤨"
         ],
-        "on-click": "nm-connection-editor",
-        "on-click-right": "$HOME/.config/hypr/scripts/WaybarScripts.sh --network"
+        "on-click": "$HOME/.config/hypr/scripts/RofiWifi.sh",
+        "on-click-right": "nm-connection-editor"
     },
     "pulseaudio": {
         "format": "{icon}",

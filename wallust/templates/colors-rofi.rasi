@@ -26,6 +26,7 @@ background-color: {{background}};
 background: rgba(0,0,0,0.7);
 foreground: {{foreground}};
 border-color: {{color12}};
+accent: {{color12}};
 
 color0: {{color0}};
 color1: {{color1}};
