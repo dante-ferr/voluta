@@ -29,6 +29,7 @@ chafa
 # Clipboard, screenshots, media
 cliphist
 wl-clipboard
+wtype
 grim
 slurp
 playerctl
