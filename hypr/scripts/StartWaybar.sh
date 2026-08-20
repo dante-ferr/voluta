@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Start a single waybar from its config dir so CSS url("assets/...") resolves.
-# No-op if waybar is already running (combined_wallust / Refresh restart explicitly).
+# No-op if waybar is already running (combined_wallust reloads CSS in place;
+# Refresh still restarts explicitly).
 
 pgrep -x waybar >/dev/null 2>&1 && exit 0
 command -v waybar >/dev/null 2>&1 || exit 0

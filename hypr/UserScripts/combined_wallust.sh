@@ -1,12 +1,27 @@
 #!/usr/bin/env bash
 # combined_wallust.sh - Generate wallust color schemes and reload desktop components
 #
-# Waypaper runs post_command once per monitor on --restore, in parallel. Without
-# coordination that stacks one waybar per display. Only one refresh runs at a
-# time; concurrent callers leave a pending wallpaper path and exit so the holder
-# can re-run once with the latest request.
+# Waypaper's post_command is fire-and-forget and can overlap a refresh already
+# in progress (startup, a previous click, or one call per monitor). Callers
+# write the requested path to PENDING, then wait for the lock. The holder
+# drains PENDING so the latest wallpaper wins; waiters that find PENDING empty
+# after acquire know the previous holder already processed their request.
+#
+# The visible theme (waybar CSS, Hyprland borders) is applied in-place. Magick,
+# wlogout icons, and a full hyprctl reload are not on that path.
 
 wallpaper="$1"
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [[ -z "$WAYLAND_DISPLAY" ]]; then
+    for sock in "$XDG_RUNTIME_DIR"/wayland-*; do
+        if [[ -S "$sock" ]]; then
+            export WAYLAND_DISPLAY="$(basename "$sock")"
+            break
+        fi
+    done
+    export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+fi
 
 _rice_paths="$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
 [[ -r $_rice_paths ]] || _rice_paths="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/rice_paths.sh"
@@ -18,8 +33,12 @@ LOCK_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 LOCK="$LOCK_DIR/imperium-combined-wallust.lock"
 PENDING="$LOCK_DIR/imperium-combined-wallust.pending"
 
+had_arg=0
 if [[ -n "$wallpaper" ]]; then
-    printf '%s\n' "$wallpaper" >"$PENDING" || true
+    had_arg=1
+    pending_tmp="${PENDING}.$$"
+    printf '%s\n' "$wallpaper" >"$pending_tmp" && mv -f "$pending_tmp" "$PENDING" || true
+    rm -f "$pending_tmp"
 fi
 
 exec 9>"$LOCK" || {
@@ -27,20 +46,43 @@ exec 9>"$LOCK" || {
     exit 1
 }
 
-# Non-blocking: if another refresh owns the lock, our path is already in
-# PENDING for it to pick up at the end of its loop.
-if ! flock -n 9; then
-    exit 0
-fi
+# Block so a caller that queued PENDING cannot exit before the holder (or we)
+# observes it. flock is released on process exit even if we are killed.
+flock 9
+
+expand_path() {
+    local p="$1"
+    p="${p#"${p%%[![:space:]]*}"}"
+    p="${p%"${p##*[![:space:]]}"}"
+    p="${p#\"}"
+    p="${p%\"}"
+    p="${p#\'}"
+    p="${p%\'}"
+    p="${p//\\ / }"
+    p="${p/#\~/$HOME}"
+    printf '%s\n' "$p"
+}
 
 resolve_wallpaper() {
-    local wp=$1
+    local wp
+    wp=$(expand_path "$1")
     if [[ -n "$wp" && -f "$wp" ]]; then
         printf '%s\n' "$wp"
         return
     fi
+    if [[ -n "$wp" ]]; then
+        if [[ -f "$HOME/Pictures/Wallpapers/$wp" ]]; then
+            printf '%s\n' "$HOME/Pictures/Wallpapers/$wp"
+            return
+        elif [[ -f "$HOME/Pictures/$wp" ]]; then
+            printf '%s\n' "$HOME/Pictures/$wp"
+            return
+        fi
+    fi
+
     if command -v awww >/dev/null 2>&1; then
         wp=$(awww query 2>/dev/null | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
+        wp=$(expand_path "$wp")
         if [[ -n "$wp" && -f "$wp" ]]; then
             printf '%s\n' "$wp"
             return
@@ -48,6 +90,7 @@ resolve_wallpaper() {
     fi
     if command -v swww >/dev/null 2>&1; then
         wp=$(swww query 2>/dev/null | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
+        wp=$(expand_path "$wp")
         if [[ -n "$wp" && -f "$wp" ]]; then
             printf '%s\n' "$wp"
             return
@@ -58,12 +101,16 @@ resolve_wallpaper() {
     local waypaper_conf="$HOME/.config/waypaper/config.ini"
     for conf in "$state_conf" "$waypaper_conf"; do
         [[ -f $conf ]] || continue
-        wp=$(grep -E '^\s*wallpaper\s*=' "$conf" | head -n 1 | cut -d '=' -f 2- | sed 's/^[ \t]*//' | sed "s|^~|$HOME|")
+        wp=$(grep -E '^\s*wallpaper\s*=' "$conf" | head -n 1 | cut -d '=' -f 2- | sed 's/^[ \t]*//')
         # Multi-monitor state lists one path per line after the first; take the first file.
         wp=${wp%%$'\n'*}
         wp=${wp%%$'\t'*}
+        wp=$(expand_path "$wp")
         if [[ -n "$wp" && -f "$wp" ]]; then
             printf '%s\n' "$wp"
+            return
+        elif [[ -n "$wp" && -f "$HOME/Pictures/Wallpapers/$wp" ]]; then
+            printf '%s\n' "$HOME/Pictures/Wallpapers/$wp"
             return
         fi
     done
@@ -107,48 +154,56 @@ write_waybar_angel_css() {
 EOF
 }
 
-launch_waybar() {
+# SIGUSR2 reloads config + CSS in place. Killing the bar costs a blank gap and
+# a full GTK startup; only spawn when nothing is running (cold start).
+reload_waybar() {
     local waybar_dir
     command -v waybar >/dev/null 2>&1 || return
-    pkill -x waybar || true
-    sleep 0.2
-    pkill -x waybar || true
+
+    if pgrep -x waybar >/dev/null 2>&1; then
+        pkill -USR2 -x waybar || true
+        return
+    fi
+
     waybar_dir=$(imperium_waybar_dir)
     if [[ -d $waybar_dir ]]; then
-        (cd "$waybar_dir" && nohup waybar >/dev/null 2>&1 &)
+        (cd "$waybar_dir" && setsid waybar >/dev/null 2>&1 &)
     else
-        nohup waybar >/dev/null 2>&1 &
+        setsid waybar >/dev/null 2>&1 &
     fi
 }
 
-do_refresh() {
-    local wp=$1
+# Borders and shadows without re-parsing hyprland.lua. A full reload can stall
+# for seconds on a busy compositor and is what made wallpaper changes feel laggy.
+apply_hyprland_colors() {
+    command -v hyprctl >/dev/null 2>&1 || return
+    local conf="$HOME/.config/hypr/wallust/wallust-hyprland.conf"
+    [[ -r $conf ]] || return
 
-    if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
-        wallust run "$wp"
-    fi
+    local color1 color0 background hex
+    color1=$(sed -n 's/^\$color1 = //p' "$conf")
+    color0=$(sed -n 's/^\$color0 = //p' "$conf")
+    background=$(sed -n 's/^\$background = //p' "$conf")
+    [[ -n $color1 && -n $color0 && -n $background ]] || return
 
-    write_waybar_angel_css
+    hex="${background#rgb(}"
+    hex="${hex#rgba(}"
+    hex="${hex%)}"
 
-    # Bar before hyprctl/magick: reload can stall on a busy compositor (SIGTERM
-    # ignored), and a plain `timeout 3` then waits forever — which left cold
-    # boots with wallust colors written but no waybar until Super+Alt+R.
-    launch_waybar
+    hyprctl --batch "keyword general:col.active_border ${color1} ; keyword general:col.inactive_border ${color0} ; keyword decoration:shadow:color rgba(${hex}B3) ; keyword decoration:shadow:color_inactive rgba(${hex}59)" >/dev/null 2>&1 || true
+}
 
-    if command -v hyprctl >/dev/null 2>&1; then
-        timeout -k 1 3 hyprctl reload >/dev/null 2>&1 || true
-    fi
-
-    # Optional derived fetch asset (sigil fallback). After the bar so a slow
-    # ImageMagick run cannot delay the session chrome.
+finish_refresh() {
     if command -v magick >/dev/null 2>&1; then
-        local asset_dir
+        local asset_dir source_img dest_img
         asset_dir=$(imperium_fastfetch_assets)
         mkdir -p "$asset_dir"
-        local source_img="$asset_dir/crown-angels.jpg"
-        if [[ -f "$source_img" ]]; then
+        source_img="$asset_dir/crown-angels.jpg"
+        dest_img="$asset_dir/crown-angels-styled.png"
+        # Same source every wallpaper; only recut when the plate is missing or newer.
+        if [[ -f $source_img && ( ! -f $dest_img || $source_img -nt $dest_img ) ]]; then
             magick "$source_img" -fuzz 14% -transparent black \
-                "$asset_dir/crown-angels-styled.png" >/dev/null 2>&1 || true
+                "$dest_img" >/dev/null 2>&1 || true
         fi
     fi
 
@@ -174,13 +229,39 @@ do_refresh() {
     fi
 }
 
+do_refresh() {
+    local wp="$1"
+
+    if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
+        # -s skips writing escape sequences to every pts; kitty is updated in
+        # finish_refresh. Templates still land on disk.
+        wallust run -s "$wp"
+    fi
+
+    write_waybar_angel_css
+    reload_waybar
+    apply_hyprland_colors
+
+    finish_refresh &
+    disown $! 2>/dev/null || true
+}
+
 # Drain PENDING until concurrent callers stop stacking requests.
+last_wp=""
 while true; do
     if [[ -r "$PENDING" ]]; then
         wallpaper=$(cat "$PENDING")
         rm -f "$PENDING"
+    elif [[ -n "$last_wp" ]]; then
+        break
+    elif [[ $had_arg -eq 1 ]]; then
+        # We queued a path, then waited. The previous holder already consumed
+        # PENDING and refreshed; doing it again would restart the theme twice.
+        break
     fi
     wallpaper=$(resolve_wallpaper "$wallpaper")
-    do_refresh "$wallpaper"
-    [[ -r "$PENDING" ]] || break
+    if [[ -z "$last_wp" || ( -n "$wallpaper" && "$wallpaper" != "$last_wp" ) ]]; then
+        do_refresh "$wallpaper"
+        last_wp="${wallpaper:-__none__}"
+    fi
 done
