@@ -2,6 +2,7 @@
 
 # How the image is parsed, in order to get the colors:
 # full - resized - wal - thumb - fastresize
+# thumb is the fastest (fixed 512×512). fastresize is SIMD and the v4 default.
 backend = "thumb"
 
 # NOTE: Wallust v4 uses palette, style, and tuning to configure color generation.
@@ -19,8 +20,10 @@ salience = { sampling = "balanced", intensity = "pastel" }
 # Color saturation adjustment (1 - 100). Higher values make colors brighter and more vibrant.
 saturation = 20
 
-# Ensures readable contrast against the background color.
-check_contrast = true
+# Leave off: wallust's own sample config says to enable this only when output
+# is unreadable. The extra contrast search re-walks the palette and is what
+# made wallpaper changes feel like they took seconds.
+check_contrast = false
 
 # Difference between similar colors (1 - 100), used inside the colorspace.
 # Higher threshold creates more distinct colors (more contrast between them).
@@ -50,8 +53,8 @@ angel_right_lit.target = '~/.config/waybar/wallust/angel-right-lit.svg'
 kitty.template = 'colors-kitty.conf'
 kitty.target = '~/.config/kitty/kitty-themes/01-Wallust.conf'
 
-starship.template = 'colors-starship.toml'
-starship.target = '~/.config/starship.toml'
+# starship.toml is linked from the rice and has no wallust placeholders.
+# Rendering it on every wallpaper change was a no-op rewrite of a large file.
 
 quickshell.template = 'qml_color.json'
 quickshell.target = '~/.config/quickshell/qml_color.json'

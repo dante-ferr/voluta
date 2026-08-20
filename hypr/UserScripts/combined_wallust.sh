@@ -173,8 +173,9 @@ reload_waybar() {
     fi
 }
 
-# Borders and shadows without re-parsing hyprland.lua. A full reload can stall
-# for seconds on a busy compositor and is what made wallpaper changes feel laggy.
+# Borders and shadows without re-parsing hyprland.lua. Never wait on hyprctl:
+# during an awww transition the compositor can ignore IPC for seconds, which
+# is the delay that survived after waybar stopped being restarted.
 apply_hyprland_colors() {
     command -v hyprctl >/dev/null 2>&1 || return
     local conf="$HOME/.config/hypr/wallust/wallust-hyprland.conf"
@@ -190,7 +191,7 @@ apply_hyprland_colors() {
     hex="${hex#rgba(}"
     hex="${hex%)}"
 
-    hyprctl --batch "keyword general:col.active_border ${color1} ; keyword general:col.inactive_border ${color0} ; keyword decoration:shadow:color rgba(${hex}B3) ; keyword decoration:shadow:color_inactive rgba(${hex}59)" >/dev/null 2>&1 || true
+    timeout -k 0.2 0.6 hyprctl --batch "keyword general:col.active_border ${color1} ; keyword general:col.inactive_border ${color0} ; keyword decoration:shadow:color rgba(${hex}B3) ; keyword decoration:shadow:color_inactive rgba(${hex}59)" >/dev/null 2>&1 || true
 }
 
 finish_refresh() {
@@ -233,15 +234,15 @@ do_refresh() {
     local wp="$1"
 
     if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
-        # -s skips writing escape sequences to every pts; kitty is updated in
-        # finish_refresh. Templates still land on disk.
-        wallust run -s "$wp"
+        # -s skips pts sequences (kitty is updated in finish_refresh).
+        # -q skips the spinner. Templates still land on disk.
+        wallust run -s -q "$wp"
     fi
 
     write_waybar_angel_css
     reload_waybar
-    apply_hyprland_colors
-
+    apply_hyprland_colors &
+    disown $! 2>/dev/null || true
     finish_refresh &
     disown $! 2>/dev/null || true
 }
