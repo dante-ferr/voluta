@@ -21,8 +21,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("waypaper --restore --no-post-command || true")
 
     -- Early bar from last session's CSS so a hung wallust path cannot leave
-    -- the desktop bare. combined_wallust reloads its CSS in place once colors
-    -- are ready, and only spawns a bar if this start was a no-op.
+    -- the desktop bare. combined_wallust restarts it once colors are ready.
     hl.exec_cmd(Scripts .. "/StartWaybar.sh")
 
     hl.exec_cmd("bash " .. UserScripts .. "/combined_wallust.sh &")

@@ -20,10 +20,9 @@ salience = { sampling = "balanced", intensity = "pastel" }
 # Color saturation adjustment (1 - 100). Higher values make colors brighter and more vibrant.
 saturation = 20
 
-# Leave off: wallust's own sample config says to enable this only when output
-# is unreadable. The extra contrast search re-walks the palette and is what
-# made wallpaper changes feel like they took seconds.
-check_contrast = false
+# Contrast search is off by default. Do not enable it: wallust re-walks the
+# palette until contrast passes, which made wallpaper changes feel multi-second.
+#check_contrast = true
 
 # Difference between similar colors (1 - 100), used inside the colorspace.
 # Higher threshold creates more distinct colors (more contrast between them).
