@@ -19,6 +19,7 @@
         "custom/swaync",
         "tray",
         "temperature",
+        "network",
         "pulseaudio",
         "battery",
         "custom/power"
@@ -104,6 +105,23 @@
         "format-icons": ["󰔏", "󱃂", "󰔐"],
         "tooltip": true,
         "tooltip-format": "{temperatureC}°C"
+    },
+    "network": {
+        "format": "{ifname}",
+        "format-wifi": "{icon}",
+        "format-ethernet": "󰌘",
+        "format-disconnected": "󰌙",
+        "tooltip-format": "{ipaddr}  {bandwidthUpBits}  {bandwidthDownBits}",
+        "format-linked": "󰈁 {ifname} (No IP)",
+        "tooltip-format-wifi": "{essid} ({signalStrength}%) {icon}",
+        "tooltip-format-ethernet": "{ifname} 󰌘",
+        "tooltip-format-disconnected": "󰌙 Disconnected",
+        "max-length": 30,
+        "format-icons": [
+            "󰤯", "󰤟", "󰤢", "󰤥", "󰤨"
+        ],
+        "on-click": "nm-connection-editor",
+        "on-click-right": "$HOME/.config/hypr/scripts/WaybarScripts.sh --network"
     },
     "pulseaudio": {
         "format": "{icon}",

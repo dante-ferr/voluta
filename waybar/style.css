@@ -193,6 +193,7 @@ window#waybar.empty #window,
 #custom-swaync,
 #tray,
 #temperature,
+#network,
 #pulseaudio,
 #battery,
 #custom-power {
@@ -220,6 +221,22 @@ window#waybar.empty #window,
 #custom-swaync:hover {
     background-color: #161622;
     color: #FFFFFF;
+}
+
+/* Network (Icon Only) */
+#network {
+    color: @color1;
+    font-size: 13px;
+}
+
+#network:hover {
+    background-color: #161622;
+    color: #FFFFFF;
+}
+
+#network.disconnected,
+#network.disabled {
+    color: #7A0016;
 }
 
 /* PulseAudio (Icon Only) - right outer edge of the first plate */
