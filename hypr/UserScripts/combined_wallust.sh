@@ -6,8 +6,9 @@
 # for the lock. The holder drains PENDING so the latest wallpaper wins.
 #
 # GTK caches @import CSS, so SIGUSR2 does not pick up a new wallust palette.
-# The bar has to be restarted. Hyprland borders are set with keyword IPC
-# instead of a full config reload.
+# The bar has to be restarted. Hyprland is then reloaded so window borders
+# and Lua decorations pick up the new palette.
+set +m
 
 wallpaper="$1"
 
@@ -151,7 +152,8 @@ EOF
 }
 
 # Restart the bar. SIGUSR2 does not reload GTK @import of wallust/colors-waybar.css,
-# so the palette would stay frozen if we only sent a signal.
+# so the palette would stay frozen if we only sent a signal. Close the lock fd
+# before exec: a live waybar that inherits it pins the flock until logout.
 launch_waybar() {
     local waybar_dir count=0
     command -v waybar >/dev/null 2>&1 || return
@@ -167,29 +169,21 @@ launch_waybar() {
     fi
 
     waybar_dir=$(imperium_waybar_dir)
-    if [[ -d $waybar_dir ]]; then
-        (cd "$waybar_dir" && setsid waybar >/dev/null 2>&1 &)
-    else
-        setsid waybar >/dev/null 2>&1 &
-    fi
+    (
+        exec 9>&-
+        if [[ -d $waybar_dir ]]; then
+            cd "$waybar_dir" || exit 0
+        fi
+        exec setsid -f waybar >/dev/null 2>&1
+    ) &
+    disown $! 2>/dev/null || true
 }
 
-apply_hyprland_colors() {
+reload_hyprland() {
     command -v hyprctl >/dev/null 2>&1 || return
-    local conf="$HOME/.config/hypr/wallust/wallust-hyprland.conf"
-    [[ -r $conf ]] || return
-
-    local color1 color0 background hex
-    color1=$(sed -n 's/^\$color1 = //p' "$conf")
-    color0=$(sed -n 's/^\$color0 = //p' "$conf")
-    background=$(sed -n 's/^\$background = //p' "$conf")
-    [[ -n $color1 && -n $color0 && -n $background ]] || return
-
-    hex="${background#rgb(}"
-    hex="${hex#rgba(}"
-    hex="${hex%)}"
-
-    timeout -k 1 2 hyprctl --batch "keyword general:col.active_border ${color1} ; keyword general:col.inactive_border ${color0} ; keyword decoration:shadow:color rgba(${hex}B3) ; keyword decoration:shadow:color_inactive rgba(${hex}59)" >/dev/null 2>&1 || true
+    # Re-runs hyprland.lua, which drops the cached wallust module and reapplies
+    # decorations. Keywords do not restyle already-mapped windows on this setup.
+    timeout -k 1 5 hyprctl reload >/dev/null 2>&1 || true
 }
 
 finish_refresh() {
@@ -230,17 +224,21 @@ finish_refresh() {
 do_refresh() {
     local wp="$1"
 
-    # Quiet is a global flag (`wallust -q run …`). Passing -q to `run` makes
-    # wallust v4 treat it as the image path and skip palette generation.
+    # -q is a global flag: `wallust -q run …`, not `wallust run -q`.
     if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
-        wallust run -s "$wp"
+        wallust -q run -s "$wp"
     fi
 
     write_waybar_angel_css
     launch_waybar
-    apply_hyprland_colors
-
-    finish_refresh &
+    # Close fd 9 in the child so hyprctl/swaync cannot inherit the flock.
+    (
+        exec 9>&-
+        # Let the wallpaper fade start so reload is not fighting the compositor.
+        sleep 0.5
+        reload_hyprland
+        finish_refresh
+    ) &
     disown $! 2>/dev/null || true
 }
 
