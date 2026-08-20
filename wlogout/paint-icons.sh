@@ -20,15 +20,23 @@ paint_wlogout_icons() {
     fi
 
     local name
+    local pids=()
     for name in lock logout suspend hibernate reboot shutdown; do
         [[ -f $src/$name.svg ]] || continue
-        sed "s/#C9A227/#${accent}/g" "$src/$name.svg" >"$out/$name.svg"
-        if command -v rsvg-convert >/dev/null 2>&1; then
-            rsvg-convert -w 64 -h 64 -f png --background-color none \
-                -o "$out/$name.png" "$out/$name.svg" >/dev/null 2>&1 || true
-        elif command -v magick >/dev/null 2>&1; then
-            magick -background none "$out/$name.svg" PNG32:"$out/$name.png" >/dev/null 2>&1 || true
-        fi
+        (
+            sed "s/#C9A227/#${accent}/g" "$src/$name.svg" >"$out/$name.svg"
+            if command -v rsvg-convert >/dev/null 2>&1; then
+                rsvg-convert -w 64 -h 64 -f png --background-color none \
+                    -o "$out/$name.png" "$out/$name.svg" >/dev/null 2>&1 || true
+            elif command -v magick >/dev/null 2>&1; then
+                magick -background none "$out/$name.svg" PNG32:"$out/$name.png" >/dev/null 2>&1 || true
+            fi
+        ) &
+        pids+=($!)
+    done
+    local pid
+    for pid in "${pids[@]}"; do
+        wait "$pid" || true
     done
 }
 

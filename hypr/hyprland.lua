@@ -14,6 +14,11 @@ local function load_module(mod_name)
     end
 end
 
+-- UserDecorations and UserKeybinds require() this. The Lua VM survives
+-- hyprctl reload, so a cached module would keep the previous wallpaper's
+-- palette on borders and window rules.
+package.loaded["UserConfigs.wallust"] = nil
+
 -- 1. Visuals, Animations & Decorations
 load_module("UserConfigs.UserDecorations")
 load_module("UserConfigs.UserAnimations")
