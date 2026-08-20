@@ -264,3 +264,20 @@ hl.window_rule({
     border_color = deck_border,
     animation = "popin",
 })
+
+-- Float, center, and resize volume control (pavucontrol) and network connection editor (nm-connection-editor)
+hl.window_rule({
+    name = "waybar-volume-menu",
+    match = { class = "^(pavucontrol|pavucontrol-qt|org.pulseaudio.pavucontrol|com.saivert.pwvucontrol)$" },
+    float = true,
+    size = "900 650",
+    center = true,
+})
+
+hl.window_rule({
+    name = "waybar-network-menu",
+    match = { class = "^(nm-connection-editor|nm-applet)$" },
+    float = true,
+    size = "900 650",
+    center = true,
+})
