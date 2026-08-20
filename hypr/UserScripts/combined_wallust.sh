@@ -53,14 +53,20 @@ resolve_wallpaper() {
             return
         fi
     fi
+    # Prefer XDG state (use_xdg_state=True); config.ini no longer stores wallpaper.
+    local state_conf="$HOME/.local/state/waypaper/state.ini"
     local waypaper_conf="$HOME/.config/waypaper/config.ini"
-    if [[ -f "$waypaper_conf" ]]; then
-        wp=$(grep -E '^\s*wallpaper\s*=' "$waypaper_conf" | head -n 1 | cut -d '=' -f 2- | sed 's/^[ \t]*//' | sed "s|^~|$HOME|")
+    for conf in "$state_conf" "$waypaper_conf"; do
+        [[ -f $conf ]] || continue
+        wp=$(grep -E '^\s*wallpaper\s*=' "$conf" | head -n 1 | cut -d '=' -f 2- | sed 's/^[ \t]*//' | sed "s|^~|$HOME|")
+        # Multi-monitor state lists one path per line after the first; take the first file.
+        wp=${wp%%$'\n'*}
+        wp=${wp%%$'\t'*}
         if [[ -n "$wp" && -f "$wp" ]]; then
             printf '%s\n' "$wp"
             return
         fi
-    fi
+    done
 }
 
 # GTK resolves CSS url() against waybar's working directory (often $HOME),
@@ -124,9 +130,17 @@ do_refresh() {
 
     write_waybar_angel_css
 
-    # Optional derived fetch asset (sigil fallback). The terminal fetch uses the
-    # tracked transparent PNG directly; this keeps a black-keyed twin for anything
-    # that still expects crown-angels-styled.png.
+    # Bar before hyprctl/magick: reload can stall on a busy compositor (SIGTERM
+    # ignored), and a plain `timeout 3` then waits forever — which left cold
+    # boots with wallust colors written but no waybar until Super+Alt+R.
+    launch_waybar
+
+    if command -v hyprctl >/dev/null 2>&1; then
+        timeout -k 1 3 hyprctl reload >/dev/null 2>&1 || true
+    fi
+
+    # Optional derived fetch asset (sigil fallback). After the bar so a slow
+    # ImageMagick run cannot delay the session chrome.
     if command -v magick >/dev/null 2>&1; then
         local asset_dir
         asset_dir=$(imperium_fastfetch_assets)
@@ -137,13 +151,6 @@ do_refresh() {
                 "$asset_dir/crown-angels-styled.png" >/dev/null 2>&1 || true
         fi
     fi
-
-    # hyprctl can block if the compositor is busy; never hold the lock forever.
-    if command -v hyprctl >/dev/null 2>&1; then
-        timeout 3 hyprctl reload >/dev/null 2>&1 || true
-    fi
-
-    launch_waybar
 
     if command -v swaync-client >/dev/null 2>&1; then
         swaync-client -R -rs >/dev/null 2>&1 || true
