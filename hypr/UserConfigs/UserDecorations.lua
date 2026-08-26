@@ -34,8 +34,10 @@ hl.config({
         active_opacity = 1.0, -- 100% solid opacity (No window transparency)
         inactive_opacity = 1.0,
         fullscreen_opacity = 1.0,
+        dim_special = 0.6, -- Dim background behind special workspace (0.0 - 1.0)
         blur = {
             enabled = true,
+            special = true, -- Blur background behind special workspace
             size = 8,
             passes = 3,
             new_optimizations = true,

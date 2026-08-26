@@ -183,6 +183,12 @@ for i = 1, 10 do
     hl.bind("SUPER + SHIFT + " .. num, hl.dsp.window.move({ workspace = tostring(i) }))
 end
 
+-- Special Workspace (Scratchpad - Super + U)
+hl.bind("SUPER + U", hl.dsp.workspace.toggle_special())
+hl.bind("SUPER + SHIFT + U", hl.dsp.window.move({ workspace = "special" }))
+hl.bind("SUPER + CTRL + U", hl.dsp.window.move({ workspace = "special", silent = true }))
+
+
 -- Keypad workspaces. A keypad key emits a different keysym depending on NumLock (and
 -- Shift inverts it), so both names are bound for each workspace to cover every state.
 local keypad_keys = {
