@@ -88,9 +88,9 @@ style = "fg:{{color6}}"
 
 # Prompt Symbols
 [character]
-success_symbol = "[/ SPQR](bold fg:{{color1}})[ >](bold fg:{{color15}})"
-error_symbol = "[x SPQR](bold fg:{{color15}})[ >](bold fg:{{color1}})"
-vimcmd_symbol = "[@VIM@ SPQR](bold fg:{{color7}})[ <](bold fg:{{color15}})"
+success_symbol = "[/](bold fg:{{color1}})[ >](bold fg:{{color15}})"
+error_symbol = "[x](bold fg:{{color15}})[ >](bold fg:{{color1}})"
+vimcmd_symbol = "[@VIM@](bold fg:{{color7}})[ <](bold fg:{{color15}})"
 
 # User & Host
 [username]
@@ -208,8 +208,8 @@ TEXT_SYMBOLS = {
     'continuation_prompt = "[- ]': 'continuation_prompt = "[\u25b8\u25b8 ]',
     'symbol = "-"': 'symbol = "\u2500"',
     'truncation_symbol = ".../"': 'truncation_symbol = "\u2026/"',
-    '"[/ SPQR]': '"[@SHIELD@ SPQR]',
-    '"[x SPQR]': '"[@SWORDS@ SPQR]',
+    '"[/]': '"[@SHIELD@]',
+    '"[x]': '"[@SWORDS@]',
     '[ >](bold fg:{{color1}})': '[ \u276f](bold fg:{{color1}})',
     '[ >](bold fg:{{color15}})': '[ \u276f](bold fg:{{color15}})',
     '[ <](bold fg:{{color15}})': '[ \u276f](bold fg:{{color15}})',

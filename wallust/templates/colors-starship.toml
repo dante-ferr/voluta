@@ -41,9 +41,9 @@ style = "fg:6"
 
 # Prompt Symbols
 [character]
-success_symbol = "[ SPQR](bold fg:1)[ ❯](bold fg:15)"
-error_symbol = "[󰞇 SPQR](bold fg:15)[ ❯](bold fg:1)"
-vimcmd_symbol = "[󰊠 SPQR](bold fg:7)[ ❯](bold fg:15)"
+success_symbol = "[](bold fg:1)[ ❯](bold fg:15)"
+error_symbol = "[󰞇](bold fg:15)[ ❯](bold fg:1)"
+vimcmd_symbol = "[󰊠](bold fg:7)[ ❯](bold fg:15)"
 
 # User & Host
 [username]

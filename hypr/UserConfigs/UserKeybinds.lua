@@ -30,7 +30,7 @@ hl.bind("SUPER + E", hl.dsp.exec_cmd("nautilus"))
 hl.bind("SUPER + B", hl.dsp.exec_cmd("brave"))
 hl.bind("SUPER + W", hl.dsp.exec_cmd("waypaper"))
 hl.bind("SUPER + D", hl.dsp.exec_cmd("pkill rofi || rofi -show drun -theme " .. home .. "/.config/rofi/dashboard.rasi"))
--- Launcher plus its flanking sigil and telemetry panels.
+-- Launcher menu.
 hl.bind("SUPER + CTRL + Return", hl.dsp.exec_cmd(UserScripts .. "/command_deck.sh"))
 hl.bind("SUPER + I", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
 hl.bind("SUPER + CTRL + T", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
@@ -223,55 +223,7 @@ hl.window_rule({
     opacity = "1.0 1.0",
 })
 
--- Command Deck: pinned wings flanking the centred app launcher.
---
--- The launcher is a fixed pixel width, so the wings are measured from the space
--- left over beside it rather than from a flat share of the monitor. A flat share
--- breaks on scaled outputs: monitor_w is the *logical* width, so a display at
--- scale 1.2 reports 1600 instead of 1920 while the launcher stays 720px wide.
--- The launcher's share of the screen therefore grows as the scale goes up, until
--- it runs into wings that were placed at a constant percentage. Anchoring the
--- wings to the launcher's edges keeps the same clearance at any scale.
---
--- LAUNCHER_W must track `window { width: ... }` in rofi/dashboard.rasi.
-local LAUNCHER_W = 720
-local DECK_GUTTER = 24 -- clearance between a wing and the launcher, in px
-local DECK_MARGIN = 0.05 -- screen-edge margin, as a share of monitor width
 
--- Hyprland splits size/move on whitespace, so the expressions carry none.
-local wing_size = ("((monitor_w-%d)/2-monitor_w*%s-%d) (monitor_h*0.62)")
-    :format(LAUNCHER_W, DECK_MARGIN, DECK_GUTTER)
-local sigil_move = ("(monitor_w*%s) (monitor_h*0.19)"):format(DECK_MARGIN)
-local telemetry_move = ("((monitor_w+%d)/2+%d) (monitor_h*0.19)"):format(LAUNCHER_W, DECK_GUTTER)
-
-local wallust = require("UserConfigs.wallust")
-local deck_border = wallust.get("color12", "rgb(D4AF37)") .. " " .. wallust.get("color4", "rgb(16161D)")
-
-hl.window_rule({
-    name = "imperium-deck-sigil",
-    match = { class = "^(imperium-sigil)$" },
-    float = true,
-    size = wing_size,
-    move = sigil_move,
-    pin = true,
-    no_initial_focus = true,
-    rounding = 0,
-    border_color = deck_border,
-    animation = "popin",
-})
-
-hl.window_rule({
-    name = "imperium-deck-telemetry",
-    match = { class = "^(imperium-telemetry)$" },
-    float = true,
-    size = wing_size,
-    move = telemetry_move,
-    pin = true,
-    no_initial_focus = true,
-    rounding = 0,
-    border_color = deck_border,
-    animation = "popin",
-})
 
 -- Float, center, and resize volume control (pavucontrol) and network connection editor (nm-connection-editor)
 hl.window_rule({
