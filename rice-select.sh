@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # rice-select.sh - Interactive Rofi selector for system rices
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 SWITCH="$SCRIPT_DIR/rice-switch.sh"
 [[ -x "$SWITCH" ]] || SWITCH="$HOME/imperivm-dotfiles/rice-switch.sh"
 [[ -x "$SWITCH" ]] || SWITCH="$HOME/rice-switch.sh"

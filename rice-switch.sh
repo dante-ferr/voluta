@@ -180,6 +180,20 @@ link_home() {
     fi
 }
 
+link_home_file() {
+    local name="$1"
+    local src="$TARGET_DIR/$name"
+    local dest="$HOME/$name"
+
+    if [[ -f "$src" ]]; then
+        if [[ -L "$dest" || -e "$dest" ]]; then
+            rm -rf "$dest"
+        fi
+        ln -s "$src" "$dest"
+        echo "  Linked ~/$name -> $src"
+    fi
+}
+
 mkdir -p "$HOME/.config"
 
 link_config "hypr"
@@ -194,6 +208,8 @@ link_config "wlogout"
 link_config "starship.toml"
 
 link_home "zshrc"
+link_home_file "rice-select.sh"
+link_home_file "rice-switch.sh"
 
 # SDDM lives under /usr/share; apply the Imperium greeter when we can.
 if [[ "$RICE" == "imperium" && -x "$TARGET_DIR/sddm/install.sh" ]]; then

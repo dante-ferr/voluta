@@ -5,6 +5,23 @@ local home = os.getenv("HOME") or "/home/dante"
 local scriptsDir = home .. "/.config/hypr/scripts"
 local UserScripts = home .. "/.config/hypr/UserScripts"
 
+local riceSelect = home .. "/rice-select.sh"
+do
+    local candidate_paths = {
+        home .. "/rice-select.sh",
+        home .. "/.config/hypr/../rice-select.sh",
+        home .. "/imperivm-dotfiles/rice-select.sh",
+    }
+    for _, p in ipairs(candidate_paths) do
+        local f = io.open(p, "r")
+        if f then
+            f:close()
+            riceSelect = p
+            break
+        end
+    end
+end
+
 -- Pixels added or removed per resize keypress; holding the key repeats it.
 local RESIZE_STEP = 120
 -- The Super + R resize submap steps in finer increments, doubled while SHIFT is held.
@@ -64,8 +81,8 @@ hl.bind("ALT + SHIFT + code:23", hl.dsp.window.cycle_next({ prev = true }))
 
 -- 3. System Actions & Session Refresh (Super + Alt + R)
 hl.bind("SUPER + ALT + R", hl.dsp.exec_cmd(scriptsDir .. "/Refresh.sh"))
-hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
-hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd("pkill rofi || " .. home .. "/rice-select.sh"))
+hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("pkill rofi || " .. riceSelect))
+hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd("pkill rofi || " .. riceSelect))
 hl.bind("SUPER + ALT + L", hl.dsp.exec_cmd(scriptsDir .. "/LockScreen.sh"), { locked = true })
 hl.bind("SUPER + ALT + E", hl.dsp.exec_cmd(scriptsDir .. "/RofiPicker.sh emoji"))
 hl.bind("SUPER + period", hl.dsp.exec_cmd(scriptsDir .. "/RofiPicker.sh emoji"))
