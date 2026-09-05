@@ -64,6 +64,22 @@ expand_path() {
     printf '%s\n' "$p"
 }
 
+get_active_monitors() {
+    if command -v hyprctl >/dev/null 2>&1; then
+        if command -v jq >/dev/null 2>&1; then
+            hyprctl monitors -j 2>/dev/null | jq -r '
+                (map(select(.id == 0)) | .[0].name // empty),
+                (map(select(.focused == true)) | .[0].name // empty),
+                (.[].name // empty)
+            ' 2>/dev/null | awk '!seen[$0]++'
+            return
+        else
+            hyprctl monitors 2>/dev/null | grep -E '^Monitor ' | awk '{print $2}'
+            return
+        fi
+    fi
+}
+
 resolve_wallpaper() {
     local wp
     wp=$(expand_path "$1")
@@ -81,38 +97,92 @@ resolve_wallpaper() {
         fi
     fi
 
-    if command -v awww >/dev/null 2>&1; then
-        wp=$(awww query 2>/dev/null | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
-        wp=$(expand_path "$wp")
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            printf '%s\n' "$wp"
-            return
-        fi
-    fi
-    if command -v swww >/dev/null 2>&1; then
-        wp=$(swww query 2>/dev/null | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
-        wp=$(expand_path "$wp")
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            printf '%s\n' "$wp"
-            return
-        fi
-    fi
-    local state_conf="$HOME/.local/state/waypaper/state.ini"
-    local waypaper_conf="$HOME/.config/waypaper/config.ini"
-    for conf in "$state_conf" "$waypaper_conf"; do
-        [[ -f $conf ]] || continue
-        wp=$(grep -E '^\s*wallpaper\s*=' "$conf" | head -n 1 | cut -d '=' -f 2- | sed 's/^[ \t]*//')
-        wp=${wp%%$'\n'*}
-        wp=${wp%%$'\t'*}
-        wp=$(expand_path "$wp")
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            printf '%s\n' "$wp"
-            return
-        elif [[ -n "$wp" && -f "$HOME/Pictures/Wallpapers/$wp" ]]; then
-            printf '%s\n' "$HOME/Pictures/Wallpapers/$wp"
-            return
+    local monitors=()
+    while IFS= read -r mon; do
+        [[ -n "$mon" ]] && monitors+=("$mon")
+    done < <(get_active_monitors)
+
+    # 1. Query live wallpaper daemons (awww, swww)
+    local query_out=""
+    for daemon in awww swww; do
+        command -v "$daemon" >/dev/null 2>&1 || continue
+        for (( retry=0; retry<10; retry++ )); do
+            query_out=$("$daemon" query 2>/dev/null || true)
+            [[ -n "$query_out" ]] && break
+            if pgrep -x "${daemon}-daemon" >/dev/null 2>&1 || pgrep -x "$daemon" >/dev/null 2>&1; then
+                sleep 0.15
+            else
+                break
+            fi
+        done
+        if [[ -n "$query_out" ]]; then
+            for mon in "${monitors[@]}"; do
+                wp=$(echo "$query_out" | grep -E "(^|: )${mon}:" | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
+                wp=$(expand_path "$wp")
+                if [[ -n "$wp" && -f "$wp" ]]; then
+                    printf '%s\n' "$wp"
+                    return
+                fi
+            done
+            wp=$(echo "$query_out" | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
+            wp=$(expand_path "$wp")
+            if [[ -n "$wp" && -f "$wp" ]]; then
+                printf '%s\n' "$wp"
+                return
+            fi
         fi
     done
+
+    # 2. Check waypaper persistent state (handles multi-line per-monitor configs)
+    if command -v python3 >/dev/null 2>&1; then
+        wp=$(python3 -c '
+import configparser, os, sys
+
+active_monitors = sys.argv[1:]
+for conf in ["~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini"]:
+    path = os.path.expanduser(conf)
+    if not os.path.isfile(path):
+        continue
+    p = configparser.ConfigParser()
+    try:
+        p.read(path, "utf-8")
+    except Exception:
+        continue
+    sec = "State" if p.has_section("State") else ("Settings" if p.has_section("Settings") else None)
+    if not sec:
+        continue
+    mons = [m.strip() for m in p.get(sec, "monitors", fallback="").splitlines() if m.strip()]
+    walls = [w.strip() for w in p.get(sec, "wallpaper", fallback="").splitlines() if w.strip()]
+    mapping = dict(zip(mons, walls))
+    for m in active_monitors:
+        if m in mapping and mapping[m]:
+            expanded = os.path.expanduser(mapping[m])
+            if os.path.isfile(expanded):
+                print(expanded)
+                sys.exit(0)
+    if "All" in mapping and mapping["All"]:
+        expanded = os.path.expanduser(mapping["All"])
+        if os.path.isfile(expanded):
+            print(expanded)
+            sys.exit(0)
+    for w in walls:
+        expanded = os.path.expanduser(w)
+        if os.path.isfile(expanded):
+            print(expanded)
+            sys.exit(0)
+' "${monitors[@]}" 2>/dev/null)
+        if [[ -n "$wp" && -f "$wp" ]]; then
+            printf '%s\n' "$wp"
+            return
+        fi
+    fi
+
+    # 3. Fallback to default wallpaper assets if nothing else resolved
+    local default_wp="$HOME/.config/hypr/assets/school-of-athens.jpg"
+    if [[ -f "$default_wp" ]]; then
+        printf '%s\n' "$default_wp"
+        return
+    fi
 }
 
 # GTK resolves CSS url() against waybar's working directory (often $HOME),

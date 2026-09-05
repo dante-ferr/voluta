@@ -18,3 +18,8 @@ fastfetch/current_styled.png
 # nwg-displays writes these per machine; loaders fall back when absent.
 hypr/monitors.conf
 hypr/workspaces.conf
+
+# Python cache
+__pycache__/
+*.pyc
+

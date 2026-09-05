@@ -10,9 +10,12 @@ local Scripts = home .. "/.config/hypr/scripts"
 
 hl.on("hyprland.start", function()
     hl.exec_cmd("~/.config/hypr/UserScripts/auto_host_link.sh")
-    hl.exec_cmd("waypaper --restore --no-post-command || true")
     hl.exec_cmd(Scripts .. "/StartWaybar.sh")
-    hl.exec_cmd("bash " .. UserScripts .. "/combined_wallust.sh &")
+    hl.exec_cmd("sh -c 'waypaper --restore --no-post-command || true; bash " .. UserScripts .. "/combined_wallust.sh' &")
     hl.exec_cmd("playerctld daemon")
     hl.exec_cmd("sh -c 'pgrep -x hypridle >/dev/null || hypridle &'")
+
+    -- Session Manager: Restore previous windows and start auto-save daemon
+    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py restore &")
+    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py daemon &")
 end)

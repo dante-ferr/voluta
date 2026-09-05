@@ -15,16 +15,14 @@ hl.on("hyprland.start", function()
     -- Notification Daemon (SwayNC) - Critical for OSD volume & media popups
     hl.exec_cmd("sh -c 'pgrep -x swaync >/dev/null || swaync &'")
 
-    -- Wallpaper restore without post_command: waypaper fires post_command once
-    -- per monitor in parallel, which used to stack duplicate waybars. Colors and
-    -- the bar are refreshed once below via combined_wallust.sh instead.
-    hl.exec_cmd("waypaper --restore --no-post-command || true")
-
     -- Early bar from last session's CSS so a hung wallust path cannot leave
     -- the desktop bare. combined_wallust restarts it once colors are ready.
     hl.exec_cmd(Scripts .. "/StartWaybar.sh")
 
-    hl.exec_cmd("bash " .. UserScripts .. "/combined_wallust.sh &")
+    -- Wallpaper restore without post_command: waypaper fires post_command once
+    -- per monitor in parallel, which used to stack duplicate waybars. Once restored,
+    -- combined_wallust refreshes the palette and desktop components synchronously.
+    hl.exec_cmd("sh -c 'waypaper --restore --no-post-command || true; bash " .. UserScripts .. "/combined_wallust.sh' &")
 
     hl.exec_cmd("playerctld daemon || true")
 
@@ -33,4 +31,8 @@ hl.on("hyprland.start", function()
 
     -- Clipboard manager
     hl.exec_cmd("sh -c 'pgrep -x cliphist >/dev/null || (wl-paste --type text --watch cliphist store & wl-paste --type image --watch cliphist store &)'")
+
+    -- Session Manager: Restore previous windows and start auto-save daemon
+    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py restore &")
+    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py daemon &")
 end)
