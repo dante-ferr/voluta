@@ -239,8 +239,12 @@ launch_waybar() {
     fi
 
     waybar_dir=$(imperium_waybar_dir)
+    local shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
     (
         exec 9>&-
+        if [[ -f $shim ]]; then
+            export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
+        fi
         if [[ -d $waybar_dir ]]; then
             cd "$waybar_dir" || exit 0
         fi
