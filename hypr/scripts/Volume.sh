@@ -23,6 +23,24 @@ is_sink_muted() {
     fi
 }
 
+is_source_muted() {
+    if command -v wpctl >/dev/null 2>&1; then
+        wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null | grep -qi "MUTED" && echo "yes" || echo "no"
+    elif command -v pamixer >/dev/null 2>&1; then
+        pamixer --default-source --get-mute 2>/dev/null && echo "yes" || echo "no"
+    else
+        echo "no"
+    fi
+}
+
+unmute_sink() {
+    if command -v wpctl >/dev/null 2>&1; then
+        wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+    elif command -v pamixer >/dev/null 2>&1; then
+        pamixer -u
+    fi
+}
+
 notify_volume() {
     local vol muted icon
     vol=$(get_sink_volume)
@@ -43,6 +61,14 @@ notify_volume() {
     fi
 }
 
+notify_mic() {
+    if [[ "$(is_source_muted)" == "yes" ]]; then
+        notify-send -t 1500 -u low -h "string:x-canonical-private-synchronous:mic_notif" -i "microphone-sensitivity-muted" "Microphone" "Muted"
+    else
+        notify-send -t 1500 -u low -h "string:x-canonical-private-synchronous:mic_notif" -i "audio-input-microphone" "Microphone" "Unmuted"
+    fi
+}
+
 case "$1" in
     "--inc"|"-i")
         if command -v wpctl >/dev/null 2>&1; then
@@ -50,6 +76,8 @@ case "$1" in
         elif command -v pamixer >/dev/null 2>&1; then
             pamixer -i 5 --allow-boost --set-limit 150 2>/dev/null || pamixer -i 5
         fi
+        # Volume keys must restore sound; mute is a separate action.
+        unmute_sink
         notify_volume
         ;;
     "--dec"|"-d")
@@ -58,6 +86,7 @@ case "$1" in
         elif command -v pamixer >/dev/null 2>&1; then
             pamixer -d 5
         fi
+        unmute_sink
         notify_volume
         ;;
     "--toggle"|"-t")
@@ -74,7 +103,7 @@ case "$1" in
         elif command -v pamixer >/dev/null 2>&1; then
             pamixer --default-source -t
         fi
-        notify-send -t 1500 -u low -h "string:x-canonical-private-synchronous:mic_notif" -i "audio-input-microphone" "Microphone" "Input mute toggled"
+        notify_mic
         ;;
     *)
         notify_volume

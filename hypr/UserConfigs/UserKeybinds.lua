@@ -102,10 +102,13 @@ hl.bind("Print", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/
 hl.bind("SHIFT + Print", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png && grim -g \"$(slurp)\" \"$f\" && wl-copy < \"$f\" && notify-send \"Screenshot Captured\" \"Saved to $f\"'"))
 
 -- 6. Audio Volume & Media Playback (with SwayNC OSD notifications)
-hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("sh -c 'wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+ || pamixer -i 5; vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk \"{print int(\\$2 * 100)}\"); notify-send -e -h int:value:\"$vol\" -h string:x-canonical-private-synchronous:volume_notif -u low \"Volume: ${vol}%\"'"), { locked = true, repeating = true })
-hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("sh -c 'wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- || pamixer -d 5; vol=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk \"{print int(\\$2 * 100)}\"); notify-send -e -h int:value:\"$vol\" -h string:x-canonical-private-synchronous:volume_notif -u low \"Volume: ${vol}%\"'"), { locked = true, repeating = true })
-hl.bind("XF86AudioMute", hl.dsp.exec_cmd("sh -c 'wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle || pamixer -t; notify-send -e -h string:x-canonical-private-synchronous:volume_notif -u low \"Mute Toggled\"'"), { locked = true, repeating = true })
-hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("sh -c 'wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle; notify-send -e -u low \"Mic Mute Toggled\"'"), { locked = true, repeating = true })
+-- Speaker mute must target the sink. The previous XF86AudioMute bind
+-- toggled DEFAULT_AUDIO_SOURCE, so Fn+mute flipped the microphone instead.
+-- Volume up/down go through Volume.sh so they also unmute a muted sink.
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd(scriptsDir .. "/Volume.sh --inc"), { locked = true, repeating = true })
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd(scriptsDir .. "/Volume.sh --dec"), { locked = true, repeating = true })
+hl.bind("XF86AudioMute", hl.dsp.exec_cmd(scriptsDir .. "/Volume.sh --toggle"), { locked = true, repeating = true })
+hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd(scriptsDir .. "/Volume.sh --toggle-mic"), { locked = true, repeating = true })
 
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("sh -c 'playerctl play-pause; sleep 0.1; title=$(playerctl metadata title 2>/dev/null); notify-send -e -u low -i \"$HOME/.config/swaync/icons/music.png\" \"Playback Toggled\" \"$title\"'"), { locked = true })
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("sh -c 'playerctl play-pause; sleep 0.1; title=$(playerctl metadata title 2>/dev/null); notify-send -e -u low -i \"$HOME/.config/swaync/icons/music.png\" \"Playback Toggled\" \"$title\"'"), { locked = true })
