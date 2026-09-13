@@ -53,7 +53,7 @@ hl.bind("SUPER + I", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
 hl.bind("SUPER + CTRL + T", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
 hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("kitty --class system-monitor -e btop"))
 hl.bind("SUPER + G", hl.dsp.exec_cmd(UserScripts .. "/pixel-widget.sh"))
-hl.bind("SUPER + KP_Add", hl.dsp.exec_cmd("bash -c 'obs-cmd recording toggle && notify-send \"OBS Studio\" \"Recording Toggled\"'"))
+hl.bind("SUPER + KP_Add", hl.dsp.exec_cmd("bash -c 'obs-cmd recording toggle'"))
 
 -- Config shortcuts
 hl.bind("CTRL + SUPER + Slash", hl.dsp.exec_cmd("xdg-open ~/.config/illogical-impulse/config.json"))
