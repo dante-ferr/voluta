@@ -40,6 +40,18 @@ window#waybar {
 #window {
     color: @foreground;
     font-weight: 700;
+    padding-left: 22px;
+    background-repeat: no-repeat;
+    background-position: 4px center;
+    background-size: 12px 20px;
+}
+
+#mpris {
+    padding-left: 28px;
+    padding-right: 16px;
+    background-repeat: no-repeat, no-repeat;
+    background-position: 8px center, right center;
+    background-size: 14px 16px, 8px 18px;
 }
 
 /* Waybar tags the bar with .empty when no window is focused */
@@ -48,40 +60,107 @@ window#waybar.empty #window,
     padding: 0;
     margin: 0;
     background-color: transparent;
+    background-image: none;
     border: none;
     box-shadow: none;
     opacity: 0;
 }
 
 /* ====================================================
-   CENTER: FLANKING ANGELS, ANIMATED WORKSPACES & CLOCK
+   CENTER: FLANKING ANGELS, PUTTI, ANIMATED WORKSPACES & CLOCK
    ==================================================== */
 
-/* The two angels bear the central tablet between them. They are carved in the
-   same stone as the plates: assets/angel-*.svg use the #0A0A0E body and the
-   #2A2A38 contour set below, so keep the three in step if the plates change. */
+/* The standing angels bear the central tablet; two pairs of flying putti
+   attend them on the outer flanks, and a rinceau grows out from the plate
+   behind them. Putti and vine are carved in the same stone as the plates.
+   The standing pair is left at its original size and placement. */
 #custom-angel-left,
-#custom-angel-right {
-    min-width: 22px;
+#custom-angel-right,
+#custom-cherub-left,
+#custom-cherub-right,
+#custom-cherub-outer-left,
+#custom-cherub-outer-right {
     padding: 0px;
     margin: 0px;
     background-color: transparent;
     background-repeat: no-repeat;
-    /* Sized explicitly: GTK scales the image to cover the box, which crops the
-       wingtips and the hem. Keep the 225:376 ratio of the padded artwork. */
-    background-size: 20px 34px;
     border: none;
     box-shadow: none;
 }
 
+#custom-angel-left,
+#custom-angel-right {
+    min-width: 22px;
+    /* Sized explicitly: GTK scales the image to cover the box, which crops the
+       wingtips and the hem. Keep the 225:376 ratio of the padded artwork. */
+    background-size: 20px 34px;
+}
+
+#custom-cherub-left,
+#custom-cherub-right,
+#custom-cherub-outer-left,
+#custom-cherub-outer-right {
+    min-width: 23px;
+    background-size: 23px 26px;
+}
+
+/* Inner putti sit high; outer putti sit low. The clockwise tilt of the
+   outer pair is baked into the SVG — GTK 3 has no CSS transform. */
+#custom-cherub-left {
+    background-position: right 0px;
+    margin-left: 2px;
+}
+
+#custom-cherub-right {
+    background-position: left 0px;
+    margin-right: 2px;
+}
+
+#custom-cherub-outer-left {
+    background-position: right 8px;
+    margin-left: 2px;
+}
+
+#custom-cherub-outer-right {
+    background-position: left 8px;
+    margin-right: 2px;
+}
+
 #custom-angel-left {
     background-position: right center;
-    margin-left: 6px;
+    margin-left: 2px;
 }
 
 #custom-angel-right {
     background-position: left center;
-    margin-right: 6px;
+    margin-right: 2px;
+}
+
+/* The centre vine is incised (open strokes). Filled rinceaux grow out of
+   the left and right plates toward the middle — same stone as the putti. */
+.modules-center,
+box.modules-center {
+    padding-left: 16px;
+    padding-right: 16px;
+    background-repeat: no-repeat, no-repeat;
+    background-position: left center, right center;
+    background-size: 120px 30px, 120px 30px;
+}
+
+.modules-left,
+box.modules-left {
+    padding-right: 96px;
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 118px 28px;
+}
+
+.modules-right,
+box.modules-right {
+    padding-left: 96px;
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: 118px 28px;
 }
 
 /* scripts/angel-flare.py adds .flare on every workspace switch. Image URLs
@@ -93,6 +172,22 @@ window#waybar.empty #window,
 
 #custom-angel-right.flare {
     animation: angel-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#custom-cherub-left.flare {
+    animation: cherub-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#custom-cherub-right.flare {
+    animation: cherub-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#custom-cherub-outer-left.flare {
+    animation: cherub-outer-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+#custom-cherub-outer-right.flare {
+    animation: cherub-outer-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 /* Workspaces and clock share one uninterrupted slab so the angels read as
@@ -165,7 +260,7 @@ window#waybar.empty #window,
 
    Cinzel's figures are proportional, so a 1 is narrower than an 8 and the
    plate changed width on almost every tick, dragging the workspaces, both
-   angels and the whole centre cluster sideways with it. The clock is the one
+   standing angels, the outer putti and the whole centre cluster sideways with it. The clock is the one
    module whose text changes every second, so it takes the monospaced face and
    keeps a fixed advance per digit; the rest of the bar stays on Cinzel. */
 #clock {
@@ -209,13 +304,16 @@ window#waybar.empty #window,
     transition: all 0.15s ease-in-out;
 }
 
-/* Left outer edge of the first plate */
+/* Left outer edge of the first plate — corbel engraved on the slab. */
 #custom-swaync {
     border-left: 1px solid #2A2A38;
     color: @color1;
     font-size: 13px;
-    padding-left: 11px;
+    padding-left: 18px;
     margin-left: 4px;
+    background-repeat: no-repeat;
+    background-position: 3px center;
+    background-size: 8px 18px;
 }
 
 #custom-swaync:hover {
@@ -242,10 +340,13 @@ window#waybar.empty #window,
 /* PulseAudio (Icon Only) - right outer edge of the first plate */
 #pulseaudio {
     border-right: 1px solid #2A2A38;
-    margin-right: 5px;
+    margin-right: 2px;
     color: @color1;
     font-size: 13px;
-    padding-right: 11px;
+    padding-right: 18px;
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 8px 18px;
 }
 
 #pulseaudio:hover {
@@ -289,14 +390,34 @@ window#waybar.empty #window,
     padding: 2px 6px;
 }
 
-/* Right outer edge of the power plate */
+/* Carved rivet between the status plate and the power plate. */
+#custom-patera {
+    min-width: 16px;
+    min-height: 26px;
+    margin: 4px 3px;
+    padding: 0;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+    border: none;
+    box-shadow: none;
+    color: transparent;
+    font-size: 1px;
+}
+
+/* Right outer edge of the power plate — mascaron instead of a nerd-font glyph. */
 #custom-power {
     border-right: 1px solid #2A2A38;
     margin-right: 6px;
-    color: @color1;
-    font-size: 13px;
+    min-width: 28px;
+    color: transparent;
+    font-size: 1px;
     padding-left: 10px;
     padding-right: 12px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 16px 18px;
 }
 
 #custom-power:hover {

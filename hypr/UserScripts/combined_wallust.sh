@@ -191,6 +191,11 @@ for conf in ["~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini
 # file:// URLs after every refresh; style.css imports this when it exists.
 write_waybar_angel_css() {
     local waybar_dir css left right lit_left lit_right
+    local cherub_left cherub_right lit_cherub_left lit_cherub_right
+    local outer_left outer_right lit_outer_left lit_outer_right
+    local rinceau_left rinceau_right
+    local spread_left spread_right
+    local volute_left lyre lyre_paused corbel_left corbel_right patera mascaron
     waybar_dir=$(imperium_waybar_dir)
     [[ -d $waybar_dir ]] || return
     mkdir -p "$waybar_dir/wallust"
@@ -198,8 +203,31 @@ write_waybar_angel_css() {
     right="$waybar_dir/assets/angel-right.svg"
     lit_left="$waybar_dir/wallust/angel-left-lit.svg"
     lit_right="$waybar_dir/wallust/angel-right-lit.svg"
+    cherub_left="$waybar_dir/assets/cherub-left.svg"
+    cherub_right="$waybar_dir/assets/cherub-right.svg"
+    lit_cherub_left="$waybar_dir/wallust/cherub-left-lit.svg"
+    lit_cherub_right="$waybar_dir/wallust/cherub-right-lit.svg"
+    outer_left="$waybar_dir/assets/cherub-outer-left.svg"
+    outer_right="$waybar_dir/assets/cherub-outer-right.svg"
+    lit_outer_left="$waybar_dir/wallust/cherub-outer-left-lit.svg"
+    lit_outer_right="$waybar_dir/wallust/cherub-outer-right-lit.svg"
+    rinceau_left="$waybar_dir/assets/rinceau-left.svg"
+    rinceau_right="$waybar_dir/assets/rinceau-right.svg"
+    spread_left="$waybar_dir/assets/spread-left.svg"
+    spread_right="$waybar_dir/assets/spread-right.svg"
+    volute_left="$waybar_dir/assets/volute-left.svg"
+    lyre="$waybar_dir/assets/lyre.svg"
+    lyre_paused="$waybar_dir/assets/lyre-paused.svg"
+    corbel_left="$waybar_dir/assets/corbel-left.svg"
+    corbel_right="$waybar_dir/assets/corbel-right.svg"
+    patera="$waybar_dir/assets/patera.svg"
+    mascaron="$waybar_dir/assets/mascaron.svg"
     [[ -f $lit_left ]] || lit_left=$left
     [[ -f $lit_right ]] || lit_right=$right
+    [[ -f $lit_cherub_left ]] || lit_cherub_left=$cherub_left
+    [[ -f $lit_cherub_right ]] || lit_cherub_right=$cherub_right
+    [[ -f $lit_outer_left ]] || lit_outer_left=$outer_left
+    [[ -f $lit_outer_right ]] || lit_outer_right=$outer_right
     [[ -f $left && -f $right ]] || return
 
     css="$waybar_dir/wallust/angel-paths.css"
@@ -210,6 +238,51 @@ write_waybar_angel_css() {
 #custom-angel-right {
     background-image: url("file://${right}");
 }
+#custom-cherub-left {
+    background-image: url("file://${cherub_left}");
+}
+#custom-cherub-right {
+    background-image: url("file://${cherub_right}");
+}
+#custom-cherub-outer-left {
+    background-image: url("file://${outer_left}");
+}
+#custom-cherub-outer-right {
+    background-image: url("file://${outer_right}");
+}
+.modules-center,
+box.modules-center {
+    background-image: url("file://${rinceau_left}"), url("file://${rinceau_right}");
+}
+.modules-left,
+box.modules-left {
+    background-image: url("file://${spread_left}");
+}
+.modules-right,
+box.modules-right {
+    background-image: url("file://${spread_right}");
+}
+#window {
+    background-image: url("file://${volute_left}");
+}
+#mpris {
+    background-image: url("file://${lyre}"), url("file://${corbel_right}");
+}
+#mpris.paused {
+    background-image: url("file://${lyre_paused}"), url("file://${corbel_right}");
+}
+#custom-swaync {
+    background-image: url("file://${corbel_left}");
+}
+#pulseaudio {
+    background-image: url("file://${corbel_right}");
+}
+#custom-patera {
+    background-image: url("file://${patera}");
+}
+#custom-power {
+    background-image: url("file://${mascaron}");
+}
 @keyframes angel-flare-left {
     0% { background-image: url("file://${lit_left}"); }
     100% { background-image: url("file://${left}"); }
@@ -217,6 +290,22 @@ write_waybar_angel_css() {
 @keyframes angel-flare-right {
     0% { background-image: url("file://${lit_right}"); }
     100% { background-image: url("file://${right}"); }
+}
+@keyframes cherub-flare-left {
+    0% { background-image: url("file://${lit_cherub_left}"); }
+    100% { background-image: url("file://${cherub_left}"); }
+}
+@keyframes cherub-flare-right {
+    0% { background-image: url("file://${lit_cherub_right}"); }
+    100% { background-image: url("file://${cherub_right}"); }
+}
+@keyframes cherub-outer-flare-left {
+    0% { background-image: url("file://${lit_outer_left}"); }
+    100% { background-image: url("file://${outer_left}"); }
+}
+@keyframes cherub-outer-flare-right {
+    0% { background-image: url("file://${lit_outer_right}"); }
+    100% { background-image: url("file://${outer_right}"); }
 }
 EOF
 }
