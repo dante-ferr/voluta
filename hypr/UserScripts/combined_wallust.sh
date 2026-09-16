@@ -195,7 +195,7 @@ write_waybar_angel_css() {
     local outer_left outer_right lit_outer_left lit_outer_right
     local rinceau_left rinceau_right
     local spread_left spread_right
-    local volute_left lyre lyre_paused corbel_left corbel_right patera mascaron
+    local volute_left lyre lyre_paused corbel_right patera
     waybar_dir=$(imperium_waybar_dir)
     [[ -d $waybar_dir ]] || return
     mkdir -p "$waybar_dir/wallust"
@@ -218,10 +218,8 @@ write_waybar_angel_css() {
     volute_left="$waybar_dir/assets/volute-left.svg"
     lyre="$waybar_dir/assets/lyre.svg"
     lyre_paused="$waybar_dir/assets/lyre-paused.svg"
-    corbel_left="$waybar_dir/assets/corbel-left.svg"
     corbel_right="$waybar_dir/assets/corbel-right.svg"
     patera="$waybar_dir/assets/patera.svg"
-    mascaron="$waybar_dir/assets/mascaron.svg"
     [[ -f $lit_left ]] || lit_left=$left
     [[ -f $lit_right ]] || lit_right=$right
     [[ -f $lit_cherub_left ]] || lit_cherub_left=$cherub_left
@@ -271,17 +269,8 @@ box.modules-right {
 #mpris.paused {
     background-image: url("file://${lyre_paused}"), url("file://${corbel_right}");
 }
-#custom-swaync {
-    background-image: url("file://${corbel_left}");
-}
-#pulseaudio {
-    background-image: url("file://${corbel_right}");
-}
 #custom-patera {
     background-image: url("file://${patera}");
-}
-#custom-power {
-    background-image: url("file://${mascaron}");
 }
 @keyframes angel-flare-left {
     0% { background-image: url("file://${lit_left}"); }

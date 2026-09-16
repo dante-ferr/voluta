@@ -55,20 +55,8 @@ box.modules-right {
     background-image: url("assets/lyre-paused.svg"), url("assets/corbel-right.svg");
 }
 
-#custom-swaync {
-    background-image: url("assets/corbel-left.svg");
-}
-
-#pulseaudio {
-    background-image: url("assets/corbel-right.svg");
-}
-
 #custom-patera {
     background-image: url("assets/patera.svg");
-}
-
-#custom-power {
-    background-image: url("assets/mascaron.svg");
 }
 
 @keyframes angel-flare-left {

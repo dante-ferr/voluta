@@ -229,7 +229,7 @@
         "tooltip": false
     },
     "custom/power": {
-        "format": " ",
+        "format": "󰐥",
         "on-click": "~/.config/hypr/scripts/Wlogout.sh",
         "tooltip": false
     }

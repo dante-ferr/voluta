@@ -20,7 +20,7 @@ ASSETS = ROOT / "assets"
 TEMPLATES = ROOT.parent / "wallust" / "templates"
 
 PAD = 18
-STROKE = 10
+STROKE = 24
 LIT_STROKE = 34
 CANVAS_W, CANVAS_H = 340, 360
 SCALE = 6

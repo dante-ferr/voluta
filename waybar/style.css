@@ -304,16 +304,13 @@ box.modules-right {
     transition: all 0.15s ease-in-out;
 }
 
-/* Left outer edge of the first plate — corbel engraved on the slab. */
+/* Left outer edge of the first plate. */
 #custom-swaync {
     border-left: 1px solid #2A2A38;
     color: @color1;
     font-size: 13px;
-    padding-left: 18px;
+    padding-left: 11px;
     margin-left: 4px;
-    background-repeat: no-repeat;
-    background-position: 3px center;
-    background-size: 8px 18px;
 }
 
 #custom-swaync:hover {
@@ -343,10 +340,7 @@ box.modules-right {
     margin-right: 2px;
     color: @color1;
     font-size: 13px;
-    padding-right: 18px;
-    background-repeat: no-repeat;
-    background-position: right center;
-    background-size: 8px 18px;
+    padding-right: 11px;
 }
 
 #pulseaudio:hover {
@@ -406,18 +400,14 @@ box.modules-right {
     font-size: 1px;
 }
 
-/* Right outer edge of the power plate — mascaron instead of a nerd-font glyph. */
+/* Right outer edge of the power plate. */
 #custom-power {
     border-right: 1px solid #2A2A38;
     margin-right: 6px;
-    min-width: 28px;
-    color: transparent;
-    font-size: 1px;
+    color: @color1;
+    font-size: 13px;
     padding-left: 10px;
     padding-right: 12px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 16px 18px;
 }
 
 #custom-power:hover {
