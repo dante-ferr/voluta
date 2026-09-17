@@ -17,51 +17,51 @@
   "modules": [
     {
       "type": "custom",
-      "format": "\u001b[1;33m╔══════════════ ✠  \u001b[1;31mREGNUM ATQUE ORDO\u001b[1;33m  ✠ ══════════════╗\u001b[0m"
+      "format": "\u001b[1;33m╔══════════════════════════════════════════════════════╗\u001b[0m"
     },
     {
       "type": "title",
-      "key": " 󰀘 Imperator",
+      "key": " 󰀘 User",
       "keyColor": "yellow"
     },
     {
       "type": "os",
-      "key": "  Regnum",
+      "key": "  OS",
       "keyColor": "yellow"
     },
     {
       "type": "host",
-      "key": " 󰍹 Arx",
+      "key": " 󰍹 Host",
       "keyColor": "yellow"
     },
     {
       "type": "kernel",
-      "key": " 󰒋 Nucleus",
+      "key": " 󰒋 Kernel",
       "keyColor": "yellow"
     },
     {
       "type": "wm",
-      "key": " 󱂬 Curia",
+      "key": " 󱂬 WM",
       "keyColor": "yellow"
     },
     {
       "type": "shell",
-      "key": " 󰞷 Interpres",
+      "key": " 󰞷 Shell",
       "keyColor": "yellow"
     },
     {
       "type": "terminal",
-      "key": "  Terminalis",
+      "key": "  Terminal",
       "keyColor": "yellow"
     },
     {
       "type": "uptime",
-      "key": " 󰅐 Aevum",
+      "key": " 󰅐 Uptime",
       "keyColor": "yellow"
     },
     {
       "type": "memory",
-      "key": " 󰍛 Memoria",
+      "key": " 󰍛 Memory",
       "keyColor": "yellow"
     },
     {
