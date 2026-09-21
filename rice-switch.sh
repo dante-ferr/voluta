@@ -8,7 +8,15 @@ RICE="${1:-toggle}"
 # This script lives in the imperium rice; resolve it so clones outside
 # ~/imperivm-dotfiles still switch correctly.
 IMPERIUM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEFAULT_DIR="${IMPERIUM_DEFAULT_DIR:-$HOME/dotfiles}"
+if [[ -n "${IMPERIUM_DEFAULT_DIR:-}" ]]; then
+    DEFAULT_DIR="$IMPERIUM_DEFAULT_DIR"
+elif [[ -d "$HOME/Hyprland-Dots" ]]; then
+    DEFAULT_DIR="$HOME/Hyprland-Dots"
+elif [[ -d "$HOME/Arch-Hyprland/Hyprland-Dots" ]]; then
+    DEFAULT_DIR="$HOME/Arch-Hyprland/Hyprland-Dots"
+else
+    DEFAULT_DIR="$HOME/dotfiles"
+fi
 DEPS_FILE="$IMPERIUM_DIR/deps/arch.txt"
 FLOORP_FLATPAK="one.ablaze.floorp"
 
@@ -27,7 +35,7 @@ if [[ "$RICE" == "imperium" ]]; then
     echo "⚡ Switching to Imperium Cyber-Sacred rice..."
 elif [[ "$RICE" == "default" || "$RICE" == "main" ]]; then
     TARGET_DIR="$DEFAULT_DIR"
-    echo "🔄 Switching to Default rice..."
+    echo "🔄 Switching to Default rice ($TARGET_DIR)..."
 else
     echo "Usage: $0 [imperium | default | toggle]"
     exit 1
@@ -151,6 +159,9 @@ fi
 link_config() {
     local name="$1"
     local src="$TARGET_DIR/$name"
+    if [[ ! -e "$src" && -e "$TARGET_DIR/config/$name" ]]; then
+        src="$TARGET_DIR/config/$name"
+    fi
     local dest="$HOME/.config/$name"
 
     if [[ -d "$src" || -f "$src" ]]; then
@@ -159,6 +170,8 @@ link_config() {
         fi
         ln -s "$src" "$dest"
         echo "  Linked ~/.config/$name -> $src"
+    elif [[ -L "$dest" ]]; then
+        rm -f "$dest"
     fi
 }
 
@@ -169,6 +182,8 @@ link_config() {
 link_home() {
     local name="$1"
     local src="$TARGET_DIR/$name"
+    [[ -e "$src" ]] || src="$TARGET_DIR/.$name"
+    [[ -e "$src" ]] || src="$TARGET_DIR/config/$name"
     local dest="$HOME/.$name"
 
     if [[ -f "$src" ]]; then
@@ -183,6 +198,7 @@ link_home() {
 link_home_file() {
     local name="$1"
     local src="$TARGET_DIR/$name"
+    [[ -e "$src" ]] || src="$IMPERIUM_DIR/$name"
     local dest="$HOME/$name"
 
     if [[ -f "$src" ]]; then
@@ -236,6 +252,12 @@ elif command -v wallust >/dev/null 2>&1; then
     hyprctl reload >/dev/null 2>&1 || true
     pkill -x waybar || true
     sleep 0.2
+    local waybar_dir shim
+    waybar_dir=$(readlink -f "${HOME}/.config/waybar" 2>/dev/null || true)
+    shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
+    if [[ -f $shim ]]; then
+        export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
+    fi
     waybar >/dev/null 2>&1 &
 fi
 

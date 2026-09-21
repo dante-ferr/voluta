@@ -38,8 +38,8 @@ hl.config({
         blur = {
             enabled = true,
             special = true, -- Blur background behind special workspace
-            size = 8,
-            passes = 3,
+            size = 2,
+            passes = 2,
             new_optimizations = true,
             -- Windows are opaque by rule, so this only ever reaches surfaces that
             -- ask for alpha themselves — kitty being the one that does.
@@ -48,7 +48,7 @@ hl.config({
             popups = true,
             -- Darkened and desaturated: a bright wallpaper behind a translucent
             -- terminal otherwise washes out the foreground text.
-            brightness = 0.72,
+            brightness = 0.65,
             contrast = 1.05,
             vibrancy = 0.15,
             vibrancy_darkness = 0.4,
