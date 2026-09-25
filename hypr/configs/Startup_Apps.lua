@@ -26,8 +26,8 @@ hl.on("hyprland.start", function()
 
     hl.exec_cmd("playerctld daemon || true")
 
-    -- Idle Daemon (Hypridle)
-    hl.exec_cmd("sh -c 'pgrep -x hypridle >/dev/null || hypridle &'")
+    -- Idle daemon. hypridle.<hostname>.conf wins when present.
+    hl.exec_cmd(Scripts .. "/StartHypridle.sh")
 
     -- Clipboard manager
     hl.exec_cmd("sh -c 'pgrep -x cliphist >/dev/null || (wl-paste --type text --watch cliphist store & wl-paste --type image --watch cliphist store &)'")

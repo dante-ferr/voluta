@@ -321,13 +321,14 @@ add-zsh-hook chpwd load-conda-env
 # Run once on startup in case you start terminal already in a project folder
 load-conda-env
 
-# Force VA-API for hardware video decoding
+# Force VA-API for hardware video decoding.
+# frank-notebook's panel is the Intel iGPU, so NVIDIA VA-API stays off there.
 export MOZ_DISABLE_RDD_SANDBOX=1
-# Forcing the NVIDIA driver on Intel/AMD machines breaks their VA-API setup, so
-# only export it where an NVIDIA GPU is actually present.
-if lspci 2>/dev/null | grep -qi nvidia; then
+host_name=$(cat /etc/hostname 2>/dev/null || true)
+if [[ "$host_name" != "frank-notebook" ]] && lspci 2>/dev/null | grep -qi nvidia; then
     export LIBVA_DRIVER_NAME=nvidia
 fi
+unset host_name
 
 # Force Wayland usage (if applicable)
 export MOZ_ENABLE_WAYLAND=1

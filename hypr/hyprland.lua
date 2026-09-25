@@ -35,3 +35,22 @@ load_module("configs.Startup_Apps")
 -- 5. Dynamic Monitor & Workspace Layout (from nwg-displays)
 load_module("monitors")
 load_module("workspaces")
+
+-- 6. Notebook power overrides. Desktop hostname "frank" does not load this.
+local function machine_hostname()
+    local f = io.open("/etc/hostname", "r")
+    if not f then
+        return ""
+    end
+    local name = f:read("*l") or ""
+    f:close()
+    return (name:gsub("%s+$", ""))
+end
+
+if machine_hostname() == "frank-notebook" then
+    local power = hypr_dir .. "/hosts/frank-notebook-power.lua"
+    local ok, err = pcall(dofile, power)
+    if not ok then
+        print(string.format("[Hyprland.lua] Error loading %s: %s", power, tostring(err)))
+    end
+end
