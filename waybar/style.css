@@ -47,11 +47,10 @@ window#waybar {
 }
 
 #mpris {
-    padding-left: 28px;
-    padding-right: 16px;
-    background-repeat: no-repeat, no-repeat;
-    background-position: 8px center, right center;
-    background-size: 14px 16px, 8px 18px;
+    padding-left: 24px;
+    background-repeat: no-repeat;
+    background-position: 6px center;
+    background-size: 12px 17px;
 }
 
 /* Waybar tags the bar with .empty when no window is focused */

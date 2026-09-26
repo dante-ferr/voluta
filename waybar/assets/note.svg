@@ -1,0 +1,8 @@
+<!-- Imperium waybar - mpris note. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 8 52 72" width="52" height="72">
+  <g fill="none" stroke="#C4C4D0" stroke-width="5.2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M34.58,57.86 C36.76,62.33 32.89,68.70 25.95,72.09 C19.00,75.48 11.60,74.60 9.42,70.14 C7.24,65.67 11.11,59.30 18.05,55.91 C25.00,52.52 32.40,53.40 34.58,57.86 Z" fill="#C4C4D0" stroke="none"/>
+    <path d="M33.2,60 V14"/>
+    <path d="M33.2,14 C48,20 50,38 38,48"/>
+  </g>
+</svg>

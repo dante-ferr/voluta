@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Generate waybar plate ornaments: cairo draw → contour → SVG.
 
-Not part of the runtime bar. Incised marks (volute, corbel, lyre, mascaron)
-are contour-only so they read on the #0A0A0E plates. The patera is filled
-stone: it sits in the gap between the two right-hand plates.
+Not part of the runtime bar. Incised marks (volute, corbel, mascaron)
+are contour-only so they read on the #0A0A0E plates. The mpris mark is a
+single quaver, drawn directly so it stays legible at bar size. The patera
+is filled stone: it sits in the gap between the two right-hand plates.
 """
 from __future__ import annotations
 
@@ -299,20 +300,19 @@ def draw_corbel(ctx):
     ellipse(ctx, 52, 96, 12, 6, 35)
 
 
-def draw_lyre(ctx):
-    """Lyre: two horns, a yoke, a rounded base."""
-    capsule(ctx, 40, 108, 36, 48, 6.5)
-    capsule(ctx, 80, 108, 84, 48, 6.5)
-    ellipse(ctx, 32, 36, 14, 11, -20)
-    ellipse(ctx, 88, 36, 14, 11, 20)
-    circle(ctx, 28, 28, 7)
-    circle(ctx, 92, 28, 7)
-    capsule(ctx, 40, 58, 80, 58, 4.5)
-    ellipse(ctx, 60, 118, 22, 14, 0)
-    circle(ctx, 60, 128, 10)
-    capsule(ctx, 52, 64, 52, 108, 2.4)
-    capsule(ctx, 60, 64, 60, 112, 2.4)
-    capsule(ctx, 68, 64, 68, 108, 2.4)
+def note_svg(paused=False):
+    """Eighth note drawn as strokes so it stays legible at bar size."""
+    slash = '\n    <path d="M8,18 L50,74"/>' if paused else ""
+    state = ", paused" if paused else ""
+    return f"""<!-- Imperium waybar - mpris note{state}. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 8 52 72" width="52" height="72">
+  <g fill="none" stroke="{PLATE_STROKE}" stroke-width="5.2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M34.58,57.86 C36.76,62.33 32.89,68.70 25.95,72.09 C19.00,75.48 11.60,74.60 9.42,70.14 C7.24,65.67 11.11,59.30 18.05,55.91 C25.00,52.52 32.40,53.40 34.58,57.86 Z" fill="{PLATE_STROKE}" stroke="none"/>
+    <path d="M33.2,60 V14"/>
+    <path d="M33.2,14 C48,20 50,38 38,48"/>{slash}
+  </g>
+</svg>
+"""
 
 
 def draw_mascaron(ctx):
@@ -359,9 +359,9 @@ def main():
     )
     print("volute: stroke")
     emit_incised("corbel", draw_corbel, 90, 170, "plate corbel", mirror_too=True)
-    emit_incised("lyre", draw_lyre, 130, 160, "mpris lyre")
-    mute = '<path d="M28,28 92,132" />'
-    emit_incised("lyre-paused", draw_lyre, 130, 160, "mpris lyre, paused", extra=mute)
+    (ASSETS / "note.svg").write_text(note_svg())
+    (ASSETS / "note-paused.svg").write_text(note_svg(paused=True))
+    print("note: stroke")
     mp = mascaron_paths()
     (ASSETS / "mascaron.svg").write_text(svg_strokes(mp, 80, 100, "power mascaron", stroke=6))
     print("mascaron: stroke")

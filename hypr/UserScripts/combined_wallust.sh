@@ -195,7 +195,7 @@ write_waybar_angel_css() {
     local outer_left outer_right lit_outer_left lit_outer_right
     local rinceau_left rinceau_right
     local spread_left spread_right
-    local volute_left lyre lyre_paused corbel_right patera
+    local volute_left note note_paused patera
     waybar_dir=$(imperium_waybar_dir)
     [[ -d $waybar_dir ]] || return
     mkdir -p "$waybar_dir/wallust"
@@ -216,9 +216,8 @@ write_waybar_angel_css() {
     spread_left="$waybar_dir/assets/spread-left.svg"
     spread_right="$waybar_dir/assets/spread-right.svg"
     volute_left="$waybar_dir/assets/volute-left.svg"
-    lyre="$waybar_dir/assets/lyre.svg"
-    lyre_paused="$waybar_dir/assets/lyre-paused.svg"
-    corbel_right="$waybar_dir/assets/corbel-right.svg"
+    note="$waybar_dir/assets/note.svg"
+    note_paused="$waybar_dir/assets/note-paused.svg"
     patera="$waybar_dir/assets/patera.svg"
     [[ -f $lit_left ]] || lit_left=$left
     [[ -f $lit_right ]] || lit_right=$right
@@ -264,10 +263,10 @@ box.modules-right {
     background-image: url("file://${volute_left}");
 }
 #mpris {
-    background-image: url("file://${lyre}"), url("file://${corbel_right}");
+    background-image: url("file://${note}");
 }
 #mpris.paused {
-    background-image: url("file://${lyre_paused}"), url("file://${corbel_right}");
+    background-image: url("file://${note_paused}");
 }
 #custom-patera {
     background-image: url("file://${patera}");

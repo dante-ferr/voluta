@@ -48,11 +48,11 @@ box.modules-right {
 }
 
 #mpris {
-    background-image: url("assets/lyre.svg"), url("assets/corbel-right.svg");
+    background-image: url("assets/note.svg");
 }
 
 #mpris.paused {
-    background-image: url("assets/lyre-paused.svg"), url("assets/corbel-right.svg");
+    background-image: url("assets/note-paused.svg");
 }
 
 #custom-patera {
