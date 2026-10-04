@@ -224,6 +224,7 @@ link_config "wlogout"
 link_config "starship.toml"
 
 link_home "zshrc"
+link_home "zprofile"
 link_home_file "rice-select.sh"
 link_home_file "rice-switch.sh"
 

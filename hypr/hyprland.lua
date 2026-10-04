@@ -36,7 +36,7 @@ load_module("configs.Startup_Apps")
 load_module("monitors")
 load_module("workspaces")
 
--- 6. Notebook power overrides. Desktop hostname "frank" does not load this.
+-- 6. Host overrides. hosts/<hostname>.lua, then hosts/<hostname>-power.lua.
 local function machine_hostname()
     local f = io.open("/etc/hostname", "r")
     if not f then
@@ -47,10 +47,23 @@ local function machine_hostname()
     return (name:gsub("%s+$", ""))
 end
 
-if machine_hostname() == "frank-notebook" then
-    local power = hypr_dir .. "/hosts/frank-notebook-power.lua"
-    local ok, err = pcall(dofile, power)
-    if not ok then
-        print(string.format("[Hyprland.lua] Error loading %s: %s", power, tostring(err)))
+local hostname = machine_hostname()
+
+local function load_host_file(path)
+    local f = io.open(path, "r")
+    if not f then
+        return
     end
+    f:close()
+    local ok, err = pcall(dofile, path)
+    if not ok then
+        print(string.format("[Hyprland.lua] Error loading %s: %s", path, tostring(err)))
+    end
+end
+
+if hostname ~= "" then
+    -- hosts/frank-notebook.lua turns shadows off. It was never sourced, so
+    -- the notebook kept the desktop shadow path.
+    load_host_file(hypr_dir .. "/hosts/" .. hostname .. ".lua")
+    load_host_file(hypr_dir .. "/hosts/" .. hostname .. "-power.lua")
 end

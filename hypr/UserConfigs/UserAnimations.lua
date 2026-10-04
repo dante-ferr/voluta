@@ -11,7 +11,6 @@ hl.config({
 hl.curve("fluidDecel", { type = "bezier", points = { { 0.16, 1.0 }, { 0.30, 1.0 } } })
 hl.curve("snappySpring", { type = "bezier", points = { { 0.05, 0.95 }, { 0.15, 1.05 } } })
 hl.curve("softEaseInOut", { type = "bezier", points = { { 0.42, 0.0 }, { 0.58, 1.0 } } })
-hl.curve("linearBorder", { type = "bezier", points = { { 1.0, 1.0 }, { 1.0, 1.0 } } })
 hl.curve("fastOut", { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
 
 -- Window Animations
@@ -20,9 +19,11 @@ hl.animation({ leaf = "windowsIn", enabled = true, speed = 5, bezier = "snappySp
 hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "fastOut", style = "popin 85%" })
 hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "fluidDecel", style = "slide" })
 
--- Border and Gradient Angle
+-- Border color fades. borderangle stays off: the borders are solid wallust
+-- colors, and style=loop damages them every frame. On the 200Hz panel that
+-- kept the GPU mapping new blur and shadow buffers until the driver locked.
 hl.animation({ leaf = "border", enabled = true, speed = 5, bezier = "fluidDecel" })
-hl.animation({ leaf = "borderangle", enabled = true, speed = 60, bezier = "linearBorder", style = "loop" })
+hl.animation({ leaf = "borderangle", enabled = false })
 
 -- Fade transitions
 hl.animation({ leaf = "fade", enabled = true, speed = 4, bezier = "softEaseInOut" })

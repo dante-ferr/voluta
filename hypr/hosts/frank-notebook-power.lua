@@ -1,5 +1,8 @@
 -- Power profile for frank-notebook. Loaded only when /etc/hostname matches.
--- The shared UserSettings keep the desktop on the NVIDIA GL and VA-API path.
+-- Hyprland and the apps it launches stay on the Intel iGPU: Mesa GLX and
+-- the iHD VA-API driver. hosts/frank.lua (NVIDIA GLX) is not loaded here.
+-- CUDA is not masked, so an ML job can still open the
+-- dGPU without the compositor holding it awake.
 ---@module 'hl'
 
 hl.env("LIBVA_DRIVER_NAME", "iHD")

@@ -45,7 +45,10 @@ hl.config({
             -- ask for alpha themselves — kitty being the one that does.
             xray = false,
             ignore_opacity = false,
-            popups = true,
+            -- Chromium and Brave popups hand Hyprland regions with a zero or
+            -- negative extent. pixman_region32_init_rect rejects those, and
+            -- the following blur pass is what reset the GL context.
+            popups = false,
             -- Darkened and desaturated: a bright wallpaper behind a translucent
             -- terminal otherwise washes out the foreground text.
             brightness = 0.65,
@@ -56,8 +59,11 @@ hl.config({
         },
         shadow = {
             enabled = true,
-            range = 24,
-            render_power = 3,
+            -- range 24 at render_power 3 on the 1440p@200 output, plus the
+            -- 1080p panel, was allocating shadow textures until the NVIDIA
+            -- BAR1 aperture returned NV_ERR_NO_MEMORY.
+            range = 8,
+            render_power = 2,
             sharp = false, -- Soft falloff, even though the windows are square
             color = shadow_of(shadow_base, "B3"),
             color_inactive = shadow_of(shadow_base, "59"),
@@ -65,4 +71,15 @@ hl.config({
             scale = 0.98,
         },
     },
+})
+
+-- Brave stays opaque. Blur, shadows, and the popin animation on that class
+-- are what preceded the GPU reset (media-process SIGILL, then Hyprland ABRT
+-- in CHyprOpenGLImpl::begin).
+hl.window_rule({
+    name = "brave-skip-effects",
+    match = { class = "^(brave-browser|Brave-browser)$" },
+    no_blur = true,
+    no_shadow = true,
+    no_anim = true,
 })

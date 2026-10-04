@@ -9,11 +9,17 @@ hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("CLUTTER_BACKEND", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
--- NVIDIA: required for a stable suspend/resume with hyprlock. Without these
--- the lock greeter can freeze on the DRM reset and only a reboot recovers it.
-hl.env("LIBVA_DRIVER_NAME", "nvidia")
-hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
-hl.env("NVD_BACKEND", "direct")
+-- nvidia-vaapi-driver maps every decoded frame through the GPU's BAR1
+-- window. Brave's media process then dies with SIGILL, the driver reports
+-- NV_ERR_NO_MEMORY, and Hyprland aborts on the GL context reset. The
+-- restarted compositor comes up on the built-in defaults. Suspend recovery
+-- is after_sleep.sh (DPMS on, then force_renderer_reload), not VA-API.
+-- hl.env values stick for the life of the process, so these empty writes
+-- clear LIBVA_DRIVER_NAME=nvidia and NVD_BACKEND=direct left by an older
+-- config. The notebook power file then sets Intel VA-API. Host GL overrides
+-- live in hosts/<hostname>.lua.
+hl.env("LIBVA_DRIVER_NAME", "")
+hl.env("NVD_BACKEND", "")
 
 hl.config({
     general = {

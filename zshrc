@@ -1,3 +1,10 @@
+# SDDM starts a login shell before uwsm. If this file is pulled into that
+# non-interactive shell, oh-my-zsh, conda, or starship can exit it. SDDM
+# then clears the password field and shows the greeter again.
+if [[ ! -o interactive ]]; then
+    return
+fi
+
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
@@ -321,16 +328,21 @@ add-zsh-hook chpwd load-conda-env
 # Run once on startup in case you start terminal already in a project folder
 load-conda-env
 
-# Force VA-API for hardware video decoding.
-# frank-notebook's panel is the Intel iGPU, so NVIDIA VA-API stays off there.
-export MOZ_DISABLE_RDD_SANDBOX=1
+# frank: do not use nvidia-vaapi-driver. It SIGILL-crashes Brave and then
+# resets the Hyprland GL context. GLX and GBM stay on the values Hyprland set.
+# frank-notebook: Hyprland stays on the Intel iGPU. Re-pin VA-API and GLX
+# here so a shell cannot inherit a desktop NVIDIA value. CUDA is untouched,
+# so ML jobs can still open the dGPU on purpose.
+unset NVD_BACKEND
 host_name=$(cat /etc/hostname 2>/dev/null || true)
-if [[ "$host_name" != "frank-notebook" ]] && lspci 2>/dev/null | grep -qi nvidia; then
-    export LIBVA_DRIVER_NAME=nvidia
+if [[ "$host_name" == "frank-notebook" ]]; then
+    export LIBVA_DRIVER_NAME=iHD
+    export __GLX_VENDOR_LIBRARY_NAME=mesa
+    unset GBM_BACKEND
+else
+    unset LIBVA_DRIVER_NAME
 fi
 unset host_name
-
-# Force Wayland usage (if applicable)
 export MOZ_ENABLE_WAYLAND=1
 
 

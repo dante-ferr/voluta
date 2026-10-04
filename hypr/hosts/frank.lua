@@ -27,7 +27,17 @@ hl.config({
         movefocus_cycles_fullscreen = true,
     },
     misc = {
-        vrr = 1,
+        -- DP-2 is 200Hz and HDMI-A-1 is 60Hz. VRR on the NVIDIA open module
+        -- in that mix is one of the paths that ends in "GPU is probably locked".
+        vrr = 0,
         allow_session_lock_restore = true,
     },
 })
+
+-- Desktop only. hyprland.lua loads this file when /etc/hostname is frank.
+-- frank-notebook never reaches this line. VA-API stays off so Brave does
+-- not load nvidia-vaapi-driver (see UserSettings.lua).
+-- Do not set GBM_BACKEND here. Hyprland reads it while opening the DRM
+-- device; nvidia-drm makes that open fail and SDDM returns to the password
+-- field. The compositor already selects this machine's only GPU.
+hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
