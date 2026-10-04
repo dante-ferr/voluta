@@ -234,6 +234,14 @@ end
 hl.bind("SUPER + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind("SUPER + mouse_up", hl.dsp.focus({ workspace = "e-1" }))
 
+-- Kitty (and some other apps) request maximize on map. Without this, Super+Return
+-- opens a maximized window instead of tiling into the dwindle grid.
+hl.window_rule({
+    name = "suppress-maximize-events",
+    match = { class = ".*" },
+    suppress_event = "maximize",
+})
+
 hl.window_rule({
     name = "widget-pixel-art",
     match = { title = "^(pixel-art-widget)$" },
