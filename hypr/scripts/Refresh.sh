@@ -20,10 +20,13 @@ shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
 if [[ -f $shim ]]; then
     export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
+# shellcheck source=waybar-config.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/waybar-config.sh"
+waybar_prepare_config "${waybar_dir:+$waybar_dir/config}"
 if [[ -d ${waybar_dir:-} ]]; then
-    (cd "$waybar_dir" && setsid waybar >/dev/null 2>&1 &)
+    (cd "$waybar_dir" && setsid waybar "${waybar_config_args[@]}" >/dev/null 2>&1 &)
 else
-    setsid waybar >/dev/null 2>&1 &
+    setsid waybar "${waybar_config_args[@]}" >/dev/null 2>&1 &
 fi
 
 # 3. Reload SwayNC Notification Center

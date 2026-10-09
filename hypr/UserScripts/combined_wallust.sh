@@ -317,6 +317,12 @@ launch_waybar() {
 
     waybar_dir=$(imperium_waybar_dir)
     local shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
+    local _waybar_cfg
+    _waybar_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/scripts/waybar-config.sh"
+    [[ -r $_waybar_cfg ]] || _waybar_cfg="$(cd "$(dirname "${BASH_SOURCE[0]}")/../scripts" && pwd)/waybar-config.sh"
+    # shellcheck source=../scripts/waybar-config.sh
+    source "$_waybar_cfg"
+    waybar_prepare_config "${waybar_dir:+$waybar_dir/config}"
     (
         exec 9>&-
         if [[ -f $shim ]]; then
@@ -325,7 +331,7 @@ launch_waybar() {
         if [[ -d $waybar_dir ]]; then
             cd "$waybar_dir" || exit 0
         fi
-        exec setsid -f waybar >/dev/null 2>&1
+        exec setsid -f waybar "${waybar_config_args[@]}" >/dev/null 2>&1
     ) &
     disown $! 2>/dev/null || true
 }

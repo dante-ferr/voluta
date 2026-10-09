@@ -11,8 +11,12 @@ if [[ -f $shim ]]; then
     export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
 
+# shellcheck source=waybar-config.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/waybar-config.sh"
+waybar_prepare_config "${waybar_dir:+$waybar_dir/config}"
+
 if [[ -d ${waybar_dir:-} ]]; then
-    (cd "$waybar_dir" && exec waybar)
+    (cd "$waybar_dir" && exec waybar "${waybar_config_args[@]}")
 else
-    exec waybar
+    exec waybar "${waybar_config_args[@]}"
 fi
