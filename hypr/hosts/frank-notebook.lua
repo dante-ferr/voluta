@@ -19,6 +19,9 @@ hl.config({
         follow_mouse = 1,
         touchpad = {
             natural_scroll = true,
+            -- Keep the pad alive while typing. The built-in default pauses
+            -- it on every key, which makes pointer work impossible.
+            disable_while_typing = false,
         },
     },
     misc = {
