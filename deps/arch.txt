@@ -36,7 +36,11 @@ playerctl
 brightnessctl
 
 # Apps assumed by keybinds / HUD
-nautilus
+dolphin
+dolphin-plugins
+ffmpegthumbs
+kdegraphics-thumbnailers
+konsole
 btop
 rofimoji
 obs-cmd

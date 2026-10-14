@@ -126,6 +126,7 @@
             "class<.*pavucontrol.*>": "󰕾",
             "class<org.pulseaudio.pavucontrol>": "󰕾",
             "class<steam>": "󰓓",
+            "class<.*dolphin.*>": "󰉋",
             "class<.*nautilus.*>": "󰉋",
             "class<thunar>": "󰉋",
             "class<waypaper>": "󰸉",

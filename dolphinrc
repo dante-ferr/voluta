@@ -1,0 +1,28 @@
+[CompactMode]
+PreviewSize=16
+
+[DetailsMode]
+ExpandableFolders=true
+PreviewSize=16
+
+[General]
+BrowseThroughArchives=true
+ConfirmClosingMultipleTabs=true
+FilterBar=true
+GlobalViewProps=true
+ShowFullPath=true
+ShowFullPathInTitlebar=true
+ShowSelectionToggle=false
+ShowZoomSlider=false
+UseTabForSwitchingSplitView=true
+Version=202
+
+[IconsMode]
+PreviewSize=80
+
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22
+
+[MainWindow]
+MenuBar=Disabled

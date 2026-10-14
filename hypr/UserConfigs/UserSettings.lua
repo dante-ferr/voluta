@@ -9,6 +9,9 @@ hl.env("SDL_VIDEODRIVER", "wayland")
 hl.env("CLUTTER_BACKEND", "wayland")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_TYPE", "wayland")
+-- Qt otherwise stays on the light Fusion style. qt6ct also covers Qt 5
+-- here. paint_dolphin_theme.sh points that palette at the wallust Imperium theme.
+hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 -- nvidia-vaapi-driver maps every decoded frame through the GPU's BAR1
 -- window. Brave's media process then dies with SIGILL, the driver reports
 -- NV_ERR_NO_MEMORY, and Hyprland aborts on the GL context reset. The

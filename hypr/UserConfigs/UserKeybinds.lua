@@ -43,7 +43,7 @@ end
 
 -- 1. App Launchers
 hl.bind("SUPER + Return", hl.dsp.exec_cmd("kitty"))
-hl.bind("SUPER + E", hl.dsp.exec_cmd("nautilus"))
+hl.bind("SUPER + E", hl.dsp.exec_cmd("dolphin"))
 hl.bind("SUPER + B", hl.dsp.exec_cmd("brave"))
 hl.bind("SUPER + W", hl.dsp.exec_cmd("waypaper"))
 hl.bind("SUPER + D", hl.dsp.exec_cmd("pkill rofi || rofi -show drun -theme " .. home .. "/.config/rofi/dashboard.rasi"))

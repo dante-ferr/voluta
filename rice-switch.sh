@@ -222,11 +222,17 @@ link_config "swaync"
 link_config "waypaper"
 link_config "wlogout"
 link_config "starship.toml"
+link_config "dolphinrc"
 
 link_home "zshrc"
 link_home "zprofile"
 link_home_file "rice-select.sh"
 link_home_file "rice-switch.sh"
+
+if [[ "$RICE" == "imperium" && -f /usr/share/applications/org.kde.dolphin.desktop ]]; then
+    xdg-mime default org.kde.dolphin.desktop inode/directory || true
+    xdg-mime default org.kde.dolphin.desktop application/x-directory || true
+fi
 
 # SDDM lives under /usr/share; apply the Imperium greeter when we can.
 if [[ "$RICE" == "imperium" && -x "$TARGET_DIR/sddm/install.sh" ]]; then

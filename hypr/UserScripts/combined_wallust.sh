@@ -376,6 +376,13 @@ finish_refresh() {
         source "$HOME/.config/wlogout/paint-icons.sh"
         paint_wlogout_icons
     fi
+
+    local dolphin_paint
+    dolphin_paint="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/UserScripts/paint_dolphin_theme.sh"
+    [[ -r $dolphin_paint ]] || dolphin_paint="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/paint_dolphin_theme.sh"
+    if [[ -r $dolphin_paint ]]; then
+        bash "$dolphin_paint" || true
+    fi
 }
 
 do_refresh() {

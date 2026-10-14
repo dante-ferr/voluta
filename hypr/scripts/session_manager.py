@@ -171,6 +171,14 @@ def resolve_command(client):
         return "telegram-desktop", home
 
     # 5. File Managers
+    if "dolphin" in cls:
+        try:
+            cwd = os.readlink(f"/proc/{pid}/cwd")
+            if os.path.isdir(cwd):
+                return f"dolphin '{cwd}'", cwd
+        except Exception:
+            pass
+        return "dolphin", home
     if "nautilus" in cls or "org.gnome.nautilus" in cls:
         try:
             cwd = os.readlink(f"/proc/{pid}/cwd")
