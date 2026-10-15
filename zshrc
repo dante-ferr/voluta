@@ -163,6 +163,10 @@ _imperium_cursor_row() {
 }
 
 _imperium_draw_banner() {
+    # Dolphin's panel is Konsole. Kitty does not set this, so its banner stays.
+    if [[ -n $KONSOLE_VERSION ]]; then
+        return 0
+    fi
     # Never drawn means never onscreen, so every hook below stays a no-op.
     _imperium_banner_fits || return 0
     if [[ -f "$HOME/.config/fastfetch/config.jsonc" ]]; then
@@ -296,7 +300,12 @@ count_loc_clean() {
 # Not every machine has linuxbrew; unguarded, this eval errors on every shell.
 [[ -x /home/linuxbrew/.linuxbrew/bin/brew ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
 
-eval "$(starship init zsh)"
+# Kitty keeps Starship. Dolphin's panel is Konsole, and that panel stays a bare prompt.
+if [[ -n $KONSOLE_VERSION ]]; then
+	PROMPT='❯ '
+else
+	eval "$(starship init zsh)"
+fi
 # opencode
 export PATH=$HOME/.opencode/bin:$PATH
 

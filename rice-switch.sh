@@ -224,6 +224,30 @@ link_config "wlogout"
 link_config "starship.toml"
 link_config "dolphinrc"
 
+# Dolphin keeps custom shortcuts in kxmlgui, outside ~/.config.
+if [[ -f "$TARGET_DIR/dolphin/dolphinui.rc" ]]; then
+    kxml_dest="$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc"
+    mkdir -p "$(dirname "$kxml_dest")"
+    ln -sfn "$TARGET_DIR/dolphin/dolphinui.rc" "$kxml_dest"
+    echo "  Linked $kxml_dest"
+fi
+
+# The wrapper loads the live palette hook. A user desktop file beats the
+# system one, and DBus activation would skip Exec, so that flag stays off.
+if [[ -x "$TARGET_DIR/dolphin/launch.sh" || -f "$TARGET_DIR/dolphin/launch.sh" ]]; then
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+    chmod +x "$TARGET_DIR/dolphin/launch.sh"
+    ln -sfn "$TARGET_DIR/dolphin/launch.sh" "$HOME/.local/bin/dolphin"
+    echo "  Linked $HOME/.local/bin/dolphin"
+    if [[ -f /usr/share/applications/org.kde.dolphin.desktop ]]; then
+        desktop_dst="$HOME/.local/share/applications/org.kde.dolphin.desktop"
+        sed -e "s|^Exec=dolphin |Exec=$HOME/.local/bin/dolphin |" \
+            -e "s|^DBusActivatable=true|DBusActivatable=false|" \
+            /usr/share/applications/org.kde.dolphin.desktop > "$desktop_dst"
+        echo "  Wrote $desktop_dst"
+    fi
+fi
+
 link_home "zshrc"
 link_home "zprofile"
 link_home_file "rice-select.sh"

@@ -18,7 +18,9 @@ exec python3 - "$root" "$colors" "$HOME" <<'PY'
 import json
 import os
 import re
+import subprocess
 import sys
+import time
 
 root, colors_path, home = sys.argv[1:4]
 
@@ -89,8 +91,10 @@ def readable(color, against, minimum=7.0):
 def hx(color):
     return f"{color[0]:02x}{color[1]:02x}{color[2]:02x}"
 
-def rgb(color):
-    return f"{color[0]},{color[1]},{color[2]}"
+def rgb(color, alpha=None):
+    if alpha is None:
+        return f"{color[0]},{color[1]},{color[2]}"
+    return f"{color[0]},{color[1]},{color[2]},{alpha}"
 
 def argb(color, alpha="ff"):
     return f"#{alpha}{hx(color)}"
@@ -104,37 +108,36 @@ fg = palette["fg"]
 accent_src = palette.get("1") or fg
 secondary_src = palette.get("2") or accent_src
 negative_src = palette.get("3") or accent_src
-paper = palette.get("15") or lighten(fg, 0.4)
 
-# View background stays a hair above pure black so rows have a surface.
-# Text is pushed toward ivory until it is obviously readable on that surface.
-mantle = mix(bg, (255, 255, 255), 0.03)
-base = mix(bg, fg, 0.08)
-surface0 = mix(bg, fg, 0.12)
+# Keep the wallpaper hues. A fixed lift toward white made every dark
+# wallpaper collapse to the same surface and ivory text.
+mantle = bg
+base = mix(bg, fg, 0.07)
+surface0 = mix(bg, fg, 0.11)
 accent = accent_src
-while luminance(accent) < 0.22:
-    accent = lighten(accent, 0.1)
+while contrast(accent, mantle) < 2.4 and luminance(accent) < 0.5:
+    accent = lighten(accent, 0.07)
 secondary = secondary_src
-while luminance(secondary) < 0.18:
-    secondary = lighten(secondary, 0.1)
+while contrast(secondary, mantle) < 2.2 and luminance(secondary) < 0.5:
+    secondary = lighten(secondary, 0.07)
 negative = negative_src
-while luminance(negative) < 0.2:
-    negative = lighten(negative, 0.1)
-text = readable(mix(paper, (255, 248, 240), 0.55), mantle, 8.0)
-muted = mix(text, mantle, 0.42)
-while contrast(muted, mantle) < 4.5:
-    muted = lighten(muted, 0.06)
-alternate = mix(mantle, text, 0.05)
-hover = mix(mantle, accent, 0.28)
-select_bg = mix(mantle, accent, 0.62)
-if luminance(select_bg) > 0.28:
-    select_bg = mix(mantle, accent, 0.4)
-selection_text = readable(text, select_bg, 5.0)
+while contrast(negative, mantle) < 2.2 and luminance(negative) < 0.5:
+    negative = lighten(negative, 0.07)
+text = fg
+if contrast(text, mantle) < 4.5:
+    text = readable(text, mantle, 4.5)
+muted = mix(text, mantle, 0.38)
+while contrast(muted, mantle) < 3.5:
+    muted = lighten(muted, 0.05)
+alternate = mix(mantle, text, 0.06)
+hover = mix(mantle, accent, 0.34)
+select_bg = mix(mantle, accent, 0.72)
+selection_text = text if contrast(text, select_bg) >= 4.5 else readable(text, select_bg, 4.5)
 surface1 = mix(surface0, accent, 0.35)
 surface2 = muted
-link = lighten(accent, 0.16)
+link = lighten(accent, 0.12)
 icon_accent = accent
-while luminance(icon_accent) < 0.34:
+while contrast(icon_accent, mantle) < 3.0 and luminance(icon_accent) < 0.55:
     icon_accent = lighten(icon_accent, 0.08)
 shadow = darken(bg, 0.4)
 
@@ -170,8 +173,27 @@ theme_dir = os.path.join(home, ".config", "Kvantum", "imperium")
 os.makedirs(theme_dir, exist_ok=True)
 with open(os.path.join(theme_dir, "imperium.svg"), "w", encoding="utf-8") as handle:
     handle.write(fill(svg_in))
+filled_kv = fill(kv_in)
 with open(os.path.join(theme_dir, "imperium.kvconfig"), "w", encoding="utf-8") as handle:
-    handle.write(fill(kv_in))
+    handle.write(filled_kv)
+
+# Dolphin gets a roomier copy of the same theme. Other Qt apps keep the
+# tighter Imperium margins.
+dolphin_theme = os.path.join(home, ".config", "Kvantum", "dolphin")
+os.makedirs(dolphin_theme, exist_ok=True)
+# Spacing stays at the template value so Places / Remote / Recent do not
+# grow a second time. Translucency is dolphin-only; other Qt apps stay solid.
+dolphin_kv = filled_kv.replace("layout_margin=4", "layout_margin=12", 1)
+dolphin_kv = dolphin_kv.replace("translucent_windows=false", "translucent_windows=true", 1)
+# 12% reduction is 88% opacity. Kitty is 75%, so Dolphin stays easier to read.
+dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=12", 1)
+with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
+    handle.write(dolphin_kv)
+svg_link = os.path.join(dolphin_theme, "dolphin.svg")
+svg_target = os.path.join(theme_dir, "imperium.svg")
+if os.path.lexists(svg_link):
+    os.remove(svg_link)
+os.symlink(svg_target, svg_link)
 
 kvantum_rc = os.path.join(home, ".config", "Kvantum", "kvantum.kvconfig")
 if os.path.isfile(kvantum_rc):
@@ -185,6 +207,15 @@ elif "[General]" in rc:
     rc = rc.replace("[General]", "[General]\ntheme=imperium", 1)
 else:
     rc = "[General]\ntheme=imperium\n" + rc
+if "[Applications]" not in rc:
+    rc = rc.rstrip() + "\n\n[Applications]\n"
+for app_name in ("dolphin", "org.kde.dolphin"):
+    if re.search(rf"(?m)^{app_name}=", rc):
+        rc = re.sub(rf"(?m)^{app_name}=.*$", f"{app_name}=dolphin", rc)
+    else:
+        rc = rc.rstrip() + f"\n{app_name}=dolphin"
+if not rc.endswith("\n"):
+    rc += "\n"
 with open(kvantum_rc, "w", encoding="utf-8") as handle:
     handle.write(rc)
 
@@ -223,8 +254,6 @@ inactive_roles = list(roles)
 inactive_roles[12] = select_bg
 inactive_roles[13] = selection_text
 inactive = ", ".join(argb(color) for color in inactive_roles)
-placeholder = roles[:]
-placeholder[-1] = surface2
 # PlaceholderText keeps a half-alpha so empty fields stay quiet.
 active_parts = active.split(", ")
 active_parts[-1] = argb(surface2, "80")
@@ -252,8 +281,91 @@ sel_fg = hx(selection_text)
 hover_hex = hx(hover)
 edge = hx(mix(accent, mantle, 0.45))
 panel = hx(base)
+quiet = hx(muted)
 with open(qss_path, "w", encoding="utf-8") as handle:
     handle.write(f"""
+DolphinMainWindow {{
+    color: #{ivory};
+    padding: 18px;
+}}
+DolphinMainWindow QToolBar {{
+    background-color: transparent;
+    border: none;
+    padding: 8px 12px;
+    spacing: 6px;
+    margin: 8px 12px 6px 12px;
+}}
+DolphinMainWindow QStatusBar {{
+    background-color: transparent;
+    color: #{quiet};
+    border: none;
+    padding: 8px 16px;
+    margin: 6px 12px 12px 12px;
+}}
+DolphinMainWindow QDockWidget {{
+    background-color: transparent;
+    color: #{ivory};
+    border: none;
+    titlebar-close-icon: none;
+    margin: 10px;
+    padding: 6px;
+}}
+DolphinMainWindow QToolButton {{
+    background-color: transparent;
+    color: #{ivory};
+    border: none;
+    padding: 6px;
+    margin: 0 2px;
+}}
+DolphinMainWindow QToolButton:hover {{
+    background-color: #{hover_hex};
+    color: #{ivory};
+}}
+DolphinMainWindow QDockWidget::title {{
+    background-color: transparent;
+    color: #{quiet};
+    padding: 10px 14px 4px 14px;
+    border: none;
+}}
+QDockWidget#terminalDock {{
+    min-height: 220px;
+}}
+QDockWidget#terminalDock::title {{
+    max-height: 0px;
+    padding: 0;
+    margin: 0;
+}}
+TerminalPanel {{
+    background-color: transparent;
+    color: #{ivory};
+    border: none;
+    min-height: 200px;
+}}
+TerminalPanel QWidget {{
+    background-color: transparent;
+    color: #{ivory};
+    border: none;
+}}
+DolphinStatusBar QLabel {{
+    min-width: 240px;
+    color: #{quiet};
+}}
+TerminalPanel QMenuBar, TerminalPanel QToolBar, TerminalPanel QTabBar {{
+    max-height: 0px;
+    min-height: 0px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background-color: transparent;
+}}
+TerminalPanel QScrollBar:vertical {{
+    width: 0px;
+    max-width: 0px;
+}}
+TerminalPanel QScrollBar:horizontal {{
+    height: 0px;
+    max-height: 0px;
+}}
 QTreeView, QListView, QTableView, QColumnView {{
     background-color: #{bg_hex};
     alternate-background-color: #{alt_hex};
@@ -262,10 +374,30 @@ QTreeView, QListView, QTableView, QColumnView {{
     selection-color: #{sel_fg};
     outline: 0;
     border: none;
+    padding: 4px;
+}}
+DolphinMainWindow QGraphicsView,
+DolphinMainWindow KItemListContainer,
+DolphinMainWindow QTreeView,
+DolphinMainWindow QListView,
+DolphinMainWindow QTableView,
+DolphinMainWindow QColumnView,
+DolphinMainWindow QHeaderView::section {{
+    background-color: transparent;
+    alternate-background-color: transparent;
+    color: #{ivory};
+    border: none;
+    padding: 8px;
 }}
 QTreeView::item, QListView::item, QTableView::item {{
     color: #{ivory};
-    padding: 3px 6px;
+    padding: 6px 12px;
+    background-color: transparent;
+}}
+DolphinMainWindow QTreeView::item,
+DolphinMainWindow QListView::item {{
+    background-color: transparent;
+    alternate-background-color: transparent;
 }}
 QTreeView::item:hover, QListView::item:hover, QTableView::item:hover {{
     background-color: #{hover_hex};
@@ -276,12 +408,38 @@ QTreeView::item:selected:!active, QListView::item:selected:!active, QTableView::
     background-color: #{sel_hex};
     color: #{sel_fg};
 }}
-QHeaderView::section {{
-    background-color: #{panel};
+DolphinMainWindow KFilePlacesView {{
+    background-color: transparent;
+    qproperty-spacing: 4;
+    padding: 4px 8px 8px 12px;
+}}
+DolphinMainWindow KFilePlacesView::item {{
     color: #{ivory};
+    background-color: transparent;
+    padding: 4px 12px;
+    margin: 0px;
+}}
+DolphinMainWindow KFilePlacesView::item:hover {{
+    background-color: #{hover_hex};
+    color: #{ivory};
+}}
+DolphinMainWindow KFilePlacesView::item:selected {{
+    background-color: #{sel_hex};
+    color: #{sel_fg};
+}}
+QHeaderView::section {{
+    background-color: #{bg_hex};
+    color: #{quiet};
     border: none;
     border-bottom: 1px solid #{edge};
-    padding: 4px 8px;
+    padding: 8px 12px;
+}}
+FilterBar {{
+    max-height: 0px;
+    min-height: 0px;
+    margin: 0px;
+    padding: 0px;
+    border: none;
 }}
 QToolTip {{
     background-color: #{panel};
@@ -289,8 +447,17 @@ QToolTip {{
     border: 1px solid #{edge};
     padding: 4px 8px;
 }}
+QMenu {{
+    background-color: #{panel};
+    color: #{ivory};
+    border: 1px solid #{edge};
+}}
+QMenu::item:selected {{
+    background-color: #{sel_hex};
+    color: #{sel_fg};
+}}
 QPlainTextEdit, QTextEdit, KTextEdit {{
-    background-color: #{bg_hex};
+    background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
     selection-background-color: #{sel_hex};
@@ -362,10 +529,10 @@ os.makedirs(os.path.dirname(qt_conf), exist_ok=True)
 with open(qt_conf, "w", encoding="utf-8") as handle:
     handle.writelines(out_lines)
 
-def scheme_group(background, alternate_bg, foreground):
+def scheme_group(background, alternate_bg, foreground, background_alpha=None):
     return "\n".join([
-        f"BackgroundAlternate={rgb(alternate_bg)}",
-        f"BackgroundNormal={rgb(background)}",
+        f"BackgroundAlternate={rgb(alternate_bg, background_alpha)}",
+        f"BackgroundNormal={rgb(background, background_alpha)}",
         f"DecorationFocus={rgb(icon_accent)}",
         f"DecorationHover={rgb(lighten(icon_accent, 0.1))}",
         f"ForegroundActive={rgb(text)}",
@@ -438,6 +605,42 @@ scheme_dir = os.path.join(home, ".local", "share", "color-schemes")
 os.makedirs(scheme_dir, exist_ok=True)
 with open(os.path.join(scheme_dir, "Imperium.colors"), "w", encoding="utf-8") as handle:
     handle.write(scheme)
+
+# A fresh filename misses KColorScheme's in-process cache. View and window
+# backgrounds in this copy are 88% opaque. Fully clear backgrounds were
+# flattened to black by opaque widgets. The shared Imperium scheme stays
+# opaque for every other Qt app.
+def clear_backgrounds(body):
+    groups = {"Colors:View", "Colors:Window", "Colors:Complementary"}
+    lines = []
+    group = ""
+    for line in body.splitlines():
+        if line.startswith("[") and line.endswith("]"):
+            group = line[1:-1]
+        elif group in groups and (
+            line.startswith("BackgroundNormal=") or line.startswith("BackgroundAlternate=")
+        ):
+            if line.count(",") == 2:
+                # The file view must stay clear so it does not paint a second
+                # near-black slab over the window. The window fill is 88%.
+                line += ",0" if group == "Colors:View" else ",224"
+        lines.append(line)
+    return "\n".join(lines) + "\n"
+
+live_stamp = str(time.time_ns())
+live_scheme = os.path.join(scheme_dir, f"dolphin-live-{live_stamp}.colors")
+with open(live_scheme, "w", encoding="utf-8") as handle:
+    handle.write(clear_backgrounds(scheme))
+for name in os.listdir(scheme_dir):
+    if not name.startswith("dolphin-live-") or not name.endswith(".colors"):
+        continue
+    if name == os.path.basename(live_scheme):
+        continue
+    try:
+        os.remove(os.path.join(scheme_dir, name))
+    except OSError:
+        pass
+live_conf = os.path.join(home, ".config", "qt6ct", "dolphin-live.conf")
 
 kdeglobals = os.path.join(home, ".config", "kdeglobals")
 font_kde = "JetBrains Mono,11,-1,5,50,0,0,0,0,0,Regular"
@@ -560,6 +763,12 @@ def paint_icons():
 
 paint_icons()
 
+# The icon files have to be in place before Dolphin is told the palette
+# changed, or the repaint keeps the previous pixmaps.
+os.makedirs(os.path.dirname(live_conf), exist_ok=True)
+with open(live_conf, "w", encoding="utf-8") as handle:
+    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}\n")
+
 konsole_dir = os.path.join(home, ".local", "share", "konsole")
 os.makedirs(konsole_dir, exist_ok=True)
 ansi = []
@@ -584,7 +793,7 @@ scheme_body = "\n".join([
     f"Color={rgb(muted)}",
     "[General]",
     "Description=Imperium",
-    "Opacity=1",
+    "Opacity=0.88",
     "",
 ]) + "\n" + "\n".join(ansi)
 with open(os.path.join(konsole_dir, "Imperium.colorscheme"), "w", encoding="utf-8") as handle:
@@ -592,15 +801,25 @@ with open(os.path.join(konsole_dir, "Imperium.colorscheme"), "w", encoding="utf-
 with open(os.path.join(konsole_dir, "Imperium.profile"), "w", encoding="utf-8") as handle:
     handle.write(
         "[Appearance]\n"
+        "BoldIntense=false\n"
         "ColorScheme=Imperium\n"
         "Font=JetBrains Mono,11\n"
+        "LineSpacing=0\n"
         "\n"
         "[General]\n"
         "Name=Imperium\n"
         "Parent=FALLBACK/\n"
+        f"Command={root}/dolphin/terminal.sh\n"
+        f"Environment=STARSHIP_CONFIG={root}/dolphin/starship.toml\n"
+        "TerminalRows=12\n"
         "\n"
         "[Scrolling]\n"
         "HistoryMode=1\n"
+        "ScrollBarPosition=0\n"
+        "\n"
+        "[Terminal Features]\n"
+        "BlinkingCursorEnabled=false\n"
+        "TerminalMargin=2\n"
     )
 konsolerc = os.path.join(home, ".config", "konsolerc")
 if os.path.isfile(konsolerc):
@@ -609,6 +828,9 @@ if os.path.isfile(konsolerc):
 else:
     konsole_lines = ["[Desktop Entry]\n", "[General]\n"]
 konsole_lines = ensure_pair(konsole_lines, "Desktop Entry", "DefaultProfile", "Imperium.profile")
+konsole_lines = ensure_pair(konsole_lines, "KonsoleWindow", "ShowMenuBarByDefault", "false")
+konsole_lines = ensure_pair(konsole_lines, "MainWindow", "MenuBar", "Disabled")
+konsole_lines = ensure_pair(konsole_lines, "TabBar", "TabBarVisibility", "AlwaysHideTabBar")
 with open(konsolerc, "w", encoding="utf-8") as handle:
     handle.writelines(konsole_lines)
 
@@ -623,4 +845,63 @@ if not os.path.isfile(view_file):
             "PreviewsShown=true\n"
             "HiddenFilesShown=false\n"
         )
+
+def session_env():
+    env = os.environ.copy()
+    runtime = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    env["XDG_RUNTIME_DIR"] = runtime
+    env.setdefault("DBUS_SESSION_BUS_ADDRESS", f"unix:path={runtime}/bus")
+    return env
+
+def push_open_windows(stylesheet):
+    """Push the new stylesheet into Dolphin windows that are already open."""
+    env = session_env()
+    try:
+        listing = subprocess.check_output(
+            ["busctl", "--user", "list", "--no-legend"], text=True, env=env, stderr=subprocess.DEVNULL
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return
+    for line in listing.splitlines():
+        service = line.split()[0] if line.split() else ""
+        if not service.startswith("org.kde.dolphin-"):
+            continue
+        try:
+            tree = subprocess.check_output(
+                ["busctl", "--user", "tree", service], text=True, env=env, stderr=subprocess.DEVNULL
+            )
+        except (OSError, subprocess.CalledProcessError):
+            continue
+        for raw in tree.splitlines():
+            if "/dolphin/Dolphin_" not in raw and raw.strip().split()[-1:] != ["/MainApplication"]:
+                continue
+            path = raw.strip().split()[-1]
+            if path != "/MainApplication" and path.count("/") != 2:
+                continue
+            interface = (
+                "org.qtproject.Qt.QApplication"
+                if path == "/MainApplication"
+                else "org.qtproject.Qt.QWidget"
+            )
+            subprocess.run(
+                [
+                    "busctl", "--user", "call", service, path,
+                    interface, "setStyleSheet", "s", stylesheet,
+                ],
+                env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        for raw in tree.splitlines():
+            if "/Sessions/" not in raw:
+                continue
+            path = raw.strip().split()[-1]
+            subprocess.run(
+                [
+                    "busctl", "--user", "call", service, path,
+                    "org.kde.konsole.Session", "setProfile", "s", "Imperium",
+                ],
+                env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+
+with open(qss_path, encoding="utf-8") as handle:
+    push_open_windows(handle.read())
 PY

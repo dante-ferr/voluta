@@ -8,7 +8,7 @@ PreviewSize=16
 [General]
 BrowseThroughArchives=true
 ConfirmClosingMultipleTabs=true
-FilterBar=true
+FilterBar=false
 GlobalViewProps=true
 ShowFullPath=true
 ShowFullPathInTitlebar=true

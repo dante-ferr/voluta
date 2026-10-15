@@ -103,6 +103,15 @@ def get_terminal_cwd(pid):
     return candidates[0] if candidates else os.path.expanduser("~")
 
 
+def dolphin_launch(argument=""):
+    """Prefer the wrapper that loads the live palette hook."""
+    wrapper = os.path.expanduser("~/.local/bin/dolphin")
+    binary = wrapper if os.path.isfile(wrapper) and os.access(wrapper, os.X_OK) else "dolphin"
+    if argument:
+        return f"{binary} {argument}"
+    return binary
+
+
 def resolve_command(client):
     """Determine the accurate launch command and working directory for a window."""
     cls = (client.get("class") or client.get("initialClass") or "").lower()
@@ -175,10 +184,10 @@ def resolve_command(client):
         try:
             cwd = os.readlink(f"/proc/{pid}/cwd")
             if os.path.isdir(cwd):
-                return f"dolphin '{cwd}'", cwd
+                return dolphin_launch(f"'{cwd}'"), cwd
         except Exception:
             pass
-        return "dolphin", home
+        return dolphin_launch(), home
     if "nautilus" in cls or "org.gnome.nautilus" in cls:
         try:
             cwd = os.readlink(f"/proc/{pid}/cwd")
