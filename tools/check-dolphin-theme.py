@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -31,6 +32,29 @@ def generator_python() -> str:
     match = re.search(r"^exec python3 - \"\$root\".*?<<'PY'\n(.*?)^PY$", shell, re.M | re.S)
     check(match is not None, "could not find embedded theme generator")
     return match.group(1).replace(ICON_SOURCE, "__TEST_ICON_SOURCE__")
+
+
+def verify_worker_selection(base: Path) -> None:
+    # Exercise the process selector without sending a signal to any process.
+    definition = next(node for node in ast.parse(generator_python()).body
+                      if isinstance(node, ast.FunctionDef) and node.name == "session_thumbnail_worker")
+    scope = {"os": os}
+    exec(compile(ast.Module(body=[definition], type_ignores=[]), str(GENERATOR), "exec"), scope)
+    matches = scope["session_thumbnail_worker"]
+    base.mkdir()
+    (base / "exe").symlink_to("/usr/lib/kf6/kioworker")
+    thumbnail = b"/usr/lib/kf6/kioworker\0/usr/lib/qt6/plugins/kf6/kio/thumbnail.so\0"
+    (base / "cmdline").write_bytes(thumbnail)
+    (base / "environ").write_bytes(b"DBUS_SESSION_BUS_ADDRESS=unix:path=/tmp/test-bus,guid=123\0")
+    check(matches(str(base), "unix:path=/tmp/test-bus"), "thumbnail worker on this session was not selected")
+    check(not matches(str(base), "unix:path=/tmp/another-bus"), "another session's worker was selected")
+    (base / "cmdline").write_bytes(thumbnail.replace(b"thumbnail.so", b"file.so"))
+    check(not matches(str(base), "unix:path=/tmp/test-bus"), "file-transfer worker was selected")
+    (base / "cmdline").write_bytes(thumbnail)
+    (base / "exe").unlink()
+    (base / "exe").symlink_to("/usr/bin/dolphin")
+    check(not matches(str(base), "unix:path=/tmp/test-bus"), "application process was selected")
+    check(not matches(str(base / "missing"), "unix:path=/tmp/test-bus"), "vanished process was selected")
 
 
 def png_with_text(key: str, value: str) -> bytes:
@@ -240,6 +264,7 @@ def verify_cache_refresh(base: Path, source: Path) -> None:
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="dolphin-theme-check-") as temporary:
         base = Path(temporary)
+        verify_worker_selection(base / "worker-selector")
         icon_source = base / "breeze-dark"
         (icon_source / "scalable/places").mkdir(parents=True)
         (icon_source / "index.theme").write_text("[Icon Theme]\nName=Breeze Dark\n", encoding="utf-8")

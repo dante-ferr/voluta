@@ -590,6 +590,12 @@ private:
             widget->update();
             if (widget->inherits("DolphinView")) {
                 QMetaObject::invokeMethod(widget, "reload", Qt::QueuedConnection);
+                // An idle thumbnail worker's closed connection is discovered
+                // on its next request. Retry after KIO discards that connection
+                // so visible folder composites come from the new worker.
+                QTimer::singleShot(600, widget, [widget] {
+                    QMetaObject::invokeMethod(widget, "reload", Qt::QueuedConnection);
+                });
             }
         }
     }

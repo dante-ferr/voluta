@@ -18,6 +18,8 @@ exec python3 - "$root" "$colors" "$HOME" <<'PY'
 import json
 import os
 import re
+import select
+import signal
 import subprocess
 import sys
 import time
@@ -199,6 +201,7 @@ dolphin_kv = fill(kv_in, dolphin_tokens).replace("layout_margin=4", "layout_marg
 dolphin_kv = dolphin_kv.replace("translucent_windows=false", "translucent_windows=true", 1)
 # 94% opacity keeps the wallpaper subtle; Kitty remains at 75%.
 dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=6", 1)
+dolphin_kv = dolphin_kv.replace("splitter_width=7", "splitter_width=2", 1)
 with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(dolphin_kv)
 svg_path = os.path.join(dolphin_theme, "dolphin.svg")
@@ -324,10 +327,18 @@ DolphinMainWindow QDockWidget {{
 }}
 DolphinMainWindow::separator {{
     background-color: #{edge};
-    width: 3px;
-    height: 3px;
+    width: 2px;
+    height: 2px;
 }}
 DolphinMainWindow::separator:hover {{
+    background-color: #{hx(accent)};
+}}
+DolphinMainWindow QSplitter::handle {{
+    background-color: #{edge};
+    width: 2px;
+    height: 2px;
+}}
+DolphinMainWindow QSplitter::handle:hover {{
     background-color: #{hx(accent)};
 }}
 DolphinMainWindow QDockWidget#placesDock {{
@@ -761,6 +772,7 @@ def paint_icons():
     stamp = os.path.join(dest, ".accent")
     preview_stamp = os.path.join(dest, ".folder-preview-accent")
     accent_hex = hx(icon_accent)
+    preview_token = accent_hex + ":workers-v2"
     previous_accent = None
     previous_preview_accent = None
     if os.path.isfile(preview_stamp):
@@ -769,7 +781,7 @@ def paint_icons():
     if os.path.isfile(stamp):
         with open(stamp, encoding="utf-8") as handle:
             previous_accent = handle.read().strip()
-        if previous_accent == accent_hex and previous_preview_accent == accent_hex:
+        if previous_accent == accent_hex and previous_preview_accent == preview_token:
             return
     if not os.path.isdir(source):
         return
@@ -807,18 +819,18 @@ def paint_icons():
     # KIO's inode/directory thumbnail is a composite containing the current
     # folder icon. Remove only those composites when their tint changes; the
     # other cached previews are user data and remain valid across icon themes.
-    if previous_accent != accent_hex or previous_preview_accent != accent_hex:
+    if previous_accent != accent_hex or previous_preview_accent != preview_token:
         invalidate_folder_thumbnails()
+        recycle_thumbnail_workers()
 
     with open(stamp, "w", encoding="utf-8") as handle:
         handle.write(accent_hex + "\n")
     # The separate stamp also repairs previews cached before invalidation was
     # implemented, even when this first application keeps the current accent.
     with open(preview_stamp, "w", encoding="utf-8") as handle:
-        handle.write(accent_hex + "\n")
-    # KIO thumbnail workers can outlive a job and keep their own icon loader.
-    # Broadcast KDE's normal icon-change signal so those workers reload the
-    # same theme before Dolphin asks them to rebuild folder composites.
+        handle.write(preview_token + "\n")
+    # Notify other Qt clients too. Thumbnail workers are restarted above
+    # because their blocking loop cannot consume this Qt theme notification.
     env = os.environ.copy()
     runtime = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
     env["XDG_RUNTIME_DIR"] = runtime
@@ -830,6 +842,53 @@ def paint_icons():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+
+def session_thumbnail_worker(proc_dir, address):
+    """Match only this user's thumbnail plugin on the same session bus."""
+    try:
+        if os.stat(proc_dir).st_uid != os.getuid():
+            return False
+        executable = os.readlink(os.path.join(proc_dir, "exe"))
+        if os.path.basename(executable) != "kioworker":
+            return False
+        with open(os.path.join(proc_dir, "cmdline"), "rb") as handle:
+            args = handle.read().split(b"\0")
+        if len(args) < 2:
+            return False
+        plugin = os.fsdecode(args[1])
+        if os.path.basename(plugin) != "thumbnail.so" or os.path.basename(os.path.dirname(plugin)) != "kio":
+            return False
+        # Read only to compare the bus; never print process environments.
+        with open(os.path.join(proc_dir, "environ"), "rb") as handle:
+            environment = handle.read().split(b"\0")
+        bus = next((entry.split(b"=", 1)[1] for entry in environment if entry.startswith(b"DBUS_SESSION_BUS_ADDRESS=")), b"")
+        return os.fsdecode(bus).split(",guid=", 1)[0] == address.split(",guid=", 1)[0]
+    except OSError:
+        return False
+
+def recycle_thumbnail_workers():
+    # The thumbnail worker's blocking dispatchLoop doesn't service Qt's theme
+    # notifications. Its QIcon cache therefore survives the icon-change signal.
+    # Retire only thumbnail workers; file and network workers are left alone.
+    runtime = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    address = os.environ.get("DBUS_SESSION_BUS_ADDRESS") or f"unix:path={runtime}/bus"
+    for entry in os.listdir("/proc"):
+        if not entry.isdecimal():
+            continue
+        descriptor = None
+        try:
+            # Pin the process before inspecting it, avoiding PID reuse races.
+            descriptor = os.pidfd_open(int(entry))
+            if session_thumbnail_worker(os.path.join("/proc", entry), address):
+                signal.pidfd_send_signal(descriptor, signal.SIGTERM)
+                exited = select.poll()
+                exited.register(descriptor, select.POLLIN)
+                exited.poll(250)
+        except OSError:
+            pass
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
 
 def png_text_metadata(path):
     """Read PNG text chunks without decoding or exposing cached image data."""
@@ -1082,7 +1141,7 @@ def push_open_windows(stylesheet):
 os.makedirs(os.path.dirname(live_conf), exist_ok=True)
 pending_conf = live_conf + "." + live_stamp
 with open(pending_conf, "w", encoding="utf-8") as handle:
-    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}\nterminal={terminal_live}\n")
+    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}:workers-v2\nterminal={terminal_live}\n")
 os.replace(pending_conf, live_conf)
 
 with open(qss_path, encoding="utf-8") as handle:
