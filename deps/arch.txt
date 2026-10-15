@@ -38,11 +38,6 @@ playerctl
 brightnessctl
 
 # Apps assumed by keybinds / HUD
-dolphin
-dolphin-plugins
-ffmpegthumbs
-kdegraphics-thumbnailers
-konsole
 btop
 rofimoji
 obs-cmd
@@ -52,6 +47,23 @@ jq
 # Audio stack (wpctl)
 pipewire
 wireplumber
+
+# Dolphin file manager, thumbnailers, and the live palette hook.
+# launch.sh compiles dolphin/live.cpp against Qt6 and KIconThemes.
+dolphin
+dolphin-plugins
+ffmpegthumbs
+kdegraphics-thumbnailers
+kio-extras
+konsole
+breeze
+breeze-icons
+kvantum
+qt6ct
+qt6-base
+kiconthemes
+pkgconf
+gcc
 
 # Fonts (waybar / hyprlock / rofi / sddm)
 ttf-jetbrains-mono

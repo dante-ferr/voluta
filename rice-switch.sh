@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# rice-switch.sh - Toggle between system dotfiles rices (default vs imperium)
+# rice-switch.sh - Toggle between ~/dotfiles and this Imperium rice.
+# JaKooLit's Hyprland-Dots is a separate tree and is not a switch target.
 
 set -e
 
@@ -10,12 +11,10 @@ RICE="${1:-toggle}"
 IMPERIUM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -n "${IMPERIUM_DEFAULT_DIR:-}" ]]; then
     DEFAULT_DIR="$IMPERIUM_DEFAULT_DIR"
-elif [[ -d "$HOME/Hyprland-Dots" ]]; then
-    DEFAULT_DIR="$HOME/Hyprland-Dots"
-elif [[ -d "$HOME/Arch-Hyprland/Hyprland-Dots" ]]; then
-    DEFAULT_DIR="$HOME/Arch-Hyprland/Hyprland-Dots"
-else
+elif [[ -d "$HOME/dotfiles" ]]; then
     DEFAULT_DIR="$HOME/dotfiles"
+else
+    DEFAULT_DIR=""
 fi
 DEPS_FILE="$IMPERIUM_DIR/deps/arch.txt"
 FLOORP_FLATPAK="one.ablaze.floorp"
@@ -34,6 +33,10 @@ if [[ "$RICE" == "imperium" ]]; then
     TARGET_DIR="$IMPERIUM_DIR"
     echo "⚡ Switching to Imperium Cyber-Sacred rice..."
 elif [[ "$RICE" == "default" || "$RICE" == "main" ]]; then
+    if [[ -z "$DEFAULT_DIR" || ! -d "$DEFAULT_DIR" ]]; then
+        echo "No default rice directory. Expected ~/dotfiles, or set IMPERIUM_DEFAULT_DIR."
+        exit 1
+    fi
     TARGET_DIR="$DEFAULT_DIR"
     echo "🔄 Switching to Default rice ($TARGET_DIR)..."
 else
@@ -44,7 +47,10 @@ fi
 # --- Imperium dependency bootstrap ------------------------------------------
 
 pkg_installed() {
-    pacman -Q "$1" >/dev/null 2>&1
+    pacman -Q "$1" >/dev/null 2>&1 && return 0
+    # Some tools are already on disk without a pacman entry. Matching only
+    # /usr/bin avoids the Imperium Dolphin wrapper in ~/.local/bin.
+    [[ -x "/usr/bin/$1" ]]
 }
 
 collect_missing_pkgs() {
@@ -102,24 +108,44 @@ ensure_imperium_deps() {
             notify-send "Imperium Rice" "paru missing; install: ${missing_pkgs[*]}" 2>/dev/null || true
         else
             installer=$(mktemp /tmp/imperium-deps-XXXXXX.sh)
+            log=$(mktemp /tmp/imperium-deps-XXXXXX.log)
             {
                 echo '#!/usr/bin/env bash'
-                echo 'set -e'
-                echo 'echo "Installing Imperium packages with paru..."'
-                printf 'paru -S --needed --noconfirm'
-                printf ' %q' "${missing_pkgs[@]}"
-                echo
-                echo 'echo'
-                echo 'echo "Done. Press Enter to close."'
-                echo 'read -r'
+                echo 'set -o pipefail'
+                echo 'log=$1'
+                echo 'fail=0'
+                echo 'echo "Installing Imperium packages with paru..." | tee -a "$log"'
+                # One package per transaction. A file conflict in one name
+                # must not roll back the rest of the rice.
+                for pkg in "${missing_pkgs[@]}"; do
+                    printf 'echo ">> %q" | tee -a "$log"\n' "$pkg"
+                    printf 'if ! paru -S --needed --noconfirm %q 2>&1 | tee -a "$log"; then\n' "$pkg"
+                    echo '  fail=1'
+                    echo 'fi'
+                done
+                echo 'if ((fail != 0)); then'
+                echo '  echo "Install failed." | tee -a "$log"'
+                echo '  exit 1'
+                echo 'fi'
+                echo 'echo "Packages installed." | tee -a "$log"'
             } >"$installer"
             chmod +x "$installer"
-            if command -v kitty >/dev/null 2>&1; then
-                kitty --class imperium-deps --title "Imperium deps" -e bash "$installer" || true
+            # A graphical switch has no terminal for paru's password prompt.
+            # The installer tees into the log, so a closed window still explains a failure.
+            if command -v kitty >/dev/null 2>&1 && [[ -n ${WAYLAND_DISPLAY:-}${DISPLAY:-} ]]; then
+                kitty --class imperium-deps --title "Imperium deps" -e bash "$installer" "$log" || true
             else
-                bash "$installer" || true
+                bash "$installer" "$log" || true
             fi
-            rm -f "$installer"
+            if [[ -s "$log" ]]; then
+                cat "$log"
+            fi
+            rm -f "$installer" "$log"
+            collect_missing_pkgs
+            if ((${#MISSING_PKGS[@]} > 0)); then
+                echo "⚠️  Still missing: ${MISSING_PKGS[*]}"
+                notify-send "Imperium Rice" "Still missing: ${MISSING_PKGS[*]}" 2>/dev/null || true
+            fi
         fi
     fi
 
@@ -197,17 +223,26 @@ link_home() {
 
 link_home_file() {
     local name="$1"
-    local src="$TARGET_DIR/$name"
-    [[ -e "$src" ]] || src="$IMPERIUM_DIR/$name"
+    local src="${2:-$TARGET_DIR/$name}"
     local dest="$HOME/$name"
 
     if [[ -f "$src" ]]; then
-        if [[ -L "$dest" || -e "$dest" ]]; then
-            rm -rf "$dest"
-        fi
-        ln -s "$src" "$dest"
+        ln -sfn "$src" "$dest"
         echo "  Linked ~/$name -> $src"
     fi
+}
+
+# Drop Imperium-only Dolphin links so the other rice does not keep this
+# launcher, shortcut file, or desktop override.
+drop_link_into() {
+    local dest="$1"
+    local root="$2"
+    local target
+    [[ -L "$dest" ]] || return 0
+    target=$(readlink -f "$dest" 2>/dev/null || true)
+    [[ "$target" == "$root/"* ]] || return 0
+    rm -f "$dest"
+    echo "  Removed $dest"
 }
 
 mkdir -p "$HOME/.config"
@@ -250,8 +285,20 @@ fi
 
 link_home "zshrc"
 link_home "zprofile"
-link_home_file "rice-select.sh"
-link_home_file "rice-switch.sh"
+# Keep this clone's switcher on $HOME. ~/dotfiles ships an older copy that
+# does not install Imperium packages.
+link_home_file "rice-select.sh" "$IMPERIUM_DIR/rice-select.sh"
+link_home_file "rice-switch.sh" "$IMPERIUM_DIR/rice-switch.sh"
+
+if [[ "$RICE" != "imperium" ]]; then
+    drop_link_into "$HOME/.local/bin/dolphin" "$IMPERIUM_DIR"
+    drop_link_into "$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc" "$IMPERIUM_DIR"
+    desktop_dst="$HOME/.local/share/applications/org.kde.dolphin.desktop"
+    if [[ -f "$desktop_dst" ]] && grep -q "$HOME/.local/bin/dolphin" "$desktop_dst"; then
+        rm -f "$desktop_dst"
+        echo "  Removed $desktop_dst"
+    fi
+fi
 
 if [[ "$RICE" == "imperium" && -f /usr/share/applications/org.kde.dolphin.desktop ]]; then
     xdg-mime default org.kde.dolphin.desktop inode/directory || true
@@ -283,7 +330,6 @@ elif command -v wallust >/dev/null 2>&1; then
     hyprctl reload >/dev/null 2>&1 || true
     pkill -x waybar || true
     sleep 0.2
-    local waybar_dir shim
     waybar_dir=$(readlink -f "${HOME}/.config/waybar" 2>/dev/null || true)
     shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
     if [[ -f $shim ]]; then
