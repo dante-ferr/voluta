@@ -38,7 +38,7 @@ hl.config({
         blur = {
             enabled = true,
             special = true, -- Blur background behind special workspace
-            size = 2,
+            size = 1,
             passes = 2,
             new_optimizations = true,
             -- Windows are opaque by rule, so this only ever reaches surfaces that
@@ -51,7 +51,7 @@ hl.config({
             popups = false,
             -- Darkened and desaturated: a bright wallpaper behind a translucent
             -- terminal otherwise washes out the foreground text.
-            brightness = 0.65,
+            brightness = 0.75,
             contrast = 1.05,
             vibrancy = 0.15,
             vibrancy_darkness = 0.4,
