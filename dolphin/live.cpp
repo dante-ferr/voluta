@@ -5,27 +5,36 @@
 // PaletteChange. Wallpaper changes rewrite the scheme file under a new path
 // and this library points the running process at it.
 //
-// Backgrounds use 88% opacity, which is less transparent than Kitty (75%).
+// Backgrounds use 94% opacity, which is less transparent than Kitty (75%).
 // A fully clear color is what turned some panels black: an opaque widget
 // flattens alpha 0 against black. Text, selection, buttons, and tooltips
 // stay fully opaque.
 
 #include <QAbstractScrollArea>
+#include <QAbstractItemDelegate>
 #include <QApplication>
 #include <QByteArray>
 #include <QColor>
 #include <QDockWidget>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileSystemWatcher>
 #include <QGraphicsView>
 #include <QGraphicsWidget>
 #include <QListView>
+#include <QMainWindow>
+#include <QPainter>
+#include <QPointer>
+#include <QStyleOptionViewItem>
+#include <QStyle>
+#include <QtMath>
 #include <QStatusBar>
 #include <QToolBar>
 #include <QMetaObject>
 #include <QPixmapCache>
 #include <QStringList>
 #include <KIconLoader>
+#include <kde_terminal_interface.h>
 #include <QTimer>
 #include <QWidget>
 
@@ -38,7 +47,139 @@
 
 namespace {
 
-constexpr int kBackgroundAlpha = 224; // 0.88. Kitty uses 0.75.
+constexpr int kBackgroundAlpha = 240; // 0.94. Kitty uses 0.75.
+constexpr int kPlacesSpacing = 2;
+constexpr int kPlacesIconSize = 24;
+constexpr int kPlacesExtraIconGap = 8;
+constexpr int kSidebarDefaultWidth = 240;
+
+// KIO paints its own labels with a hard-coded four-pixel icon gap. Keep its
+// delegate, animations, capacity bars and event handling, and insert eight
+// pixels into the native painted row. Installing this only for column zero
+// is important: KIO's mouse handler casts itemDelegate() to its private class.
+class PlacesGapDelegate : public QAbstractItemDelegate
+{
+public:
+    PlacesGapDelegate(QListView *view, QAbstractItemDelegate *native)
+        : QAbstractItemDelegate(view), m_view(view), m_native(native)
+    {
+        connect(native, &QAbstractItemDelegate::sizeHintChanged, this, &QAbstractItemDelegate::sizeHintChanged);
+        connect(native, &QAbstractItemDelegate::commitData, this, &QAbstractItemDelegate::commitData);
+        connect(native, &QAbstractItemDelegate::closeEditor, this, &QAbstractItemDelegate::closeEditor);
+        const auto iconChanged = [this] {
+            // KIO's smooth resize takes 500ms and uses an intermediate private
+            // icon size. Paint natively until the requested size has settled.
+            m_iconChange.start();
+            QTimer::singleShot(600, this, [this] { m_view->viewport()->update(); });
+        };
+        connect(view, &QAbstractItemView::iconSizeChanged, this, iconChanged);
+        iconChanged();
+    }
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        if (!m_native) {
+            return;
+        }
+        const int iconSize = qMin(m_view->iconSize().width(), m_view->iconSize().height());
+        const int width = option.rect.width() - kPlacesExtraIconGap;
+        const int height = option.rect.height();
+        // The user can still choose automatic icon sizing in Dolphin's menu.
+        // Unknown or very narrow layouts retain the complete native rendering.
+        if (m_iconChange.elapsed() < 600 || iconSize <= 0 || width <= iconSize + 24 || height <= 0) {
+            m_native->paint(painter, option, index);
+            return;
+        }
+
+        const qreal dpr = painter->device()->devicePixelRatioF();
+        QPixmap row(QSize(qCeil(width * dpr), qCeil(height * dpr)));
+        row.setDevicePixelRatio(dpr);
+        row.fill(Qt::transparent);
+        QStyleOptionViewItem nativeOption(option);
+        nativeOption.rect = QRect(0, 0, width, height);
+        QPainter nativePainter(&row);
+        nativePainter.setFont(painter->font());
+        nativePainter.setRenderHints(painter->renderHints());
+        // Exactly one call: native paint consumes drag state and starts the
+        // asynchronous capacity query. Repainting clipped passes is unsafe.
+        m_native->paint(&nativePainter, nativeOption, index);
+        nativePainter.end();
+
+        int headerHeight = 0;
+        const int groupRole = index.model()->roleNames().key(QByteArrayLiteral("group"), -1);
+        if (groupRole >= 0) {
+            QModelIndex previous;
+            for (int r = index.row() - 1; r >= 0; --r) {
+                if (!m_view->isRowHidden(r)) {
+                    previous = index.siblingAtRow(r);
+                    break;
+                }
+            }
+            if (index.data(groupRole).toString() != previous.data(groupRole).toString()) {
+                // Ask the native delegate for the header's extra height rather
+                // than duplicating KIO's font and spacing calculation.
+                QStyleOptionViewItem hintOption(nativeOption);
+                hintOption.features |= QStyleOptionViewItem::HasDecoration;
+                hintOption.decorationSize = QSize(iconSize, iconSize);
+                const int bodyHeight = qApp->style()->sizeFromContents(QStyle::CT_ItemViewItem, &hintOption, {}, option.widget).height();
+                if (m_headerFontHeight != m_view->fontMetrics().height() || m_headerSpacing != m_view->spacing()) {
+                    m_headerHeight = 0;
+                    m_headerFontHeight = m_view->fontMetrics().height();
+                    m_headerSpacing = m_view->spacing();
+                }
+                // An appearing/disappearing row scales its body, not its
+                // header. Keep the settled header height through that fade.
+                m_headerHeight = qMax(m_headerHeight, m_native->sizeHint(nativeOption, index).height() - bodyHeight);
+                headerHeight = qBound(0, m_headerHeight, height);
+            }
+        }
+
+        const auto copy = [&](const QRectF &target, const QRectF &source) {
+            if (!target.isEmpty()) {
+                painter->drawPixmap(target.translated(option.rect.topLeft()), row,
+                                    QRectF(source.x() * dpr, source.y() * dpr, source.width() * dpr, source.height() * dpr));
+            }
+        };
+        // Keep group titles at the original position; only the item body gains
+        // a gap. Native text elision already accounts for the reduced width.
+        copy(QRectF(0, 0, width, headerHeight), QRectF(0, 0, width, headerHeight));
+        const int bodyHeight = height - headerHeight;
+        const int split = option.direction == Qt::LeftToRight ? iconSize + 6 : width - iconSize - 6;
+        // RTL shifts the label side away from the right-hand icon; the action
+        // stays at the real viewport edge in both directions. KIO hit testing
+        // uses visualRect(), so its eject and group hitboxes remain unchanged.
+        copy(QRectF(0, headerHeight, split, bodyHeight), QRectF(0, headerHeight, split, bodyHeight));
+        copy(QRectF(split, headerHeight, kPlacesExtraIconGap, bodyHeight), QRectF(split, headerHeight, 1, bodyHeight));
+        copy(QRectF(split + kPlacesExtraIconGap, headerHeight, width - split, bodyHeight), QRectF(split, headerHeight, width - split, bodyHeight));
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    { return m_native ? m_native->sizeHint(option, index) : QSize(); }
+    QList<int> paintingRoles() const override
+    { return m_native ? m_native->paintingRoles() : QList<int>(); }
+    bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override
+    { return m_native && m_native->helpEvent(event, view, option, index); }
+    bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override
+    { return m_native && m_native->editorEvent(event, model, option, index); }
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    { return m_native ? m_native->createEditor(parent, option, index) : nullptr; }
+    void destroyEditor(QWidget *editor, const QModelIndex &index) const override
+    { if (m_native) m_native->destroyEditor(editor, index); }
+    void setEditorData(QWidget *editor, const QModelIndex &index) const override
+    { if (m_native) m_native->setEditorData(editor, index); }
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override
+    { if (m_native) m_native->setModelData(editor, model, index); }
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    { if (m_native) m_native->updateEditorGeometry(editor, option, index); }
+
+private:
+    QListView *m_view;
+    QPointer<QAbstractItemDelegate> m_native;
+    QElapsedTimer m_iconChange;
+    mutable int m_headerHeight = 0;
+    mutable int m_headerFontHeight = 0;
+    mutable int m_headerSpacing = 0;
+};
 
 QString homeConfig(const char *leaf)
 {
@@ -223,6 +364,7 @@ public:
         connect(&m_watcher, &QFileSystemWatcher::fileChanged, this, [this] {
             QTimer::singleShot(80, this, [this] { apply(); });
         });
+        qApp->installEventFilter(this);
         arm();
         apply();
         QTimer::singleShot(400, this, [this] { apply(); });
@@ -231,7 +373,12 @@ public:
 
     bool eventFilter(QObject *watched, QEvent *event) override
     {
-        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::Show) {
+        if (event->type() == QEvent::Show && (watched->inherits("KFilePlacesView") || watched->inherits("TerminalPanel")
+                                            || qobject_cast<QMainWindow *>(watched))) {
+            QTimer::singleShot(0, this, [this] { apply(); });
+        }
+        if (watched->property("imperiumGlass").toBool()
+            && (event->type() == QEvent::PaletteChange || event->type() == QEvent::Show)) {
             if (auto *widget = qobject_cast<QWidget *>(watched)) {
                 // Dolphin resets the viewport color on focus. Keep that fill
                 // translucent so it cannot flatten to black.
@@ -247,6 +394,9 @@ private:
     {
         if (QFile::exists(m_conf) && !m_watcher.files().contains(m_conf)) {
             m_watcher.addPath(m_conf);
+        }
+        if (!m_qssPath.isEmpty() && QFile::exists(m_qssPath) && !m_watcher.files().contains(m_qssPath)) {
+            m_watcher.addPath(m_qssPath);
         }
     }
 
@@ -266,6 +416,7 @@ private:
         QString schemePath;
         QString qssPath;
         QString icons;
+        QString terminalProfile;
         while (!conf.atEnd()) {
             const QString line = QString::fromUtf8(conf.readLine()).trimmed();
             if (line.startsWith(QLatin1String("scheme="))) {
@@ -274,6 +425,8 @@ private:
                 qssPath = line.mid(4);
             } else if (line.startsWith(QLatin1String("icons="))) {
                 icons = line.mid(6);
+            } else if (line.startsWith(QLatin1String("terminal="))) {
+                terminalProfile = line.mid(9);
             }
         }
         const SchemeColors colors = readScheme(schemePath);
@@ -293,6 +446,16 @@ private:
 
         const auto widgets = QApplication::allWidgets();
         for (QWidget *widget : widgets) {
+            if (widget->inherits("TerminalPanel") && !terminalProfile.isEmpty()) {
+                for (QObject *child : widget->findChildren<QObject *>()) {
+                    auto *terminal = qobject_cast<TerminalInterface *>(child);
+                    if (terminal && terminal->terminalProcessId() > 0
+                        && child->property("imperiumTerminalProfile").toString() != terminalProfile
+                        && terminal->setCurrentProfile(terminalProfile)) {
+                        child->setProperty("imperiumTerminalProfile", terminalProfile);
+                    }
+                }
+            }
             if (auto *toolbar = qobject_cast<QToolBar *>(widget)) {
                 toolbar->setContentsMargins(16, 10, 16, 6);
             }
@@ -300,7 +463,7 @@ private:
                 status->setContentsMargins(18, 8, 18, 12);
             }
             if (auto *dock = qobject_cast<QDockWidget *>(widget)) {
-                dock->setContentsMargins(8, 8, 10, 8);
+                dock->setContentsMargins(8, 8, dock->objectName() == QLatin1String("placesDock") ? 2 : 10, 8);
             }
 
             auto *view = qobject_cast<QGraphicsView *>(widget);
@@ -310,10 +473,16 @@ private:
             }
             if (places) {
                 if (auto *list = qobject_cast<QListView *>(widget)) {
-                    if (list->spacing() != 4) {
-                        list->setSpacing(4);
+                    if (list->spacing() != kPlacesSpacing) {
+                        list->setSpacing(kPlacesSpacing);
+                    }
+                    if (!list->property("imperiumPlacesGap").toBool() && list->itemDelegate()) {
+                        list->setIconSize(QSize(kPlacesIconSize, kPlacesIconSize));
+                        list->setItemDelegateForColumn(0, new PlacesGapDelegate(list, list->itemDelegate()));
+                        list->setProperty("imperiumPlacesGap", true);
                     }
                 }
+                setInitialSidebarWidth(widget);
             }
             if (!sameColor(widget->palette(), palette)) {
                 widget->setPalette(palette);
@@ -325,7 +494,6 @@ private:
                     viewport->setAttribute(Qt::WA_TranslucentBackground, true);
                     viewport->setAutoFillBackground(false);
                     if (!viewport->property("imperiumGlass").toBool()) {
-                        viewport->installEventFilter(this);
                         viewport->setProperty("imperiumGlass", true);
                     }
                     if (!sameColor(viewport->palette(), palette)) {
@@ -333,7 +501,7 @@ private:
                     }
                 }
                 if (places) {
-                    ViewportMargins::set(area, 14, 6, 6, 8);
+                    ViewportMargins::set(area, 14, 6, 0, 8);
                 } else if (view) {
                     ViewportMargins::set(area, 10, 8, 10, 8);
                 }
@@ -351,7 +519,14 @@ private:
             }
         }
 
-        if (!qssPath.isEmpty() && qssPath != m_qssPath) {
+        if (qssPath != m_qssPath) {
+            if (!m_qssPath.isEmpty()) {
+                m_watcher.removePath(m_qssPath);
+            }
+            m_qssPath = qssPath;
+        }
+        arm();
+        if (!qssPath.isEmpty()) {
             QFile qss(qssPath);
             if (qss.open(QIODevice::ReadOnly)) {
                 const QByteArray body = qss.readAll();
@@ -359,7 +534,6 @@ private:
                     m_qss = body;
                     qApp->setStyleSheet(QString::fromUtf8(body));
                 }
-                m_qssPath = qssPath;
             }
         }
 
@@ -376,13 +550,39 @@ private:
         m_applying = false;
     }
 
+    void setInitialSidebarWidth(QWidget *placesView)
+    {
+        if (!placesView->isVisible()) {
+            return;
+        }
+        for (QWidget *parent = placesView->parentWidget(); parent; parent = parent->parentWidget()) {
+            auto *dock = qobject_cast<QDockWidget *>(parent);
+            if (!dock) {
+                continue;
+            }
+            if (dock->property("imperiumSidebarWidthSet").toBool() || dock->isFloating()) {
+                return;
+            }
+            auto *window = qobject_cast<QMainWindow *>(dock->parentWidget());
+            if (!window) {
+                return;
+            }
+            if (dock->width() < kSidebarDefaultWidth) {
+                window->resizeDocks({dock}, {kSidebarDefaultWidth}, Qt::Horizontal);
+            }
+            // Apply once after the sidebar is visible; later user resizing is respected.
+            dock->setProperty("imperiumSidebarWidthSet", true);
+            return;
+        }
+    }
+
     void refreshIcons()
     {
         QPixmapCache::clear();
         // Drop KIconLoader's pixmap cache in this process before the file
         // view asks for icons again. A bus signal would arrive too late.
         if (KIconLoader *icons = KIconLoader::global()) {
-            icons->newIconLoader();
+            icons->reconfigure(QString());
         }
 
         const auto widgets = QApplication::allWidgets();

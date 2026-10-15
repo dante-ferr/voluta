@@ -11,6 +11,7 @@ mkdir -p "$(dirname "$lib")"
 if [[ ! -f "$lib" || "$src" -nt "$lib" ]]; then
     if ! g++ -shared -fPIC -O2 -std=c++17 -pthread -o "$lib" "$src" \
         -I/usr/include/KF6/KIconThemes \
+        -I/usr/include/KF6/KParts \
         $(pkg-config --cflags --libs Qt6Widgets) -lKF6IconThemes; then
         exec /usr/bin/dolphin "$@"
     fi

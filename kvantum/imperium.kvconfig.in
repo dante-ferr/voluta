@@ -2,7 +2,7 @@
 author=Imperium rice, based on the Catppuccin Arc Dark Kvantum theme
 comment=Imperium
 combo_focus_rect=true
-spread_menuitems=true
+spread_menuitems=false
 left_tabs=true
 mirror_doc_tabs=true
 scroll_width=8
@@ -375,15 +375,19 @@ inherits=PanelButtonCommand
 text.press.color=@@MANTLE@@
 text.toggle.color=@@MANTLE@@
 text.bold=false
-frame.top=3
-frame.bottom=3
-frame.left=3
-frame.right=3
+frame.top=5
+frame.bottom=5
+frame.left=8
+frame.right=8
 
 [MenuItem]
 inherits=PanelButtonCommand
 interior.element=menuitem
 indicator.size=8
+text.margin.top=3
+text.margin.bottom=3
+text.margin.left=8
+text.margin.right=8
 text.focus.color=@@TEXT@@
 text.press.color=@@TEXT@@
 

@@ -21,6 +21,8 @@ import re
 import subprocess
 import sys
 import time
+import urllib.parse
+import zlib
 
 root, colors_path, home = sys.argv[1:4]
 
@@ -81,12 +83,19 @@ def contrast(a, b):
     return (lighter + 0.05) / (darker + 0.05)
 
 def readable(color, against, minimum=7.0):
-    lifted = color
-    for _ in range(12):
-        if contrast(lifted, against) >= minimum:
-            return lifted
-        lifted = lighten(lifted, 0.08)
-    return lifted
+    if contrast(color, against) >= minimum:
+        return color
+    # Find the smallest adjustment that meets the contrast floor. Choosing
+    # either black or white also handles unexpectedly light wallpapers.
+    target = max(((0, 0, 0), (255, 255, 255)), key=lambda c: contrast(c, against))
+    low, high = 0.0, 1.0
+    for _ in range(24):
+        amount = (low + high) / 2
+        if contrast(mix(color, target, amount), against) >= minimum:
+            high = amount
+        else:
+            low = amount
+    return mix(color, target, high)
 
 def hx(color):
     return f"{color[0]:02x}{color[1]:02x}{color[2]:02x}"
@@ -105,6 +114,9 @@ if not palette:
 
 bg = palette["bg"]
 fg = palette["fg"]
+# Match Kitty's wallust background (lighten(0.03)), with less glass showing
+# through Dolphin. Other Qt apps keep their existing Imperium surfaces.
+dolphin_bg = lighten(bg, 0.03)
 accent_src = palette.get("1") or fg
 secondary_src = palette.get("2") or accent_src
 negative_src = palette.get("3") or accent_src
@@ -162,10 +174,10 @@ kv_in = os.path.join(template_dir, "imperium.kvconfig.in")
 if not (os.path.isfile(svg_in) and os.path.isfile(kv_in)):
     sys.exit(0)
 
-def fill(path):
+def fill(path, overrides=None):
     with open(path, encoding="utf-8") as handle:
         text = handle.read()
-    for token, value in tokens.items():
+    for token, value in (tokens | (overrides or {})).items():
         text = text.replace(token, "#" + value)
     return text
 
@@ -181,19 +193,19 @@ with open(os.path.join(theme_dir, "imperium.kvconfig"), "w", encoding="utf-8") a
 # tighter Imperium margins.
 dolphin_theme = os.path.join(home, ".config", "Kvantum", "dolphin")
 os.makedirs(dolphin_theme, exist_ok=True)
-# Spacing stays at the template value so Places / Remote / Recent do not
-# grow a second time. Translucency is dolphin-only; other Qt apps stay solid.
-dolphin_kv = filled_kv.replace("layout_margin=4", "layout_margin=12", 1)
+# Translucency and the Kitty-like background are Dolphin-only.
+dolphin_tokens = {"@@BASE@@": hx(dolphin_bg), "@@MANTLE@@": hx(dolphin_bg)}
+dolphin_kv = fill(kv_in, dolphin_tokens).replace("layout_margin=4", "layout_margin=12", 1)
 dolphin_kv = dolphin_kv.replace("translucent_windows=false", "translucent_windows=true", 1)
-# 12% reduction is 88% opacity. Kitty is 75%, so Dolphin stays easier to read.
-dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=12", 1)
+# 94% opacity keeps the wallpaper subtle; Kitty remains at 75%.
+dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=6", 1)
 with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(dolphin_kv)
-svg_link = os.path.join(dolphin_theme, "dolphin.svg")
-svg_target = os.path.join(theme_dir, "imperium.svg")
-if os.path.lexists(svg_link):
-    os.remove(svg_link)
-os.symlink(svg_target, svg_link)
+svg_path = os.path.join(dolphin_theme, "dolphin.svg")
+if os.path.islink(svg_path):
+    os.remove(svg_path)
+with open(svg_path, "w", encoding="utf-8") as handle:
+    handle.write(fill(svg_in, dolphin_tokens))
 
 kvantum_rc = os.path.join(home, ".config", "Kvantum", "kvantum.kvconfig")
 if os.path.isfile(kvantum_rc):
@@ -310,6 +322,18 @@ DolphinMainWindow QDockWidget {{
     margin: 10px;
     padding: 6px;
 }}
+DolphinMainWindow::separator {{
+    background-color: #{edge};
+    width: 3px;
+    height: 3px;
+}}
+DolphinMainWindow::separator:hover {{
+    background-color: #{hx(accent)};
+}}
+DolphinMainWindow QDockWidget#placesDock {{
+    margin-right: 2px;
+    padding-right: 0px;
+}}
 DolphinMainWindow QToolButton {{
     background-color: transparent;
     color: #{ivory};
@@ -410,8 +434,8 @@ QTreeView::item:selected:!active, QListView::item:selected:!active, QTableView::
 }}
 DolphinMainWindow KFilePlacesView {{
     background-color: transparent;
-    qproperty-spacing: 4;
-    padding: 4px 8px 8px 12px;
+    qproperty-spacing: 2;
+    padding: 4px 0px 8px 12px;
 }}
 DolphinMainWindow KFilePlacesView::item {{
     color: #{ivory};
@@ -445,16 +469,25 @@ QToolTip {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    padding: 4px 8px;
+    padding: 6px 10px;
 }}
 QMenu {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
+    padding: 5px 8px;
+}}
+QMenu::item {{
+    padding: 6px 12px;
 }}
 QMenu::item:selected {{
     background-color: #{sel_hex};
     color: #{sel_fg};
+}}
+QMenu::separator {{
+    height: 1px;
+    margin: 5px 8px;
+    background-color: #{edge};
 }}
 QPlainTextEdit, QTextEdit, KTextEdit {{
     background-color: #{panel};
@@ -463,10 +496,14 @@ QPlainTextEdit, QTextEdit, KTextEdit {{
     selection-background-color: #{sel_hex};
     selection-color: #{sel_fg};
 }}
+QTextEdit, KTextEdit {{
+    padding: 8px;
+}}
 KMessageWidget {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
+    padding: 8px 12px;
 }}
 Baloo--FileMetaDataWidget {{
     min-width: 260px;
@@ -607,7 +644,7 @@ with open(os.path.join(scheme_dir, "Imperium.colors"), "w", encoding="utf-8") as
     handle.write(scheme)
 
 # A fresh filename misses KColorScheme's in-process cache. View and window
-# backgrounds in this copy are 88% opaque. Fully clear backgrounds were
+# backgrounds in this copy are 94% opaque. Fully clear backgrounds were
 # flattened to black by opaque widgets. The shared Imperium scheme stays
 # opaque for every other Qt app.
 def clear_backgrounds(body):
@@ -622,8 +659,9 @@ def clear_backgrounds(body):
         ):
             if line.count(",") == 2:
                 # The file view must stay clear so it does not paint a second
-                # near-black slab over the window. The window fill is 88%.
-                line += ",0" if group == "Colors:View" else ",224"
+                # near-black slab over the window. The window fill is 94%.
+                key = line.split("=", 1)[0]
+                line = f"{key}={rgb(dolphin_bg)}," + ("0" if group == "Colors:View" else "240")
         lines.append(line)
     return "\n".join(lines) + "\n"
 
@@ -721,11 +759,18 @@ def paint_icons():
     source = "/usr/share/icons/breeze-dark"
     dest = os.path.join(home, ".local", "share", "icons", "imperium")
     stamp = os.path.join(dest, ".accent")
+    preview_stamp = os.path.join(dest, ".folder-preview-accent")
     accent_hex = hx(icon_accent)
+    previous_accent = None
+    previous_preview_accent = None
+    if os.path.isfile(preview_stamp):
+        with open(preview_stamp, encoding="utf-8") as handle:
+            previous_preview_accent = handle.read().strip()
     if os.path.isfile(stamp):
         with open(stamp, encoding="utf-8") as handle:
-            if handle.read().strip() == accent_hex:
-                return
+            previous_accent = handle.read().strip()
+        if previous_accent == accent_hex and previous_preview_accent == accent_hex:
+            return
     if not os.path.isdir(source):
         return
     os.makedirs(dest, exist_ok=True)
@@ -758,51 +803,177 @@ def paint_icons():
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, "w", encoding="utf-8") as handle:
                 handle.write(needle.sub("#" + accent_hex, body))
+
+    # KIO's inode/directory thumbnail is a composite containing the current
+    # folder icon. Remove only those composites when their tint changes; the
+    # other cached previews are user data and remain valid across icon themes.
+    if previous_accent != accent_hex or previous_preview_accent != accent_hex:
+        invalidate_folder_thumbnails()
+
     with open(stamp, "w", encoding="utf-8") as handle:
         handle.write(accent_hex + "\n")
+    # The separate stamp also repairs previews cached before invalidation was
+    # implemented, even when this first application keeps the current accent.
+    with open(preview_stamp, "w", encoding="utf-8") as handle:
+        handle.write(accent_hex + "\n")
+    # KIO thumbnail workers can outlive a job and keep their own icon loader.
+    # Broadcast KDE's normal icon-change signal so those workers reload the
+    # same theme before Dolphin asks them to rebuild folder composites.
+    env = os.environ.copy()
+    runtime = env.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    env["XDG_RUNTIME_DIR"] = runtime
+    env.setdefault("DBUS_SESSION_BUS_ADDRESS", f"unix:path={runtime}/bus")
+    subprocess.run(
+        ["busctl", "--user", "emit", "/KIconLoader", "org.kde.KIconLoader", "iconChanged", "i", "0"],
+        env=env,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+def png_text_metadata(path):
+    """Read PNG text chunks without decoding or exposing cached image data."""
+    metadata = {}
+
+    def inflate_text(payload):
+        decoder = zlib.decompressobj()
+        decoded = decoder.decompress(payload, 64 * 1024)
+        if decoder.unconsumed_tail or not decoder.eof or len(decoded) >= 64 * 1024:
+            return None
+        return decoded
+
+    try:
+        with open(path, "rb") as handle:
+            if handle.read(8) != b"\x89PNG\r\n\x1a\n":
+                return metadata
+            while True:
+                header = handle.read(8)
+                if len(header) != 8:
+                    break
+                length = int.from_bytes(header[:4], "big")
+                chunk_type = header[4:]
+                if chunk_type in (b"tEXt", b"zTXt", b"iTXt") and length <= 1024 * 1024:
+                    chunk = handle.read(length)
+                    if len(chunk) != length:
+                        break
+                else:
+                    chunk = b""
+                    handle.seek(length, os.SEEK_CUR)
+                if len(handle.read(4)) != 4:
+                    break
+                if chunk_type == b"tEXt":
+                    key, separator, value = chunk.partition(b"\0")
+                    if separator:
+                        metadata[key.decode("latin-1")] = value.decode("latin-1")
+                elif chunk_type == b"zTXt":
+                    key, separator, payload = chunk.partition(b"\0")
+                    if separator and payload[:1] == b"\0":
+                        try:
+                            decoded = inflate_text(payload[1:])
+                            if decoded is not None:
+                                metadata[key.decode("latin-1")] = decoded.decode("latin-1")
+                        except (UnicodeError, zlib.error):
+                            pass
+                elif chunk_type == b"iTXt":
+                    key, separator, rest = chunk.partition(b"\0")
+                    if not separator or len(rest) < 2:
+                        continue
+                    compressed, method = rest[:2]
+                    _, separator, rest = rest[2:].partition(b"\0")
+                    if not separator:
+                        continue
+                    _, separator, payload = rest.partition(b"\0")
+                    if not separator:
+                        continue
+                    try:
+                        if compressed == 1 and method == 0:
+                            payload = inflate_text(payload)
+                            if payload is None:
+                                continue
+                        metadata[key.decode("latin-1")] = payload.decode("utf-8")
+                    except (UnicodeError, zlib.error):
+                        pass
+                if chunk_type == b"IEND":
+                    break
+    except OSError:
+        pass
+    return metadata
+
+def local_directory_from_uri(uri):
+    try:
+        parsed = urllib.parse.urlsplit(uri)
+        if parsed.scheme != "file" or parsed.netloc not in ("", "localhost"):
+            return None
+        path = urllib.parse.unquote(parsed.path)
+        return path if path and os.path.isdir(path) else None
+    except (TypeError, ValueError):
+        return None
+
+def invalidate_folder_thumbnails():
+    cache_home = os.environ.get("XDG_CACHE_HOME") or os.path.join(home, ".cache")
+    thumbnail_root = os.path.join(os.path.abspath(cache_home), "thumbnails")
+    for tier in ("normal", "large", "x-large", "xx-large"):
+        tier_dir = os.path.join(thumbnail_root, tier)
+        if os.path.islink(tier_dir):
+            continue
+        try:
+            names = os.listdir(tier_dir)
+        except OSError:
+            continue
+        for name in names:
+            if not name.endswith(".png"):
+                continue
+            path = os.path.join(tier_dir, name)
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            uri = png_text_metadata(path).get("Thumb::URI")
+            if uri and local_directory_from_uri(uri):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
 paint_icons()
 
-# The icon files have to be in place before Dolphin is told the palette
-# changed, or the repaint keeps the previous pixmaps.
-os.makedirs(os.path.dirname(live_conf), exist_ok=True)
-with open(live_conf, "w", encoding="utf-8") as handle:
-    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}\n")
-
 konsole_dir = os.path.join(home, ".local", "share", "konsole")
 os.makedirs(konsole_dir, exist_ok=True)
+terminal_live = f"dolphin-terminal-live-{live_stamp}"
 ansi = []
 for index in range(8):
-    normal = palette.get(str(index)) or mantle
-    intense = palette.get(str(index + 8)) or lighten(normal, 0.2)
+    normal = readable(palette.get(str(index)) or text, dolphin_bg, 4.5)
+    intense = readable(palette.get(str(index + 8)) or lighten(normal, 0.2), dolphin_bg, 7.0)
+    faint = readable(mix(normal, dolphin_bg, 0.25), dolphin_bg, 4.5)
     ansi.append(f"[Color{index}]\nColor={rgb(normal)}\n")
     ansi.append(f"[Color{index}Intense]\nColor={rgb(intense)}\n")
-    ansi.append(f"[Color{index}Faint]\nColor={rgb(mix(normal, mantle, 0.45))}\n")
+    ansi.append(f"[Color{index}Faint]\nColor={rgb(faint)}\n")
 scheme_body = "\n".join([
     "[Background]",
-    f"Color={rgb(mantle)}",
+    f"Color={rgb(dolphin_bg)}",
     "[BackgroundIntense]",
-    f"Color={rgb(base)}",
+    f"Color={rgb(dolphin_bg)}",
     "[BackgroundFaint]",
-    f"Color={rgb(mantle)}",
+    f"Color={rgb(dolphin_bg)}",
     "[Foreground]",
-    f"Color={rgb(text)}",
+    f"Color={rgb(readable(text, dolphin_bg, 7.0))}",
     "[ForegroundIntense]",
-    f"Color={rgb(lighten(text, 0.08))}",
+    f"Color={rgb(readable(lighten(text, 0.08), dolphin_bg, 7.0))}",
     "[ForegroundFaint]",
-    f"Color={rgb(muted)}",
+    f"Color={rgb(readable(muted, dolphin_bg, 4.5))}",
     "[General]",
     "Description=Imperium",
-    "Opacity=0.88",
+    "Opacity=0.94",
     "",
 ]) + "\n" + "\n".join(ansi)
 with open(os.path.join(konsole_dir, "Imperium.colorscheme"), "w", encoding="utf-8") as handle:
     handle.write(scheme_body)
-with open(os.path.join(konsole_dir, "Imperium.profile"), "w", encoding="utf-8") as handle:
-    handle.write(
+# Konsole caches profiles and color schemes by name. Fresh names let the
+# running embedded terminal pick up a wallpaper change without losing its shell.
+with open(os.path.join(konsole_dir, terminal_live + ".colorscheme"), "w", encoding="utf-8") as handle:
+    handle.write(scheme_body)
+profile_body = (
         "[Appearance]\n"
         "BoldIntense=false\n"
-        "ColorScheme=Imperium\n"
+        f"ColorScheme={terminal_live}\n"
         "Font=JetBrains Mono,11\n"
         "LineSpacing=0\n"
         "\n"
@@ -819,8 +990,23 @@ with open(os.path.join(konsole_dir, "Imperium.profile"), "w", encoding="utf-8") 
         "\n"
         "[Terminal Features]\n"
         "BlinkingCursorEnabled=false\n"
-        "TerminalMargin=2\n"
-    )
+        "TerminalMargin=10\n"
+)
+with open(os.path.join(konsole_dir, "Imperium.profile"), "w", encoding="utf-8") as handle:
+    handle.write(profile_body)
+with open(os.path.join(konsole_dir, terminal_live + ".profile"), "w", encoding="utf-8") as handle:
+    handle.write(profile_body.replace("Name=Imperium\n", f"Name={terminal_live}\n", 1))
+# Keep the current and preceding generation for a window mid-refresh.
+old_profiles = sorted(
+    name for name in os.listdir(konsole_dir)
+    if re.fullmatch(r"dolphin-terminal-live-\d+\.profile", name)
+)
+for name in old_profiles[:-2]:
+    for extension in (".profile", ".colorscheme"):
+        try:
+            os.remove(os.path.join(konsole_dir, name.removesuffix(".profile") + extension))
+        except OSError:
+            pass
 konsolerc = os.path.join(home, ".config", "konsolerc")
 if os.path.isfile(konsolerc):
     with open(konsolerc, encoding="utf-8") as handle:
@@ -890,17 +1076,14 @@ def push_open_windows(stylesheet):
                 ],
                 env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
-        for raw in tree.splitlines():
-            if "/Sessions/" not in raw:
-                continue
-            path = raw.strip().split()[-1]
-            subprocess.run(
-                [
-                    "busctl", "--user", "call", service, path,
-                    "org.kde.konsole.Session", "setProfile", "s", "Imperium",
-                ],
-                env=env, check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
+
+# Publish only after icons, thumbnails, QSS, and terminal files are ready.
+# An atomic replacement prevents the live hook from reading a partial marker.
+os.makedirs(os.path.dirname(live_conf), exist_ok=True)
+pending_conf = live_conf + "." + live_stamp
+with open(pending_conf, "w", encoding="utf-8") as handle:
+    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}\nterminal={terminal_live}\n")
+os.replace(pending_conf, live_conf)
 
 with open(qss_path, encoding="utf-8") as handle:
     push_open_windows(handle.read())
