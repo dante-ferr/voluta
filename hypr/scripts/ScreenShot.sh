@@ -60,6 +60,33 @@ case "$1" in
             fi
         fi
         ;;
+    "--text"|"-t")
+        if ! command -v tesseract >/dev/null 2>&1; then
+            notify-send -u normal "Text capture" "Install tesseract to copy text from a region."
+            exit 1
+        fi
+        GEOM=$(slurp -d) || exit 0
+        if [[ -z "$GEOM" ]]; then
+            exit 0
+        fi
+        LANGS="eng"
+        if tesseract --list-langs 2>/dev/null | grep -qx "por"; then
+            LANGS="eng+por"
+        fi
+        if command -v magick >/dev/null 2>&1; then
+            TEXT=$(grim -g "$GEOM" - | magick png:- -resize 200% png:- | tesseract -l "$LANGS" stdin stdout 2>/dev/null)
+        else
+            TEXT=$(grim -g "$GEOM" - | tesseract -l "$LANGS" stdin stdout 2>/dev/null)
+        fi
+        TEXT=$(printf '%s' "$TEXT" | sed -e 's/[[:space:]]*$//')
+        if [[ -z "$TEXT" ]]; then
+            notify-send -u normal "Text capture" "No text found in that region."
+            exit 1
+        fi
+        printf '%s' "$TEXT" | wl-copy --type text/plain
+        PREVIEW=$(printf '%s' "$TEXT" | tr '\n' ' ' | cut -c1-80)
+        notify-send -u low "Text copied" "$PREVIEW"
+        ;;
     *)
         grim "$FILE_PATH"
         wl-copy < "$FILE_PATH"

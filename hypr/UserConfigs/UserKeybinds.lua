@@ -100,6 +100,7 @@ hl.bind("SUPER + SHIFT + P", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screens
 hl.bind("SUPER + P", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png && grim \"$f\" && wl-copy < \"$f\" && notify-send \"Screenshot Captured\" \"Saved to $f\"'"))
 hl.bind("Print", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png && grim \"$f\" && wl-copy < \"$f\" && notify-send \"Screenshot Captured\" \"Saved to $f\"'"))
 hl.bind("SHIFT + Print", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png && grim -g \"$(slurp)\" \"$f\" && wl-copy < \"$f\" && notify-send \"Screenshot Captured\" \"Saved to $f\"'"))
+hl.bind("SUPER + SHIFT + T", hl.dsp.exec_cmd(scriptsDir .. "/ScreenShot.sh --text"))
 
 -- 6. Audio Volume & Media Playback (with SwayNC OSD notifications)
 -- Speaker mute must target the sink. The previous XF86AudioMute bind

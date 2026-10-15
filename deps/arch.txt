@@ -32,6 +32,8 @@ wl-clipboard
 wtype
 grim
 slurp
+tesseract
+tesseract-data-eng
 playerctl
 brightnessctl
 
