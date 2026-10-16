@@ -24,8 +24,6 @@ end
 
 -- Pixels added or removed per resize keypress; holding the key repeats it.
 local RESIZE_STEP = 120
--- The Super + R resize submap steps in finer increments, doubled while SHIFT is held.
-local RESIZE_STEP_FINE = 80
 
 -- Helper for active window resizing (works for both floating & tiled windows; no-ops if maximized/fullscreen).
 -- Must use hl.dsp.window.resize: hl.dsp.exec_raw accepts any string but never runs it.
@@ -160,27 +158,6 @@ hl.bind("SUPER + CTRL + H", function() resize_active(-RESIZE_STEP, 0) end, { rep
 hl.bind("SUPER + CTRL + L", function() resize_active(RESIZE_STEP, 0) end, { repeating = true })
 hl.bind("SUPER + CTRL + K", function() resize_active(0, -RESIZE_STEP) end, { repeating = true })
 hl.bind("SUPER + CTRL + J", function() resize_active(0, RESIZE_STEP) end, { repeating = true })
-
--- Dedicated Resize Submap (Super + R)
-hl.define_submap("resize", function()
-    hl.bind("Right", function() resize_active(RESIZE_STEP_FINE, 0) end, { repeating = true })
-    hl.bind("Left", function() resize_active(-RESIZE_STEP_FINE, 0) end, { repeating = true })
-    hl.bind("Up", function() resize_active(0, -RESIZE_STEP_FINE) end, { repeating = true })
-    hl.bind("Down", function() resize_active(0, RESIZE_STEP_FINE) end, { repeating = true })
-    hl.bind("l", function() resize_active(RESIZE_STEP_FINE, 0) end, { repeating = true })
-    hl.bind("h", function() resize_active(-RESIZE_STEP_FINE, 0) end, { repeating = true })
-    hl.bind("k", function() resize_active(0, -RESIZE_STEP_FINE) end, { repeating = true })
-    hl.bind("j", function() resize_active(0, RESIZE_STEP_FINE) end, { repeating = true })
-
-    hl.bind("SHIFT + Right", function() resize_active(RESIZE_STEP_FINE * 2, 0) end, { repeating = true })
-    hl.bind("SHIFT + Left", function() resize_active(-RESIZE_STEP_FINE * 2, 0) end, { repeating = true })
-    hl.bind("SHIFT + Up", function() resize_active(0, -RESIZE_STEP_FINE * 2) end, { repeating = true })
-    hl.bind("SHIFT + Down", function() resize_active(0, RESIZE_STEP_FINE * 2) end, { repeating = true })
-
-    hl.bind("Escape", hl.dsp.submap("reset"))
-    hl.bind("Return", hl.dsp.submap("reset"))
-end)
-hl.bind("SUPER + R", hl.dsp.submap("resize"))
 
 -- 10. Window Moving (Super + Alt + Arrows & Super + Shift + HJKL)
 hl.bind("SUPER + ALT + Left", hl.dsp.window.move({ direction = "left" }))

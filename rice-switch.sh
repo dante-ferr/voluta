@@ -280,7 +280,11 @@ link_config "swaync"
 link_config "waypaper"
 link_config "wlogout"
 link_config "starship.toml"
-link_config "dolphinrc"
+if [[ "$RICE" == "imperium" ]]; then
+    python3 "$TARGET_DIR/dolphin/apply-config.py"
+else
+    link_config "dolphinrc"
+fi
 
 # Dolphin keeps custom shortcuts in kxmlgui, outside ~/.config.
 if [[ -f "$TARGET_DIR/dolphin/dolphinui.rc" ]]; then
@@ -297,6 +301,9 @@ if [[ -x "$TARGET_DIR/dolphin/launch.sh" || -f "$TARGET_DIR/dolphin/launch.sh" ]
     chmod +x "$TARGET_DIR/dolphin/launch.sh"
     ln -sfn "$TARGET_DIR/dolphin/launch.sh" "$HOME/.local/bin/dolphin"
     echo "  Linked $HOME/.local/bin/dolphin"
+    if [[ "$RICE" == "imperium" ]]; then
+        bash "$TARGET_DIR/dolphin/launch.sh" --prepare
+    fi
     if [[ -f /usr/share/applications/org.kde.dolphin.desktop ]]; then
         desktop_dst="$HOME/.local/share/applications/org.kde.dolphin.desktop"
         sed -e "s|^Exec=dolphin |Exec=$HOME/.local/bin/dolphin |" \

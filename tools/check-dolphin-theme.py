@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import ast
+import configparser
 import json
 import os
 import re
@@ -265,6 +266,45 @@ def verify_cache_refresh(base: Path, source: Path) -> None:
     check(len(list((home / ".local/share/konsole").glob("dolphin-terminal-live-*.profile"))) == 2, "obsolete live terminal profiles were not pruned")
 
 
+def verify_existing_install(base: Path, source: Path) -> None:
+    home = base / "home"
+    config = home / ".config"
+    config.mkdir(parents=True)
+    original = base / "old-tracked-dolphinrc"
+    original.write_text("[DetailsMode]\nIconSize=48\n[General]\nGlobalViewProps=false\n[LocalSession]\nPath=/tmp/local-folder\n")
+    (config / "dolphinrc").symlink_to(original)
+    qt = config / "qt6ct/qt6ct.conf"
+    qt.parent.mkdir()
+    qt.write_text("[Appearance]\nstyle=Fusion\n[Fonts]\ngeneral=Old Font\n[Interface]\nactivate_item_on_single_click=0\n")
+    view = home / ".local/share/dolphin/view_properties/global/.directory"
+    view.parent.mkdir(parents=True)
+    view.write_text("[Dolphin]\nViewMode=0\nPreviewsShown=false\nHiddenFilesShown=true\nLocalProperty=keep\n")
+
+    def read(path):
+        result = configparser.ConfigParser(interpolation=None)
+        result.optionxform = str
+        result.read(path)
+        return result
+
+    for _ in range(2):
+        run_generator(home, base / "cache", source, None)
+        rc = read(config / "dolphinrc")
+        check(not (config / "dolphinrc").is_symlink(), "Dolphin can still overwrite the tracked baseline")
+        check(rc["DetailsMode"]["IconSize"] == "22", "old visual settings survived migration")
+        check(rc["General"]["GlobalViewProps"] == "true", "global view defaults not enforced")
+        check(rc["LocalSession"]["Path"] == "/tmp/local-folder", "migration removed local session state")
+        check(read(view)["Dolphin"]["ViewMode"] == "2", "existing view mode was not updated")
+        check(read(view)["Dolphin"]["PreviewsShown"] == "true", "existing preview setting was not updated")
+        check(read(view)["Dolphin"]["LocalProperty"] == "keep", "unmanaged view state was removed")
+        interface = read(qt)["Interface"]
+        check(interface["stylesheets"] == str(config / "qt6ct/qss/imperium.qss"), "missing stylesheet key was not installed")
+        check(interface["activate_item_on_single_click"] == "0", "unmanaged Qt setting was overwritten")
+        check(read(qt)["Appearance"]["color_scheme_path"] == str(config / "qt6ct/colors/Imperium.conf"), "Qt palette path is not absolute")
+    check(original.read_text().startswith("[DetailsMode]\nIconSize=48\n"), "migration wrote through the old symlink")
+    check((config / "dolphinrc.pre-imperium").read_bytes() == original.read_bytes(), "original config backup was overwritten")
+    check((home / ".local/share/kxmlgui5/dolphin/dolphinui.rc").resolve() == ROOT / "dolphin/dolphinui.rc", "toolbar override points at another checkout")
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="dolphin-theme-check-") as temporary:
         base = Path(temporary)
@@ -278,6 +318,7 @@ def main() -> None:
         )
 
         verify_cache_refresh(base / "cache-case", icon_source)
+        verify_existing_install(base / "existing-install", icon_source)
 
         custom = base / "custom-case"
         custom_home = custom / "home"
@@ -298,7 +339,7 @@ def main() -> None:
         fallback_data = json.loads((ROOT / "wallust/colorschemes/imperium.json").read_text(encoding="utf-8"))
         verify_colors(fallback_home, dolphin_background(fallback_data["background"]), "fallback palette")
 
-    print("PASS: Dolphin theme cache refresh, ANSI contrast, and live backgrounds")
+    print("PASS: Dolphin theme cache refresh, ANSI contrast, live backgrounds, and existing-install convergence")
 
 
 if __name__ == "__main__":

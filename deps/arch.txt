@@ -66,10 +66,12 @@ kvantum
 qt6ct
 qt6-base
 kiconthemes
+kparts
 pkgconf
 gcc
 
 # Fonts (waybar / hyprlock / rofi / sddm)
+otf-monaspace
 ttf-jetbrains-mono
 ttf-jetbrains-mono-nerd
 ttf-firacode-nerd

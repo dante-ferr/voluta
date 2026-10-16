@@ -523,60 +523,55 @@ Baloo--FileMetaDataWidget {{
 }}
 """.lstrip())
 
+def ensure_pair(lines, section, key, value):
+    text = "".join(lines)
+    if f"[{section}]" not in text:
+        if text and not text.endswith("\n"):
+            text += "\n"
+        text += f"[{section}]\n{key}={value}\n"
+        return text.splitlines(keepends=True)
+    out = []
+    in_section = False
+    replaced = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            if in_section and not replaced:
+                out.append(f"{key}={value}\n")
+                replaced = True
+            in_section = stripped == f"[{section}]"
+        if in_section and stripped.startswith(f"{key}="):
+            out.append(f"{key}={value}\n")
+            replaced = True
+            continue
+        out.append(line)
+    if in_section and not replaced:
+        out.append(f"{key}={value}\n")
+    return out
+
+
 qt_conf = os.path.join(home, ".config", "qt6ct", "qt6ct.conf")
 font = '"Monaspace Argon,10,-1,5,50,0,0,0,0,0,0,0,0,0,0,0,1,Regular"'
-font_general = '"Monaspace Argon,10,-1,5,50,0,0,0,0,0,0,0,0,0,0,0,1,Regular"'
-replacements = {
-    "color_scheme_path": "$HOME/.config/qt6ct/colors/Imperium.conf",
-    "custom_palette": "true",
-    "icon_theme": "imperium",
-    "style": "kvantum",
-    "fixed": font,
-    "general": font_general,
-    "stylesheets": qss_path,
-}
 if os.path.isfile(qt_conf):
     with open(qt_conf, encoding="utf-8") as handle:
-        lines = handle.readlines()
+        qt_lines = handle.readlines()
 else:
-    lines = ["[Appearance]\n", "[Fonts]\n", "[Interface]\n"]
-seen = set()
-out_lines = []
-for line in lines:
-    key = line.split("=", 1)[0].strip()
-    if key in replacements:
-        out_lines.append(f"{key}={replacements[key]}\n")
-        seen.add(key)
-    else:
-        out_lines.append(line if line.endswith("\n") else line + "\n")
-missing_appearance = [k for k in ("color_scheme_path", "custom_palette", "icon_theme", "style") if k not in seen]
-missing_fonts = [k for k in ("fixed", "general") if k not in seen]
-if missing_appearance or missing_fonts:
-    rebuilt = []
-    inserted_a = False
-    inserted_f = False
-    for line in out_lines:
-        rebuilt.append(line)
-        if line.strip() == "[Appearance]" and missing_appearance:
-            for key in missing_appearance:
-                rebuilt.append(f"{key}={replacements[key]}\n")
-            inserted_a = True
-        if line.strip() == "[Fonts]" and missing_fonts:
-            for key in missing_fonts:
-                rebuilt.append(f"{key}={replacements[key]}\n")
-            inserted_f = True
-    if missing_appearance and not inserted_a:
-        rebuilt.insert(0, "[Appearance]\n")
-        for key in missing_appearance:
-            rebuilt.insert(1, f"{key}={replacements[key]}\n")
-    if missing_fonts and not inserted_f:
-        rebuilt.append("[Fonts]\n")
-        for key in missing_fonts:
-            rebuilt.append(f"{key}={replacements[key]}\n")
-    out_lines = rebuilt
+    qt_lines = []
+# Insert missing Interface keys too. An existing qt6ct.conf without stylesheets
+# otherwise silently missed all the generated spacing and toolbar styling.
+for section, values in {
+    "Appearance": {
+        "color_scheme_path": os.path.join(qt_dir, "Imperium.conf"),
+        "custom_palette": "true", "icon_theme": "imperium", "style": "kvantum",
+    },
+    "Fonts": {"fixed": font, "general": font},
+    "Interface": {"stylesheets": qss_path},
+}.items():
+    for key, value in values.items():
+        qt_lines = ensure_pair(qt_lines, section, key, value)
 os.makedirs(os.path.dirname(qt_conf), exist_ok=True)
 with open(qt_conf, "w", encoding="utf-8") as handle:
-    handle.writelines(out_lines)
+    handle.writelines(qt_lines)
 
 def scheme_group(background, alternate_bg, foreground, background_alpha=None):
     return "\n".join([
@@ -736,31 +731,6 @@ if missing:
             rebuilt.insert(1, f"{key}={kde_keys[key]}\n")
     kde_out = rebuilt
 
-def ensure_pair(lines, section, key, value):
-    text = "".join(lines)
-    if f"[{section}]" not in text:
-        if text and not text.endswith("\n"):
-            text += "\n"
-        text += f"[{section}]\n{key}={value}\n"
-        return text.splitlines(keepends=True)
-    out = []
-    in_section = False
-    replaced = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("[") and stripped.endswith("]"):
-            if in_section and not replaced:
-                out.append(f"{key}={value}\n")
-                replaced = True
-            in_section = stripped == f"[{section}]"
-        if in_section and stripped.startswith(f"{key}="):
-            out.append(f"{key}={value}\n")
-            replaced = True
-            continue
-        out.append(line)
-    if in_section and not replaced:
-        out.append(f"{key}={value}\n")
-    return out
 
 kde_out = ensure_pair(kde_out, "Icons", "Theme", "imperium")
 kde_out = ensure_pair(kde_out, "KDE", "widgetStyle", "kvantum")
@@ -1080,17 +1050,9 @@ konsole_lines = ensure_pair(konsole_lines, "TabBar", "TabBarVisibility", "Always
 with open(konsolerc, "w", encoding="utf-8") as handle:
     handle.writelines(konsole_lines)
 
-view_dir = os.path.join(home, ".local", "share", "dolphin", "view_properties", "global")
-view_file = os.path.join(view_dir, ".directory")
-if not os.path.isfile(view_file):
-    os.makedirs(view_dir, exist_ok=True)
-    with open(view_file, "w", encoding="utf-8") as handle:
-        handle.write(
-            "[Dolphin]\n"
-            "ViewMode=2\n"
-            "PreviewsShown=true\n"
-            "HiddenFilesShown=false\n"
-        )
+# Converge existing installations too; appearance is owned by the repo.
+subprocess.run([sys.executable, os.path.join(root, "dolphin", "apply-config.py"),
+                "--home", home], check=True)
 
 def session_env():
     env = os.environ.copy()

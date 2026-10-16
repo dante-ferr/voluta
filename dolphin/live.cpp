@@ -710,10 +710,11 @@ private:
             if (!window) {
                 return;
             }
-            if (dock->width() < kSidebarDefaultWidth) {
+            if (dock->width() != kSidebarDefaultWidth) {
                 window->resizeDocks({dock}, {kSidebarDefaultWidth}, Qt::Horizontal);
             }
-            // Apply once after the sidebar is visible; later user resizing is respected.
+            // Start with the tracked width on both hosts; later resizing in
+            // this window is respected until it is reopened.
             dock->setProperty("imperiumSidebarWidthSet", true);
             return;
         }

@@ -4,6 +4,16 @@
 # 1. Reload Hyprland Window Manager
 hyprctl reload >/dev/null 2>&1 || true
 
+# A pull also changes generated Qt styling, saved view defaults and the hook.
+# Do this before setting Waybar's LD_PRELOAD below.
+refresh_script=$(readlink -f -- "${BASH_SOURCE[0]}")
+rice_root=$(cd -- "$(dirname -- "$refresh_script")/../.." && pwd)
+if [[ -f "$rice_root/dolphin/apply.sh" ]]; then
+    if ! bash "$rice_root/dolphin/apply.sh"; then
+        notify-send "Dolphin refresh failed" "Run bash ~/imperivm-dotfiles/dolphin/apply.sh in a terminal for details."
+    fi
+fi
+
 # 2. Restart Waybar from its config dir so CSS url("assets/...") resolves.
 pkill -x waybar || true
 for _ in {1..15}; do
