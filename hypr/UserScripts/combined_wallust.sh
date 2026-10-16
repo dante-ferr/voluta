@@ -2,8 +2,8 @@
 # combined_wallust.sh - Generate wallust color schemes and reload desktop components
 #
 # Waypaper's post_command is fire-and-forget and can overlap a refresh already
-# in progress. Callers write the requested path to PENDING, then wait briefly
-# for the lock. The holder drains PENDING so the latest wallpaper wins.
+# in progress. Callers queue requested paths; the holder combines them with the
+# current wallpaper on every active display before generating a palette.
 #
 # GTK caches @import CSS, so SIGUSR2 does not pick up a new wallust palette.
 # The bar has to be restarted. Hyprland is then reloaded so window borders
@@ -34,9 +34,9 @@ LOCK="$LOCK_DIR/imperium-combined-wallust.lock"
 PENDING="$LOCK_DIR/imperium-combined-wallust.pending"
 
 if [[ -n "$wallpaper" ]]; then
-    pending_tmp="${PENDING}.$$"
-    printf '%s\n' "$wallpaper" >"$pending_tmp" && mv -f "$pending_tmp" "$PENDING" || true
-    rm -f "$pending_tmp"
+    # Append each monitor's hook argument instead of overwriting earlier ones.
+    # The lock protects draining this queue below.
+    printf '%s\n' "$wallpaper" >>"$PENDING" 2>/dev/null || true
 fi
 
 exec 9>"$LOCK" || {
@@ -80,109 +80,67 @@ get_active_monitors() {
     fi
 }
 
-resolve_wallpaper() {
-    local wp
-    wp=$(expand_path "$1")
-    if [[ -n "$wp" && -f "$wp" ]]; then
-        printf '%s\n' "$wp"
-        return
-    fi
-    if [[ -n "$wp" ]]; then
-        if [[ -f "$HOME/Pictures/Wallpapers/$wp" ]]; then
-            printf '%s\n' "$HOME/Pictures/Wallpapers/$wp"
-            return
-        elif [[ -f "$HOME/Pictures/$wp" ]]; then
-            printf '%s\n' "$HOME/Pictures/$wp"
-            return
-        fi
-    fi
-
-    local monitors=()
+resolve_wallpapers() {
+    local requested="$1" wp query_out daemon mon
+    local monitors=() wallpapers=() seen='|' default_wp
     while IFS= read -r mon; do
         [[ -n "$mon" ]] && monitors+=("$mon")
     done < <(get_active_monitors)
 
-    # 1. Query live wallpaper daemons (awww, swww)
-    local query_out=""
+    add_wallpaper() {
+        local candidate
+        candidate=$(expand_path "$1")
+        [[ -f "$candidate" ]] || return
+        [[ "$seen" == *"|$candidate|"* ]] && return
+        seen+="$candidate|"
+        wallpapers+=("$candidate")
+    }
+
+    # Retain the hook argument in case a daemon's query output lags its update.
+    add_wallpaper "$requested"
+
+    # Query the live daemon for one image per active monitor. Include every
+    # reported image as a fallback when monitor names are not present in output.
     for daemon in awww swww; do
         command -v "$daemon" >/dev/null 2>&1 || continue
-        for (( retry=0; retry<10; retry++ )); do
-            query_out=$("$daemon" query 2>/dev/null || true)
-            [[ -n "$query_out" ]] && break
-            if pgrep -x "${daemon}-daemon" >/dev/null 2>&1 || pgrep -x "$daemon" >/dev/null 2>&1; then
-                sleep 0.15
-            else
-                break
-            fi
+        query_out=$("$daemon" query 2>/dev/null || true)
+        [[ -n "$query_out" ]] || continue
+        for mon in "${monitors[@]}"; do
+            wp=$(printf '%s\n' "$query_out" | grep -F "$mon:" | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
+            [[ -n "$wp" ]] && add_wallpaper "$wp"
         done
-        if [[ -n "$query_out" ]]; then
-            for mon in "${monitors[@]}"; do
-                wp=$(echo "$query_out" | grep -E "(^|: )${mon}:" | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
-                wp=$(expand_path "$wp")
-                if [[ -n "$wp" && -f "$wp" ]]; then
-                    printf '%s\n' "$wp"
-                    return
-                fi
-            done
-            wp=$(echo "$query_out" | grep -o 'image: .*' | head -n 1 | cut -d ' ' -f 2-)
-            wp=$(expand_path "$wp")
-            if [[ -n "$wp" && -f "$wp" ]]; then
-                printf '%s\n' "$wp"
-                return
-            fi
-        fi
+        while IFS= read -r wp; do
+            [[ -n "$wp" ]] && add_wallpaper "$wp"
+        done < <(printf '%s\n' "$query_out" | sed -n 's/.*image: //p')
+        ((${#wallpapers[@]} > 0)) && break
     done
 
-    # 2. Check waypaper persistent state (handles multi-line per-monitor configs)
-    if command -v python3 >/dev/null 2>&1; then
-        wp=$(python3 -c '
+    # Waypaper state is useful during startup before the daemon query is ready.
+    if ((${#wallpapers[@]} == 0)) && command -v python3 >/dev/null 2>&1; then
+        while IFS= read -r wp; do add_wallpaper "$wp"; done < <(python3 -c '
 import configparser, os, sys
-
-active_monitors = sys.argv[1:]
-for conf in ["~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini"]:
-    path = os.path.expanduser(conf)
-    if not os.path.isfile(path):
-        continue
+active = sys.argv[1:]
+for conf in ("~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini"):
     p = configparser.ConfigParser()
-    try:
-        p.read(path, "utf-8")
-    except Exception:
-        continue
+    try: p.read(os.path.expanduser(conf), "utf-8")
+    except Exception: continue
     sec = "State" if p.has_section("State") else ("Settings" if p.has_section("Settings") else None)
-    if not sec:
-        continue
-    mons = [m.strip() for m in p.get(sec, "monitors", fallback="").splitlines() if m.strip()]
-    walls = [w.strip() for w in p.get(sec, "wallpaper", fallback="").splitlines() if w.strip()]
+    if not sec: continue
+    mons = [x.strip() for x in p.get(sec, "monitors", fallback="").splitlines() if x.strip()]
+    walls = [x.strip() for x in p.get(sec, "wallpaper", fallback="").splitlines() if x.strip()]
     mapping = dict(zip(mons, walls))
-    for m in active_monitors:
-        if m in mapping and mapping[m]:
-            expanded = os.path.expanduser(mapping[m])
-            if os.path.isfile(expanded):
-                print(expanded)
-                sys.exit(0)
-    if "All" in mapping and mapping["All"]:
-        expanded = os.path.expanduser(mapping["All"])
-        if os.path.isfile(expanded):
-            print(expanded)
-            sys.exit(0)
-    for w in walls:
-        expanded = os.path.expanduser(w)
-        if os.path.isfile(expanded):
-            print(expanded)
-            sys.exit(0)
+    for m in active:
+        if mapping.get(m): print(mapping[m])
+    if mapping.get("All"): print(mapping["All"])
+    for w in walls: print(w)
 ' "${monitors[@]}" 2>/dev/null)
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            printf '%s\n' "$wp"
-            return
-        fi
     fi
 
-    # 3. Fallback to default wallpaper assets if nothing else resolved
-    local default_wp="$HOME/.config/hypr/assets/school-of-athens.jpg"
-    if [[ -f "$default_wp" ]]; then
-        printf '%s\n' "$default_wp"
-        return
+    if ((${#wallpapers[@]} == 0)); then
+        default_wp="$HOME/.config/hypr/assets/school-of-athens.jpg"
+        add_wallpaper "$default_wp"
     fi
+    printf '%s\n' "${wallpapers[@]}"
 }
 
 # GTK resolves CSS url() against waybar's working directory (often $HOME),
@@ -386,12 +344,26 @@ finish_refresh() {
 }
 
 do_refresh() {
-    local wp="$1"
+    local wallpapers=("${@}") wp palette_image="$LOCK_DIR/imperium-wallust-palette.jpg"
+
+    # Build a compact contact sheet so Wallust samples colors across every
+    # active display instead of only the last Waypaper post_command argument.
+    if ((${#wallpapers[@]} > 1)) && command -v magick >/dev/null 2>&1; then
+        if magick montage "${wallpapers[@]}" -thumbnail 512x512^ -gravity center \
+            -extent 512x512 -tile 2x -geometry +0+0 "$palette_image" 2>/dev/null; then
+            wp="$palette_image"
+        else
+            wp="${wallpapers[0]}"
+        fi
+    elif ((${#wallpapers[@]} > 0)); then
+        wp="${wallpapers[0]}"
+    fi
 
     # -q is a global flag: `wallust -q run …`, not `wallust run -q`.
     if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
         wallust -q run -s "$wp"
     fi
+    [[ "$wp" != "$palette_image" ]] || rm -f "$palette_image"
 
     write_waybar_angel_css
     launch_waybar
@@ -406,17 +378,31 @@ do_refresh() {
     disown $! 2>/dev/null || true
 }
 
-last_wp=""
+# Let rapid per-monitor Waypaper hooks settle before sampling the live display set.
+sleep 0.25
 while true; do
+    requested=()
     if [[ -r "$PENDING" ]]; then
-        wallpaper=$(cat "$PENDING")
-        rm -f "$PENDING"
-    elif [[ -n "$last_wp" ]]; then
+        pending_batch="${PENDING}.$$"
+        mv -f "$PENDING" "$pending_batch" 2>/dev/null || true
+        if [[ -r "$pending_batch" ]]; then
+            mapfile -t requested <"$pending_batch"
+            rm -f "$pending_batch"
+        fi
+    elif [[ -n "$wallpaper" ]]; then
+        requested=("$wallpaper")
+    fi
+
+    # Resolve current display assignments on every pass. This makes startup
+    # refreshes (which have no hook argument) use the same multi-display path.
+    mapfile -t wallpapers < <(resolve_wallpapers "${requested[@]:-}")
+    if ((${#wallpapers[@]} > 0)); then
+        do_refresh "${wallpapers[@]}"
+    fi
+
+    # Drain hooks that arrived while generating the palette, then finish.
+    if [[ ! -s "$PENDING" ]]; then
         break
     fi
-    wallpaper=$(resolve_wallpaper "$wallpaper")
-    if [[ -z "$last_wp" || ( -n "$wallpaper" && "$wallpaper" != "$last_wp" ) ]]; then
-        do_refresh "$wallpaper"
-        last_wp="${wallpaper:-__none__}"
-    fi
+    wallpaper=""
 done
