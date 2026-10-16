@@ -6,9 +6,15 @@ set -e
 
 RICE="${1:-toggle}"
 
-# This script lives in the imperium rice; resolve it so clones outside
-# ~/imperivm-dotfiles still switch correctly.
-IMPERIUM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# This script lives in the imperium rice. ~/rice-switch.sh is a symlink into
+# the checkout. dirname of that symlink is $HOME, and a switch from there
+# removes ~/.config/hypr and turns ~/.zshrc into a symlink to itself.
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || true)"
+if [[ -z "$SCRIPT_PATH" || ! -f "$SCRIPT_PATH" ]]; then
+    echo "Cannot resolve $(basename "${BASH_SOURCE[0]}"). Run the copy inside the rice checkout."
+    exit 1
+fi
+IMPERIUM_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 if [[ -n "${IMPERIUM_DEFAULT_DIR:-}" ]]; then
     DEFAULT_DIR="$IMPERIUM_DEFAULT_DIR"
 elif [[ -d "$HOME/dotfiles" ]]; then
@@ -41,6 +47,11 @@ elif [[ "$RICE" == "default" || "$RICE" == "main" ]]; then
     echo "🔄 Switching to Default rice ($TARGET_DIR)..."
 else
     echo "Usage: $0 [imperium | default | toggle]"
+    exit 1
+fi
+
+if [[ "$(readlink -f "$TARGET_DIR")" == "$(readlink -f "$HOME")" ]]; then
+    echo "Refusing to switch: rice directory resolved to \$HOME."
     exit 1
 fi
 
@@ -191,6 +202,10 @@ link_config() {
     local dest="$HOME/.config/$name"
 
     if [[ -d "$src" || -f "$src" ]]; then
+        if [[ "$src" == "$dest" ]]; then
+            echo "  Refusing to link ~/.config/$name onto itself"
+            exit 1
+        fi
         if [[ -L "$dest" || -e "$dest" ]]; then
             rm -rf "$dest"
         fi
@@ -213,6 +228,10 @@ link_home() {
     local dest="$HOME/.$name"
 
     if [[ -f "$src" ]]; then
+        if [[ "$src" == "$dest" ]]; then
+            echo "  Refusing to link ~/.$name onto itself"
+            exit 1
+        fi
         if [[ -L "$dest" || -e "$dest" ]]; then
             rm -rf "$dest"
         fi
@@ -227,6 +246,10 @@ link_home_file() {
     local dest="$HOME/$name"
 
     if [[ -f "$src" ]]; then
+        if [[ "$src" == "$dest" ]]; then
+            echo "  Refusing to link ~/$name onto itself"
+            exit 1
+        fi
         ln -sfn "$src" "$dest"
         echo "  Linked ~/$name -> $src"
     fi
