@@ -187,16 +187,16 @@ def verify_colors(home: Path, expected_bg: str, label: str) -> None:
 
     live_files = list((home / ".local/share/color-schemes").glob("dolphin-live-*.colors"))
     check(len(live_files) == 1, f"{label}: expected one live Dolphin color scheme")
-    groups: dict[str, dict[str, tuple[int, int, int, int]]] = {}
+    groups: dict[str, dict[str, tuple[int, ...]]] = {}
     group = ""
     for raw in live_files[0].read_text(encoding="utf-8").splitlines():
         if raw.startswith("[") and raw.endswith("]"):
             group = raw[1:-1]
             groups[group] = {}
-        elif group in ("Colors:View", "Colors:Window", "Colors:Complementary") and "=" in raw:
+        elif group in ("Colors:View", "Colors:Window", "Colors:Complementary", "Colors:Selection") and "=" in raw:
             key, value = raw.split("=", 1)
-            if key in ("BackgroundNormal", "BackgroundAlternate"):
-                groups[group][key] = tuple(int(c) for c in value.split(","))  # type: ignore[assignment]
+            if key in ("BackgroundNormal", "BackgroundAlternate", "ForegroundNormal"):
+                groups[group][key] = tuple(int(c) for c in value.split(","))
     target = tuple(int(expected_bg.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))
     for group_name in ("Colors:View", "Colors:Window", "Colors:Complementary"):
         for key in ("BackgroundNormal", "BackgroundAlternate"):
@@ -205,6 +205,10 @@ def verify_colors(home: Path, expected_bg: str, label: str) -> None:
             check(value[:3] == target, f"{label}: {group_name} {key} differs from Dolphin background")
             expected_alpha = 0 if group_name == "Colors:View" else 240
             check(value[3] == expected_alpha, f"{label}: {group_name} {key} opacity is wrong")
+    selection = groups.get("Colors:Selection", {})
+    check("BackgroundNormal" in selection and "ForegroundNormal" in selection, f"{label}: missing selection colors")
+    check(contrast(selection["ForegroundNormal"], selection["BackgroundNormal"]) >= 4.5,
+          f"{label}: selected text contrast below 4.5")
 
 
 def verify_cache_refresh(base: Path, source: Path) -> None:

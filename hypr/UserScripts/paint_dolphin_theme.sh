@@ -145,7 +145,7 @@ while contrast(muted, mantle) < 3.5:
     muted = lighten(muted, 0.05)
 alternate = mix(mantle, text, 0.06)
 hover = mix(mantle, accent, 0.34)
-select_bg = mix(mantle, accent, 0.72)
+select_bg = mix(mantle, accent, 0.50)
 selection_text = text if contrast(text, select_bg) >= 4.5 else readable(text, select_bg, 4.5)
 surface1 = mix(surface0, accent, 0.35)
 surface2 = muted
