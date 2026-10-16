@@ -1,9 +1,10 @@
 [CompactMode]
-PreviewSize=16
+PreviewSize=80
 
 [DetailsMode]
 ExpandableFolders=true
-PreviewSize=16
+IconSize=22
+PreviewSize=22
 
 [General]
 BrowseThroughArchives=true
@@ -18,7 +19,7 @@ UseTabForSwitchingSplitView=true
 Version=202
 
 [IconsMode]
-PreviewSize=80
+PreviewSize=112
 
 [KFileDialog Settings]
 Places Icons Auto-resize=false

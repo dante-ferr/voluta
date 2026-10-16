@@ -48,7 +48,7 @@
 namespace {
 
 constexpr int kBackgroundAlpha = 240; // 0.94. Kitty uses 0.75.
-constexpr int kPlacesSpacing = 2;
+constexpr int kPlacesSpacing = 1;
 constexpr int kPlacesIconSize = 24;
 constexpr int kPlacesExtraIconGap = 8;
 constexpr int kSidebarDefaultWidth = 240;

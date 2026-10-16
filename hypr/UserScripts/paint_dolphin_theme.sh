@@ -163,6 +163,7 @@ tokens = {
     "@@SURFACE1@@": hx(surface1),
     "@@SURFACE2@@": hx(surface2),
     "@@TEXT@@": hx(text),
+    "@@SELECT_BG@@": hx(select_bg),
     "@@SELECT_TEXT@@": hx(selection_text),
     "@@ACCENT@@": hx(accent),
     "@@NEGATIVE@@": hx(negative),
@@ -445,13 +446,13 @@ QTreeView::item:selected:!active, QListView::item:selected:!active, QTableView::
 }}
 DolphinMainWindow KFilePlacesView {{
     background-color: transparent;
-    qproperty-spacing: 2;
+    qproperty-spacing: 1;
     padding: 4px 0px 8px 12px;
 }}
 DolphinMainWindow KFilePlacesView::item {{
     color: #{ivory};
     background-color: transparent;
-    padding: 4px 12px;
+    padding: 3px 12px;
     margin: 0px;
 }}
 DolphinMainWindow KFilePlacesView::item:hover {{
@@ -523,8 +524,8 @@ Baloo--FileMetaDataWidget {{
 """.lstrip())
 
 qt_conf = os.path.join(home, ".config", "qt6ct", "qt6ct.conf")
-font = '"JetBrains Mono,11,-1,5,50,0,0,0,0,0,0,0,0,0,0,1,Regular"'
-font_general = '"JetBrains Mono,12,-1,5,50,0,0,0,0,0,0,0,0,0,0,1,Regular"'
+font = '"Monaspace Argon,10,-1,5,50,0,0,0,0,0,0,0,0,0,0,0,1,Regular"'
+font_general = '"Monaspace Argon,10,-1,5,50,0,0,0,0,0,0,0,0,0,0,0,1,Regular"'
 replacements = {
     "color_scheme_path": "$HOME/.config/qt6ct/colors/Imperium.conf",
     "custom_palette": "true",
@@ -692,9 +693,9 @@ for name in os.listdir(scheme_dir):
 live_conf = os.path.join(home, ".config", "qt6ct", "dolphin-live.conf")
 
 kdeglobals = os.path.join(home, ".config", "kdeglobals")
-font_kde = "JetBrains Mono,11,-1,5,50,0,0,0,0,0,Regular"
-font_small = "JetBrains Mono,8,-1,5,50,0,0,0,0,0,Regular"
-font_toolbar = "JetBrains Mono,10,-1,5,50,0,0,0,0,0,Regular"
+font_kde = "Monaspace Argon,10,-1,5,50,0,0,0,0,0,Regular"
+font_small = "Monaspace Argon,8,-1,5,50,0,0,0,0,0,Regular"
+font_toolbar = "Monaspace Argon,10,-1,5,50,0,0,0,0,0,Regular"
 kde_keys = {
     "ColorScheme": "Imperium",
     "TerminalApplication": "kitty",
@@ -1033,7 +1034,7 @@ profile_body = (
         "[Appearance]\n"
         "BoldIntense=false\n"
         f"ColorScheme={terminal_live}\n"
-        "Font=JetBrains Mono,11\n"
+        "Font=Monaspace Argon,10\n"
         "LineSpacing=0\n"
         "\n"
         "[General]\n"
