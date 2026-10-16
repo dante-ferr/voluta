@@ -29,6 +29,4 @@ bash "$root/hypr/scripts/SetDefaultFileManager.sh"
 bash "$here/launch.sh" --prepare
 bash "$root/hypr/UserScripts/paint_dolphin_theme.sh"
 
-if pgrep -u "$(id -u)" -x dolphin >/dev/null; then
-    notify-send "Dolphin appearance applied" "Fully quit Dolphin and reopen it to apply updated code and saved view settings." 2>/dev/null || true
-fi
+python3 "$here/notify-restart.py" || true

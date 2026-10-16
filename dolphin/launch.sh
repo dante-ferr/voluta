@@ -14,14 +14,9 @@ if ! bash "$here/build.sh"; then
 fi
 [[ ${1:-} == --prepare ]] && exit 0
 
-# Dolphin may forward this launch to an existing process. Replacing the .so
-# cannot update code already mapped there, and stopping it could interrupt I/O.
-while IFS= read -r pid; do
-    if [[ -r /proc/$pid/maps ]] && { ! grep -Fq "$lib" "/proc/$pid/maps" || grep -Fq "$lib (deleted)" "/proc/$pid/maps"; }; then
-        notify-send "Dolphin restart needed" "Fully quit Dolphin, then reopen it to load the current Imperium customization." 2>/dev/null || true
-        break
-    fi
-done < <(pgrep -u "$(id -u)" -x dolphin || true)
+# An existing application can retain old code; the shell wrapper itself is
+# not such a process. The shared check also suppresses repeated warnings.
+python3 "$here/notify-restart.py" || true
 
 export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
 export QT_QPA_PLATFORMTHEME=qt6ct
