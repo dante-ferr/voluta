@@ -292,6 +292,8 @@ def verify_existing_install(base: Path, source: Path) -> None:
         check(not (config / "dolphinrc").is_symlink(), "Dolphin can still overwrite the tracked baseline")
         check(rc["DetailsMode"]["IconSize"] == "22", "old visual settings survived migration")
         check(rc["General"]["GlobalViewProps"] == "true", "global view defaults not enforced")
+        for mode in ("IconsMode", "CompactMode", "DetailsMode"):
+            check(rc[mode]["UseSystemFont"] == "true", f"{mode}: local custom font overrides the shared font")
         check(rc["LocalSession"]["Path"] == "/tmp/local-folder", "migration removed local session state")
         check(read(view)["Dolphin"]["ViewMode"] == "2", "existing view mode was not updated")
         check(read(view)["Dolphin"]["PreviewsShown"] == "true", "existing preview setting was not updated")
@@ -303,6 +305,21 @@ def verify_existing_install(base: Path, source: Path) -> None:
     check(original.read_text().startswith("[DetailsMode]\nIconSize=48\n"), "migration wrote through the old symlink")
     check((config / "dolphinrc.pre-imperium").read_bytes() == original.read_bytes(), "original config backup was overwritten")
     check((home / ".local/share/kxmlgui5/dolphin/dolphinui.rc").resolve() == ROOT / "dolphin/dolphinui.rc", "toolbar override points at another checkout")
+
+
+def verify_qt_appearance(home: Path, base: Path) -> None:
+    # Exercise Qt's actual font parser and dock layout, rather than assuming
+    # identical INI strings imply identical font weights or panel placement.
+    flags = subprocess.check_output(["pkg-config", "--cflags", "--libs", "Qt6Widgets"], text=True).split()
+    binary = base / "appearance-check"
+    subprocess.run([
+        "g++", "-fPIC", "-std=c++17", "-pthread",
+        "-I/usr/include/KF6/KIconThemes", "-I/usr/include/KF6/KParts",
+        str(ROOT / "tools/check-dolphin-appearance.cpp"), "-o", str(binary),
+        *flags, "-lKF6IconThemes",
+    ], check=True)
+    env = dict(os.environ, HOME=str(home), FONTCONFIG_FILE=str(ROOT / "dolphin/fonts.conf"))
+    subprocess.run([str(binary), str(home), "-platform", "offscreen"], env=env, check=True)
 
 
 def main() -> None:
@@ -331,6 +348,7 @@ def main() -> None:
         write_palette(custom_palette_path, custom_palette)
         run_generator(custom_home, custom_cache, icon_source, custom_palette_path)
         verify_colors(custom_home, dolphin_background(custom_palette["bg"]), "generated palette")
+        verify_qt_appearance(custom_home, base)
 
         fallback = base / "fallback-case"
         fallback_home = fallback / "home"

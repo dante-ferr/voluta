@@ -19,6 +19,7 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileSystemWatcher>
+#include <QFont>
 #include <QGraphicsView>
 #include <QGraphicsWidget>
 #include <QListView>
@@ -55,6 +56,47 @@ constexpr int kPlacesSpacing = 1;
 constexpr int kPlacesIconSize = 24;
 constexpr int kPlacesExtraIconGap = 8;
 constexpr int kSidebarDefaultWidth = 240;
+
+QFont imperiumFont()
+{
+    QFont font(QStringLiteral("Monaspace Argon"), 10, QFont::Normal);
+    font.setStyleName(QStringLiteral("Regular"));
+    return font;
+}
+
+void applyInitialPanelLayout(QMainWindow *window)
+{
+    if (!window->isVisible() || window->property("imperiumPanelLayoutSet").toBool()) {
+        return;
+    }
+    auto *places = window->findChild<QDockWidget *>(QStringLiteral("placesDock"));
+    if (!places) {
+        return;
+    }
+    // Restore named docks after Dolphin has restored its machine-local State
+    // blob. Keep visibility choices, but start Places at the top of the left
+    // sidebar, Folders below it, Information right, and Terminal below files.
+    const auto dock = [window](QDockWidget *panel, Qt::DockWidgetArea area) {
+        if (!panel) {
+            return;
+        }
+        const bool hidden = panel->isHidden();
+        panel->setFloating(false);
+        window->addDockWidget(area, panel);
+        panel->setVisible(!hidden);
+    };
+    dock(places, Qt::LeftDockWidgetArea);
+    auto *folders = window->findChild<QDockWidget *>(QStringLiteral("foldersDock"));
+    if (folders) {
+        const bool hidden = folders->isHidden();
+        dock(folders, Qt::LeftDockWidgetArea);
+        window->splitDockWidget(places, folders, Qt::Vertical);
+        folders->setVisible(!hidden);
+    }
+    dock(window->findChild<QDockWidget *>(QStringLiteral("infoDock")), Qt::RightDockWidgetArea);
+    dock(window->findChild<QDockWidget *>(QStringLiteral("terminalDock")), Qt::BottomDockWidgetArea);
+    window->setProperty("imperiumPanelLayoutSet", true);
+}
 
 // KIO paints its own labels with a hard-coded four-pixel icon gap. Keep its
 // delegate, animations, capacity bars and event handling, and insert eight
@@ -575,12 +617,22 @@ private:
         // then reads the wallpaper's colors, including the background alpha.
         qApp->setProperty("KDE_COLOR_SCHEME_PATH", schemePath);
 
+        const QFont font = imperiumFont();
+        if (qApp->font() != font) {
+            qApp->setFont(font);
+        }
+
         const QPalette palette = paletteFrom(colors);
         if (!sameColor(qApp->palette(), palette)) {
             qApp->setPalette(palette);
         }
 
         const auto widgets = QApplication::allWidgets();
+        for (QWidget *widget : widgets) {
+            if (auto *window = qobject_cast<QMainWindow *>(widget); window && window->inherits("DolphinMainWindow")) {
+                applyInitialPanelLayout(window);
+            }
+        }
         for (QWidget *widget : widgets) {
             if (widget->inherits("TerminalPanel") && !terminalProfile.isEmpty()) {
                 for (QObject *child : widget->findChildren<QObject *>()) {

@@ -24,9 +24,17 @@ launch, including on existing installations. Other settings, bookmarks, paths,
 window geometry and sessions remain local. Originals are backed up once beside
 the local files with the suffix `.pre-imperium`.
 
-The sidebar starts at the width defined in `live.cpp` on each new window.
-Changing the width in a running window is still supported. Opaque Qt dock/window
-state is not copied between displays with different sizes or scaling.
+Each new window restores a shared logical panel layout after Dolphin reads its
+local Qt state: Places above Folders on the left, Information on the right and
+Terminal below the files. Visibility choices remain local. The sidebar starts
+at the width defined in `live.cpp`. Later changes in that window are supported.
+Opaque Qt window geometry is not copied between displays.
+
+The Qt/KDE font strings use Qt 6's explicit Normal weight (400). The live hook
+also sets Monaspace Argon Regular at 10 points, and every view mode uses the
+system font instead of retaining a local custom font. `fonts.conf` gives this
+launcher the desktop's grayscale antialiasing and slight hinting, independently
+of machine-local fontconfig rules. It is inherited by the embedded terminal.
 
 The launcher waits for a changed hook to compile and reports build failures
 instead of quietly loading an older version. Its cache fingerprints source,
@@ -43,3 +51,8 @@ dependency list includes `otf-monaspace`, Kvantum, Breeze, qt6ct and the build
 dependencies. For a newly added dependency, run `rice-switch.sh imperium` once.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.
+
+Run `python3 tools/check-dolphin-theme.py` from the checkout to check existing
+install migration, generated themes, Qt font parsing, and panel positioning in
+an isolated home with Qt's offscreen platform. The checks require the build
+dependencies listed in `deps/arch.txt` and do not open a Dolphin window.

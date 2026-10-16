@@ -25,6 +25,7 @@ done < <(pgrep -u "$(id -u)" -x dolphin || true)
 
 export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
 export QT_QPA_PLATFORMTHEME=qt6ct
+export FONTCONFIG_FILE="$here/fonts.conf"
 
 platform_args=()
 host=$(< /etc/hostname)

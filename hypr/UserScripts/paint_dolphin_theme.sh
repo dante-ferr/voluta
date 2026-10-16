@@ -551,7 +551,10 @@ def ensure_pair(lines, section, key, value):
 
 
 qt_conf = os.path.join(home, ".config", "qt6ct", "qt6ct.conf")
-font = '"Monaspace Argon,10,-1,5,50,0,0,0,0,0,0,0,0,0,0,0,1,Regular"'
+# QFont::toString() in Qt 6 uses OpenType weights (Normal=400). A long
+# Qt 6 string with legacy weight 50 requests an extremely light font.
+font_regular = "Monaspace Argon,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
+font = '"' + font_regular + '"'
 if os.path.isfile(qt_conf):
     with open(qt_conf, encoding="utf-8") as handle:
         qt_lines = handle.readlines()
@@ -688,9 +691,9 @@ for name in os.listdir(scheme_dir):
 live_conf = os.path.join(home, ".config", "qt6ct", "dolphin-live.conf")
 
 kdeglobals = os.path.join(home, ".config", "kdeglobals")
-font_kde = "Monaspace Argon,10,-1,5,50,0,0,0,0,0,Regular"
-font_small = "Monaspace Argon,8,-1,5,50,0,0,0,0,0,Regular"
-font_toolbar = "Monaspace Argon,10,-1,5,50,0,0,0,0,0,Regular"
+font_kde = font_regular
+font_small = font_regular.replace(",10,", ",8,", 1)
+font_toolbar = font_regular
 kde_keys = {
     "ColorScheme": "Imperium",
     "TerminalApplication": "kitty",
@@ -1004,7 +1007,7 @@ profile_body = (
         "[Appearance]\n"
         "BoldIntense=false\n"
         f"ColorScheme={terminal_live}\n"
-        "Font=Monaspace Argon,10\n"
+        f"Font={font_regular}\n"
         "LineSpacing=0\n"
         "\n"
         "[General]\n"
