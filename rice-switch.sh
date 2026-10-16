@@ -57,40 +57,8 @@ fi
 
 # --- Imperium dependency bootstrap ------------------------------------------
 
-pkg_installed() {
-    pacman -Q "$1" >/dev/null 2>&1 && return 0
-    # Some tools are already on disk without a pacman entry. Matching only
-    # /usr/bin avoids the Imperium Dolphin wrapper in ~/.local/bin.
-    [[ -x "/usr/bin/$1" ]]
-}
-
-collect_missing_pkgs() {
-    local line pkg alts installed chosen
-    MISSING_PKGS=()
-    [[ -r "$DEPS_FILE" ]] || return 0
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line="${line%%#*}"
-        line="${line#"${line%%[![:space:]]*}"}"
-        line="${line%"${line##*[![:space:]]}"}"
-        [[ -z "$line" ]] && continue
-        installed=0
-        chosen=""
-        IFS='|' read -r -a alts <<<"$line"
-        for pkg in "${alts[@]}"; do
-            pkg="${pkg#"${pkg%%[![:space:]]*}"}"
-            pkg="${pkg%"${pkg##*[![:space:]]}"}"
-            [[ -z "$pkg" ]] && continue
-            [[ -z "$chosen" ]] && chosen=$pkg
-            if pkg_installed "$pkg"; then
-                installed=1
-                break
-            fi
-        done
-        if ((installed == 0)) && [[ -n "$chosen" ]]; then
-            MISSING_PKGS+=("$chosen")
-        fi
-    done <"$DEPS_FILE"
-}
+# shellcheck source=deps/packages.sh
+source "$IMPERIUM_DIR/deps/packages.sh"
 
 floorp_present() {
     command -v floorp >/dev/null 2>&1 && return 0
@@ -98,69 +66,13 @@ floorp_present() {
 }
 
 ensure_imperium_deps() {
-    local missing_pkgs=() need_floorp=0 installer
-
-    collect_missing_pkgs
-    missing_pkgs=("${MISSING_PKGS[@]+"${MISSING_PKGS[@]}"}")
-
-    if ! floorp_present; then
-        need_floorp=1
-    fi
-
-    if ((${#missing_pkgs[@]} == 0)) && ((need_floorp == 0)); then
-        echo "📦 Imperium dependencies already satisfied."
+    local installer
+    ensure_arch_packages "$DEPS_FILE" Imperium || return 1
+    if floorp_present; then
         return 0
     fi
 
-    if ((${#missing_pkgs[@]} > 0)); then
-        echo "📦 Missing packages: ${missing_pkgs[*]}"
-        if ! command -v paru >/dev/null 2>&1; then
-            echo "⚠️  paru not found; skipping package install. Install manually: ${missing_pkgs[*]}"
-            notify-send "Imperium Rice" "paru missing; install: ${missing_pkgs[*]}" 2>/dev/null || true
-        else
-            installer=$(mktemp /tmp/imperium-deps-XXXXXX.sh)
-            log=$(mktemp /tmp/imperium-deps-XXXXXX.log)
-            {
-                echo '#!/usr/bin/env bash'
-                echo 'set -o pipefail'
-                echo 'log=$1'
-                echo 'fail=0'
-                echo 'echo "Installing Imperium packages with paru..." | tee -a "$log"'
-                # One package per transaction. A file conflict in one name
-                # must not roll back the rest of the rice.
-                for pkg in "${missing_pkgs[@]}"; do
-                    printf 'echo ">> %q" | tee -a "$log"\n' "$pkg"
-                    printf 'if ! paru -S --needed --noconfirm %q 2>&1 | tee -a "$log"; then\n' "$pkg"
-                    echo '  fail=1'
-                    echo 'fi'
-                done
-                echo 'if ((fail != 0)); then'
-                echo '  echo "Install failed." | tee -a "$log"'
-                echo '  exit 1'
-                echo 'fi'
-                echo 'echo "Packages installed." | tee -a "$log"'
-            } >"$installer"
-            chmod +x "$installer"
-            # A graphical switch has no terminal for paru's password prompt.
-            # The installer tees into the log, so a closed window still explains a failure.
-            if command -v kitty >/dev/null 2>&1 && [[ -n ${WAYLAND_DISPLAY:-}${DISPLAY:-} ]]; then
-                kitty --class imperium-deps --title "Imperium deps" -e bash "$installer" "$log" || true
-            else
-                bash "$installer" "$log" || true
-            fi
-            if [[ -s "$log" ]]; then
-                cat "$log"
-            fi
-            rm -f "$installer" "$log"
-            collect_missing_pkgs
-            if ((${#MISSING_PKGS[@]} > 0)); then
-                echo "⚠️  Still missing: ${MISSING_PKGS[*]}"
-                notify-send "Imperium Rice" "Still missing: ${MISSING_PKGS[*]}" 2>/dev/null || true
-            fi
-        fi
-    fi
-
-    if ((need_floorp)); then
+    if ! floorp_present; then
         echo "📦 Floorp not found; installing Flatpak $FLOORP_FLATPAK..."
         if ! command -v flatpak >/dev/null 2>&1; then
             echo "⚠️  flatpak not found; install Floorp manually (Flatpak: $FLOORP_FLATPAK)."

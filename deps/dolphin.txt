@@ -1,0 +1,23 @@
+# Shared by dolphin/apply.sh and the full Imperium installer.
+dolphin
+dolphin-plugins
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xdg-desktop-portal-kde
+ffmpegthumbs
+kdegraphics-thumbnailers
+kio-extras
+konsole
+breeze
+breeze-icons
+kvantum
+qt6ct
+qt6-base
+kiconthemes
+kparts
+pkgconf
+gcc
+python
+fontconfig
+otf-monaspace

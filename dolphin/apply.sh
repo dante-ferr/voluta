@@ -3,7 +3,18 @@
 set -euo pipefail
 here=$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")
 root=${here%/*}
-[[ -x /usr/bin/dolphin ]] || exit 0
+# Install before touching appearance files or building the hook. The full
+# rice installer includes the same manifest, so both entry points converge.
+source "$root/deps/packages.sh"
+ensure_arch_packages "$root/deps/dolphin.txt" Dolphin
+
+if ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
+    fc-cache -f
+    if ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
+        echo 'otf-monaspace is installed, but fontconfig cannot resolve Monaspace Argon.' >&2
+        exit 1
+    fi
+fi
 
 python3 "$here/apply-config.py"
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
@@ -18,10 +29,6 @@ bash "$root/hypr/scripts/SetDefaultFileManager.sh"
 bash "$here/launch.sh" --prepare
 bash "$root/hypr/UserScripts/paint_dolphin_theme.sh"
 
-if command -v fc-match >/dev/null 2>&1 && ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
-    echo 'Install otf-monaspace for the Imperium Dolphin font.' >&2
-    notify-send "Dolphin font missing" "Install otf-monaspace, then reopen Dolphin." 2>/dev/null || true
-fi
 if pgrep -u "$(id -u)" -x dolphin >/dev/null; then
     notify-send "Dolphin appearance applied" "Fully quit Dolphin and reopen it to apply updated code and saved view settings." 2>/dev/null || true
 fi

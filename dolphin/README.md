@@ -13,7 +13,13 @@ bash ~/imperivm-dotfiles/dolphin/apply.sh
 
 This installs the launcher and desktop/D-Bus routing, merges the managed visual
 settings, builds the current hook, and regenerates Qt/Kvantum styling, icons,
-and the embedded terminal profile. The generator also applies managed settings
+and the embedded terminal profile. It first installs missing packages from
+`deps/dolphin.txt`, including `otf-monaspace`, using the same installer as the
+full rice switch. It uses `paru`, or `sudo pacman` when paru is unavailable.
+A keybind invocation opens Kitty for authentication when needed; a terminal
+invocation uses that terminal. Installation failures stop the apply before
+appearance files are changed and report the remaining packages and a log path.
+The generator also applies managed settings
 on wallpaper changes. Switching to Imperium installs dependencies and prepares
 the hook before restoring the desktop.
 
@@ -48,7 +54,8 @@ Refresh never kills an active Dolphin process or interrupts file transfers.
 
 Fonts and system Qt/KDE assets must also be installed on both hosts; the shared
 dependency list includes `otf-monaspace`, Kvantum, Breeze, qt6ct and the build
-dependencies. For a newly added dependency, run `rice-switch.sh imperium` once.
+dependencies. Both `dolphin/apply.sh` and `rice-switch.sh imperium` install
+newly added dependencies automatically.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.
 
