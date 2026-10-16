@@ -291,6 +291,12 @@ link_home_file "rice-select.sh" "$IMPERIUM_DIR/rice-select.sh"
 link_home_file "rice-switch.sh" "$IMPERIUM_DIR/rice-switch.sh"
 
 if [[ "$RICE" != "imperium" ]]; then
+    for service in org.freedesktop.FileManager1 org.kde.dolphin.FileManager1; do
+        service_dst="${XDG_DATA_HOME:-$HOME/.local/share}/dbus-1/services/$service.service"
+        if [[ -f "$service_dst" ]] && grep -q '^# Managed by Imperium SetDefaultFileManager.sh$' "$service_dst"; then
+            rm -f "$service_dst"
+        fi
+    done
     drop_link_into "$HOME/.local/bin/dolphin" "$IMPERIUM_DIR"
     drop_link_into "$HOME/.local/share/kxmlgui5/dolphin/dolphinui.rc" "$IMPERIUM_DIR"
     desktop_dst="$HOME/.local/share/applications/org.kde.dolphin.desktop"
@@ -301,8 +307,7 @@ if [[ "$RICE" != "imperium" ]]; then
 fi
 
 if [[ "$RICE" == "imperium" && -f /usr/share/applications/org.kde.dolphin.desktop ]]; then
-    xdg-mime default org.kde.dolphin.desktop inode/directory || true
-    xdg-mime default org.kde.dolphin.desktop application/x-directory || true
+    bash "$TARGET_DIR/hypr/scripts/SetDefaultFileManager.sh"
 fi
 
 # SDDM lives under /usr/share; apply the Imperium greeter when we can.

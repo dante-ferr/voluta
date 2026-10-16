@@ -252,6 +252,13 @@ hl.window_rule({
     opacity = "1.0 1.0",
 })
 
+-- App Open/Save dialogs float; regular Dolphin windows use the normal layout.
+hl.window_rule({
+    name = "kde-file-picker-floating",
+    match = { class = "^(org\\.freedesktop\\.impl\\.portal\\.desktop\\.kde|xdg-desktop-portal-kde|org\\.kde\\.xdg-desktop-portal-kde)$" },
+    float = true,
+})
+
 
 
 -- Float, center, and resize volume control (pavucontrol) and network connection editor (nm-connection-editor)

@@ -52,6 +52,10 @@ wireplumber
 # launch.sh compiles dolphin/live.cpp against Qt6 and KIconThemes.
 dolphin
 dolphin-plugins
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xdg-desktop-portal-kde
 ffmpegthumbs
 kdegraphics-thumbnailers
 kio-extras

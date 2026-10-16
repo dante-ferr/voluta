@@ -180,7 +180,7 @@ def resolve_command(client):
         return "telegram-desktop", home
 
     # 5. File Managers
-    if "dolphin" in cls:
+    if any(manager in cls for manager in ("dolphin", "nautilus", "org.gnome.nautilus", "thunar")):
         try:
             cwd = os.readlink(f"/proc/{pid}/cwd")
             if os.path.isdir(cwd):
@@ -188,22 +188,6 @@ def resolve_command(client):
         except Exception:
             pass
         return dolphin_launch(), home
-    if "nautilus" in cls or "org.gnome.nautilus" in cls:
-        try:
-            cwd = os.readlink(f"/proc/{pid}/cwd")
-            if os.path.isdir(cwd):
-                return f"nautilus '{cwd}'", cwd
-        except Exception:
-            pass
-        return "nautilus", home
-    if "thunar" in cls:
-        try:
-            cwd = os.readlink(f"/proc/{pid}/cwd")
-            if os.path.isdir(cwd):
-                return f"thunar '{cwd}'", cwd
-        except Exception:
-            pass
-        return "thunar", home
 
     # 6. Fallback: Parse /proc/<pid>/cmdline if available
     if pid:
