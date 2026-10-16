@@ -23,10 +23,13 @@
 #include <QGraphicsWidget>
 #include <QListView>
 #include <QMainWindow>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QPointer>
+#include <QProxyStyle>
 #include <QStyleOptionViewItem>
 #include <QStyle>
+#include <QStyleFactory>
 #include <QtMath>
 #include <QStatusBar>
 #include <QToolBar>
@@ -354,6 +357,120 @@ bool sameColor(const QPalette &have, const QPalette &want)
         && have.color(QPalette::Accent) == want.color(QPalette::Accent);
 }
 
+// Dolphin supplies the branch cell and expanded state through QStyle, but
+// does not pass the row's hover state. Use the painter's row transform to
+// reveal the native toggle on row hover without changing its hit target.
+class FolderBranchStyle : public QProxyStyle
+{
+public:
+    explicit FolderBranchStyle(QGraphicsView *view)
+        : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))), m_view(view)
+    {
+        setParent(view->scene());
+        view->viewport()->setMouseTracking(true);
+        view->viewport()->installEventFilter(this);
+    }
+
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (m_view && watched == m_view->viewport()) {
+            if (event->type() == QEvent::MouseMove) {
+                updateHover(static_cast<QMouseEvent *>(event)->position().toPoint());
+            } else if (event->type() == QEvent::Enter) {
+                updateHover(static_cast<QEnterEvent *>(event)->position().toPoint());
+            } else if (event->type() == QEvent::Leave) {
+                updateHover(QPoint(-1, -1));
+            } else if (event->type() == QEvent::Wheel) {
+                QTimer::singleShot(0, this, [this] { updateHover(m_pointer); });
+            }
+        }
+        return QProxyStyle::eventFilter(watched, event);
+    }
+
+    void drawPrimitive(PrimitiveElement element, const QStyleOption *option,
+                       QPainter *painter, const QWidget *widget = nullptr) const override
+    {
+        if (element != PE_IndicatorBranch) {
+            QProxyStyle::drawPrimitive(element, option, painter, widget);
+            return;
+        }
+        if (!(option->state & State_Children) || !m_view) {
+            return;
+        }
+        const bool expanded = option->state & State_Open;
+        const QWidget *viewport = m_view->viewport();
+        bool invertible = false;
+        const QTransform inverse = painter->worldTransform().inverted(&invertible);
+        const qreal rowY = inverse.map(QPointF(m_pointer)).y();
+        const bool hovered = invertible && viewport->rect().contains(m_pointer)
+            && rowY >= option->rect.top() && rowY < option->rect.bottom() + 1;
+        if (!hovered) {
+            return;
+        }
+
+        const QPointF center = QRectF(option->rect).center();
+        const qreal direction = m_view->layoutDirection() == Qt::RightToLeft ? -1.0 : 1.0;
+        QPolygonF chevron;
+        if (expanded) {
+            chevron << QPointF(-3.5, -1.75) << QPointF(0, 1.75) << QPointF(3.5, -1.75);
+        } else {
+            chevron << QPointF(-1.75 * direction, -3.5) << QPointF(1.75 * direction, 0)
+                    << QPointF(-1.75 * direction, 3.5);
+        }
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing);
+        painter->translate(center);
+        painter->setPen(QPen(m_view->palette().color(QPalette::Text), 1.5,
+                             Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter->drawPolyline(chevron);
+        painter->restore();
+    }
+
+private:
+    void updateHover(const QPoint &pointer)
+    {
+        m_pointer = pointer;
+        if (!m_view) {
+            return;
+        }
+        QGraphicsWidget *next = nullptr;
+        QWidget *viewport = m_view->viewport();
+        if (viewport->rect().contains(pointer)) {
+            // Hit-test the whole horizontal row, including its empty gutters.
+            const auto items = m_view->items(QRect(0, pointer.y(), viewport->width(), 1),
+                                             Qt::IntersectsItemBoundingRect);
+            const QPointF scenePointer = m_view->mapToScene(pointer);
+            for (QGraphicsItem *item : items) {
+                auto *row = qgraphicsitem_cast<QGraphicsWidget *>(item);
+                if (row && row->inherits("DolphinFileItemListWidget")) {
+                    // The one-pixel query intersects both rows at a boundary.
+                    // Match the painter's half-open vertical interval instead
+                    // of switching early to the next row while moving down.
+                    const qreal localY = row->mapFromScene(scenePointer).y();
+                    const QRectF bounds = row->boundingRect();
+                    if (localY >= bounds.top() && localY < bounds.bottom()) {
+                        next = row;
+                        break;
+                    }
+                }
+            }
+        }
+        if (m_hoveredRow != next) {
+            if (m_hoveredRow) {
+                m_hoveredRow->update();
+            }
+            m_hoveredRow = next;
+            if (next) {
+                next->update();
+            }
+        }
+    }
+
+    QPointer<QGraphicsView> m_view;
+    QPointer<QGraphicsWidget> m_hoveredRow;
+    QPoint m_pointer{-1, -1};
+};
+
 class LiveTheme : public QObject
 {
 public:
@@ -513,6 +630,13 @@ private:
             const auto items = view->scene()->items();
             for (QGraphicsItem *item : items) {
                 auto *graphics = qgraphicsitem_cast<QGraphicsWidget *>(item);
+                if (graphics && graphics->inherits("DolphinItemListView")
+                    && !view->scene()->property("imperiumFolderBranches").toBool()) {
+                    // Graphics widgets inherit the scene style, rather than
+                    // their parent widget's style. This also covers new rows.
+                    view->scene()->setStyle(new FolderBranchStyle(view));
+                    view->scene()->setProperty("imperiumFolderBranches", true);
+                }
                 if (graphics && !sameColor(graphics->palette(), palette)) {
                     graphics->setPalette(palette);
                 }
