@@ -33,4 +33,17 @@ fi
 if [[ -f "$lib" ]]; then
     export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
-exec /usr/bin/dolphin "$@"
+
+platform_args=()
+host=$(< /etc/hostname)
+if [[ "$host" == frank && -n "${WAYLAND_DISPLAY:-}" ]]; then
+    # Qt's default shared-memory presentation stalls during selection on DP-2.
+    # The native Wayland RHI path was verified smooth in the interactive test.
+    # Keep this workaround in Dolphin's launcher, away from session-wide Qt
+    # settings and the notebook's Intel graphics configuration.
+    # https://github.com/hyprwm/Hyprland/discussions/11133
+    export QT_WIDGETS_RHI=1
+    export QT_WIDGETS_RHI_BACKEND=opengl
+    platform_args=(-platform wayland)
+fi
+exec /usr/bin/dolphin "${platform_args[@]}" "$@"

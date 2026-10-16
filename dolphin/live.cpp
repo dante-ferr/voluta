@@ -375,7 +375,17 @@ public:
     {
         if (m_view && watched == m_view->viewport()) {
             if (event->type() == QEvent::MouseMove) {
-                updateHover(static_cast<QMouseEvent *>(event)->position().toPoint());
+                const auto *mouse = static_cast<QMouseEvent *>(event);
+                // Rubber-band selection already hit-tests and repaints the
+                // scene. Do not run a second full-width scene query for every
+                // drag event just to reveal a folder toggle.
+                updateHover(mouse->buttons() == Qt::NoButton
+                                ? mouse->position().toPoint() : QPoint(-1, -1));
+            } else if (event->type() == QEvent::MouseButtonRelease) {
+                const auto *mouse = static_cast<QMouseEvent *>(event);
+                if (mouse->buttons() == Qt::NoButton) {
+                    updateHover(mouse->position().toPoint());
+                }
             } else if (event->type() == QEvent::Enter) {
                 updateHover(static_cast<QEnterEvent *>(event)->position().toPoint());
             } else if (event->type() == QEvent::Leave) {
@@ -402,7 +412,7 @@ public:
         bool invertible = false;
         const QTransform inverse = painter->worldTransform().inverted(&invertible);
         const qreal rowY = inverse.map(QPointF(m_pointer)).y();
-        const bool hovered = invertible && viewport->rect().contains(m_pointer)
+        const bool hovered = m_hoveredRow && invertible && viewport->rect().contains(m_pointer)
             && rowY >= option->rect.top() && rowY < option->rect.bottom() + 1;
         if (!hovered) {
             return;
@@ -436,10 +446,19 @@ private:
         QGraphicsWidget *next = nullptr;
         QWidget *viewport = m_view->viewport();
         if (viewport->rect().contains(pointer)) {
+            const QPointF scenePointer = m_view->mapToScene(pointer);
+            // Most motion stays within the same row. Reuse that hit instead
+            // of asking QGraphicsScene to collect and sort its items again.
+            if (m_hoveredRow && m_hoveredRow->isVisible()) {
+                const qreal localY = m_hoveredRow->mapFromScene(scenePointer).y();
+                const QRectF bounds = m_hoveredRow->boundingRect();
+                if (localY >= bounds.top() && localY < bounds.bottom()) {
+                    return;
+                }
+            }
             // Hit-test the whole horizontal row, including its empty gutters.
             const auto items = m_view->items(QRect(0, pointer.y(), viewport->width(), 1),
                                              Qt::IntersectsItemBoundingRect);
-            const QPointF scenePointer = m_view->mapToScene(pointer);
             for (QGraphicsItem *item : items) {
                 auto *row = qgraphicsitem_cast<QGraphicsWidget *>(item);
                 if (row && row->inherits("DolphinFileItemListWidget")) {
