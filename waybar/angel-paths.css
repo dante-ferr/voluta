@@ -1,4 +1,4 @@
-/* Relative fallbacks for the flanking angels, putti and rinceau. GTK often
+/* Relative fallbacks for the flanking angels, putti and ornaments. GTK often
    resolves url() against waybar's working directory rather than this
    stylesheet; the generated wallust/angel-paths.css overrides these with
    file:// URLs after combined_wallust.sh runs. Keep both @imports at the
@@ -35,12 +35,12 @@ box.modules-center {
 
 .modules-left,
 box.modules-left {
-    background-image: url("assets/spread-left.svg");
+    background-image: url("assets/ornaments-left.svg");
 }
 
 .modules-right,
 box.modules-right {
-    background-image: url("assets/spread-right.svg");
+    background-image: url("assets/ornaments-right.svg");
 }
 
 #window {

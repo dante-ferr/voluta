@@ -70,8 +70,7 @@ window#waybar.empty #window,
    ==================================================== */
 
 /* The standing angels bear the central tablet; two pairs of flying putti
-   attend them on the outer flanks, and a rinceau grows out from the plate
-   behind them. Putti and vine are carved in the same stone as the plates.
+   attend them on the outer flanks, and mirrored ornaments extend from the plates behind them.
    The standing pair is left at its original size and placement. */
 #custom-angel-left,
 #custom-angel-right,
@@ -135,8 +134,7 @@ window#waybar.empty #window,
     margin-right: 2px;
 }
 
-/* The centre vine is incised (open strokes). Filled rinceaux grow out of
-   the left and right plates toward the middle — same stone as the putti. */
+/* Original incised vines frame the centre tablet. */
 .modules-center,
 box.modules-center {
     padding-left: 16px;
@@ -148,18 +146,20 @@ box.modules-center {
 
 .modules-left,
 box.modules-left {
-    padding-right: 96px;
+    /* Meet the plate edge across its 6px outer margin. */
+    padding-right: 69px;
     background-repeat: no-repeat;
     background-position: right center;
-    background-size: 118px 28px;
+    background-size: 75px 28px;
 }
 
 .modules-right,
 box.modules-right {
-    padding-left: 96px;
+    /* Meet the status plate across its 4px outer margin. */
+    padding-left: 71px;
     background-repeat: no-repeat;
     background-position: left center;
-    background-size: 118px 28px;
+    background-size: 75px 28px;
 }
 
 /* scripts/angel-flare.py adds .flare on every workspace switch. Image URLs
