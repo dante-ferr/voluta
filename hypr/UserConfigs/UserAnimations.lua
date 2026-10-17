@@ -30,10 +30,11 @@ hl.animation({ leaf = "fade", enabled = true, speed = 4, bezier = "softEaseInOut
 hl.animation({ leaf = "fadeIn", enabled = true, speed = 4, bezier = "softEaseInOut" })
 hl.animation({ leaf = "fadeOut", enabled = true, speed = 3, bezier = "softEaseInOut" })
 
--- Workspace transitions (Silky horizontal slides)
-hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "fluidDecel", style = "slide" })
-hl.animation({ leaf = "workspacesIn", enabled = true, speed = 5, bezier = "fluidDecel", style = "slide" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 4, bezier = "fluidDecel", style = "slide" })
+-- Workspace transitions: a short crossfade with a restrained lateral glide.
+-- The extra tenth of a second gives the transition more room without feeling slow.
+hl.animation({ leaf = "workspaces", enabled = true, speed = 6, bezier = "fluidDecel", style = "slidefade 30%" })
+hl.animation({ leaf = "workspacesIn", enabled = true, speed = 6, bezier = "fluidDecel", style = "slidefade 18%" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 5, bezier = "fluidDecel", style = "slidefade 18%" })
 
 -- Layer Surface Animations (Rofi, Waybar, Notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4, bezier = "fluidDecel", style = "fade" })
