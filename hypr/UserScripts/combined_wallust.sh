@@ -81,7 +81,7 @@ get_active_monitors() {
 }
 
 resolve_wallpapers() {
-    local requested="$1" wp query_out daemon mon
+    local requested wp query_out daemon mon
     local monitors=() wallpapers=() seen='|' default_wp
     while IFS= read -r mon; do
         [[ -n "$mon" ]] && monitors+=("$mon")
@@ -96,8 +96,10 @@ resolve_wallpapers() {
         wallpapers+=("$candidate")
     }
 
-    # Retain the hook argument in case a daemon's query output lags its update.
-    add_wallpaper "$requested"
+    # Retain every queued hook in case a daemon's query output lags its update.
+    for requested in "$@"; do
+        add_wallpaper "$requested"
+    done
 
     # Query the live daemon for one image per active monitor. Include every
     # reported image as a fallback when monitor names are not present in output.
@@ -360,8 +362,28 @@ do_refresh() {
     fi
 
     # -q is a global flag: `wallust -q run …`, not `wallust run -q`.
-    if [[ -n "$wp" && -f "$wp" ]] && command -v wallust >/dev/null 2>&1; then
-        wallust -q run -s "$wp"
+    if [[ -n "$wp" && -f "$wp" ]]; then
+        # The config uses Wallust v4. Graphical sessions do not source zshrc,
+        # so PATH may select the distro's v3 over the user's Cargo build.
+        local wallust_bin candidate version
+        for candidate in "${CARGO_HOME:-$HOME/.cargo}/bin/wallust" "$(command -v wallust)"; do
+            [[ -x "$candidate" ]] || continue
+            version=$("$candidate" --version 2>/dev/null)
+            if [[ "$version" == "wallust 4."* ]]; then
+                wallust_bin="$candidate"
+                break
+            fi
+        done
+        if [[ -z "$wallust_bin" ]]; then
+            echo "combined_wallust: Wallust v4 is required; install it in PATH or Cargo's bin directory" >&2
+            rm -f "$palette_image"
+            return 1
+        fi
+        if ! "$wallust_bin" -q run -s "$wp"; then
+            echo "combined_wallust: palette generation failed for $wp" >&2
+            [[ "$wp" != "$palette_image" ]] || rm -f "$palette_image"
+            return 1
+        fi
     fi
     [[ "$wp" != "$palette_image" ]] || rm -f "$palette_image"
 
@@ -395,9 +417,9 @@ while true; do
 
     # Resolve current display assignments on every pass. This makes startup
     # refreshes (which have no hook argument) use the same multi-display path.
-    mapfile -t wallpapers < <(resolve_wallpapers "${requested[@]:-}")
+    mapfile -t wallpapers < <(resolve_wallpapers "${requested[@]}")
     if ((${#wallpapers[@]} > 0)); then
-        do_refresh "${wallpapers[@]}"
+        do_refresh "${wallpapers[@]}" || exit 1
     fi
 
     # Drain hooks that arrived while generating the palette, then finish.
