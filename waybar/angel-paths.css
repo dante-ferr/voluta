@@ -1,7 +1,7 @@
 /* Relative fallbacks for the flanking angels and ornaments. GTK often
    resolves url() against waybar's working directory rather than this
    stylesheet; the generated wallust/angel-paths.css overrides these with
-   tinted SVGs and file:// URLs after combined_wallust.sh runs. Keep both @imports at the
+   glowing images and file:// URLs after combined_wallust.sh runs. Keep both @imports at the
    top of style.css — later @import is ignored by the CSS spec. */
 
 #custom-angel-left {

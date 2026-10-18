@@ -3,6 +3,7 @@
 
 @import "wallust/colors-waybar.css";
 @import "angel-paths.css";
+/* Generated decoration images and plate glow settings from glow.json. */
 @import "wallust/angel-paths.css";
 
 * {
@@ -15,7 +16,7 @@
     min-height: 0;
 }
 
-/* 100% Transparent Bar Background */
+/* Transparent bar; plates and decorations share a soft Wallust glow. */
 window#waybar {
     background-color: transparent;
     background: transparent;
@@ -34,7 +35,6 @@ window#waybar {
     background-color: #0A0A0E; /* Opaque Basalt Slate */
     color: @foreground;
     border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
 #window {
@@ -42,15 +42,15 @@ window#waybar {
     font-weight: 700;
     padding-left: 22px;
     background-repeat: no-repeat;
-    background-position: 4px center;
-    background-size: 12px 20px;
+    background-position: -4px center;
+    background-size: 28px 36px;
 }
 
 #mpris {
     padding-left: 24px;
     background-repeat: no-repeat;
-    background-position: 6px center;
-    background-size: 12px 17px;
+    background-position: -2px center;
+    background-size: 28px 33px;
 }
 
 /* Waybar tags the bar with .empty when no window is focused */
@@ -82,38 +82,39 @@ window#waybar.empty #window,
 
 #custom-angel-left,
 #custom-angel-right {
-    min-width: 100px;
+    min-width: 108px;
     /* Preserve the 1664:512 proportions of assets/angels.svg.
-       The left asset has its mirror baked in for GTK 3. */
-    background-size: 97.5px 30px;
+       Generated images add 8px of glow space on each side.
+       Offset that padding at the box edge to preserve contact. */
+    background-size: 113.5px 46px;
 }
 
 #custom-angel-left {
-    background-position: right 3px;
+    background-position: calc(100% + 8px) -5px;
     margin-left: 2px;
 }
 
 #custom-angel-right {
-    background-position: left 3px;
+    background-position: -8px -5px;
     margin-right: 2px;
 }
 
 .modules-left,
 box.modules-left {
-    /* Meet the plate edge across its 6px outer margin. */
-    padding-right: 69px;
+    /* 75px artwork plus 8px of glow; meet the plate across its 3px margin. */
+    padding-right: 80px;
     background-repeat: no-repeat;
     background-position: right center;
-    background-size: 75px 28px;
+    background-size: 91px 44px;
 }
 
 .modules-right,
 box.modules-right {
     /* Meet the status plate across its 4px outer margin. */
-    padding-left: 71px;
+    padding-left: 79px;
     background-repeat: no-repeat;
     background-position: left center;
-    background-size: 75px 28px;
+    background-size: 91px 44px;
 }
 
 /* Workspaces and clock share one uninterrupted slab so the angels read as
@@ -124,7 +125,6 @@ box.modules-right {
     background-color: #0A0A0E;
     border: 1px solid #2A2A38;
     border-right: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 
 #workspaces button {
@@ -155,7 +155,7 @@ box.modules-right {
     100% {
         background-color: @color1;
         color: #0A0A0E;
-        box-shadow: inset 0 0 0 1px #0A0A0E;
+        box-shadow: none;
     }
 }
 
@@ -164,7 +164,7 @@ box.modules-right {
     background-color: @color1;
     color: #0A0A0E; /* Dark engraved text on solid accent */
     font-weight: 900;
-    box-shadow: inset 0 0 0 1px #0A0A0E;
+    box-shadow: none;
 }
 
 /* The clock supplies the seam on this side of the slab */
@@ -196,7 +196,6 @@ box.modules-right {
     color: @foreground;
     border: 1px solid #2A2A38;
     border-left: 1px solid #22222E;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
     letter-spacing: 0.4px;
@@ -226,7 +225,6 @@ box.modules-right {
     border-bottom: 1px solid #2A2A38;
     border-left: 1px solid #1C1C26;
     border-right: none;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
     transition: all 0.15s ease-in-out;
 }
 
@@ -319,7 +317,7 @@ box.modules-right {
     background-color: transparent;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 14px 14px;
+    background-size: 30px 30px;
     border: none;
     box-shadow: none;
     color: transparent;

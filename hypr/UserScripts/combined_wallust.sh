@@ -145,7 +145,7 @@ for conf in ("~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini
     printf '%s\n' "${wallpapers[@]}"
 }
 
-# Rebuild SVG tints from the freshly rendered Wallust palette and write
+# Rebuild SVG glows from the freshly rendered Wallust palette and write
 # absolute image URLs, since GTK can resolve CSS URLs against the working dir.
 write_waybar_angel_css() {
     local waybar_dir

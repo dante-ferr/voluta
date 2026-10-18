@@ -1,0 +1,11 @@
+{
+  "decorations": {
+    "expansion_px": 0.35,
+    "blur_px": 0.65,
+    "opacity": 0.24
+  },
+  "boxes": {
+    "blur_px": 3,
+    "opacity": 0.16
+  }
+}

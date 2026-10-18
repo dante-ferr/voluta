@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Tint Waybar decorations with Wallust and add a compact dark shadow.
+"""Render dark Waybar decorations over a soft Wallust-colored glow.
 
 Source SVG geometry stays unchanged. Generated SVGs and absolute CSS URLs live
 under waybar/wallust and are rebuilt on wallpaper refresh and Waybar startup.
 """
 from pathlib import Path
 from copy import deepcopy
+import json
 import math
+import subprocess
 import re
 import xml.etree.ElementTree as ET
 
@@ -32,88 +34,120 @@ DISPLAY_HEIGHTS = {
     "patera.svg": 14,
 }
 
+DISPLAY_WIDTHS = {
+    "angels-left.svg": 97.5, "angels.svg": 97.5,
+    "ornaments-left.svg": 75, "ornaments-right.svg": 75,
+    "volute-left.svg": 12, "note.svg": 12, "note-paused.svg": 12,
+    "patera.svg": 14,
+}
 
-def muted_color(foreground, background):
-    """Use an opaque, subdued palette tint rather than bright text color."""
-    channels = [round(int(foreground[i:i+2], 16) * 0.7
-                      + int(background[i:i+2], 16) * 0.3)
-                for i in (1, 3, 5)]
-    return "#" + "".join(f"{channel:02x}" for channel in channels)
 
-
-def tinted(source, target, color):
+def glowing(source, target, glow_color, settings):
     root = ET.parse(source).getroot()
     # Preserve negative space, existing icon strokes and all transforms.
     # Change only explicit paint colors; filled shapes otherwise default black.
-    root.set("fill", color)
+    root.set("fill", "#0A0A0E")
     for element in root.iter():
         for paint in ("fill", "stroke"):
             value = element.get(paint)
             if value and value.lower() not in ("none", "transparent"):
-                element.set(paint, color)
-    add_shadow(root, DISPLAY_HEIGHTS[source.name])
-    ET.ElementTree(root).write(target, encoding="utf-8", xml_declaration=True)
-
-
-def add_shadow(root, height):
-    """Layer soft dark silhouettes without runtime SVG blur filters.
-
-    A broad faint edge and tighter darker core approximate a small blur at
-    bar size. Compensate for local SVG scaling so mirrored art looks alike.
-    """
+                element.set(paint, "#0A0A0E")
+    if glow_color:
+        add_glow(root, DISPLAY_HEIGHTS[source.name], glow_color, settings)
+    # Rasterize the authored SVG at 3x display resolution. GTK then only loads
+    # a small PNG; the Gaussian blur is computed once per palette refresh.
     x, y, width, view_height = map(float, root.get("viewBox").split())
+    height = DISPLAY_HEIGHTS[source.name]
+    # Eight screen pixels contain the expanded mask and its soft fade.
+    # CSS adds the same space to the background size and compensates its
+    # position, keeping the actual artwork scale and contact edge unchanged.
+    display_width = DISPLAY_WIDTHS[source.name]
+    pad_x, pad_y = 8 * width / display_width, 8 * view_height / height
+    root.set("viewBox", f"{x-pad_x} {y-pad_y} {width+2*pad_x} {view_height+2*pad_y}")
+    root.set("preserveAspectRatio", "none")
+    subprocess.run([
+        "rsvg-convert", "--width", str(round((display_width + 16) * 3)),
+        "--height", str((height + 16) * 3), "--output", str(target),
+    ], input=ET.tostring(root), check=True)
+
+
+def add_glow(root, height, color, settings):
+    """Expand one union mask before blurring, supporting fine details evenly."""
+    view_height = float(root.get("viewBox").split()[3])
     unit = view_height / height
-    # Keep the source viewport: padding rescales the artwork and pulls its
-    # attachment edge away from the adjacent Waybar box.
     artwork = [child for child in root
                if child.tag.rsplit("}", 1)[-1] not in ("defs", "metadata", "title", "desc")]
-
-    def darken(element, radius, scale=1.0, inherited_width=0.0):
-        for args in re.findall(r"scale\(([^)]+)\)", element.get("transform", "")):
-            values = [float(v) for v in re.split(r"[ ,]+", args.strip())]
-            scale *= math.sqrt(abs(values[0] * values[-1]))
-        original_width = float(element.get("stroke-width", inherited_width))
-        element.attrib.pop("id", None)
-        for paint in ("fill", "stroke"):
-            if element.get(paint, "none") != "none":
-                element.set(paint, "#08080c")
-        if element.tag.rsplit("}", 1)[-1] == "path":
-            element.set("stroke", "#08080c")
-            element.set("stroke-width", str(original_width + 2 * radius / scale))
-            element.set("stroke-linejoin", "round")
-            element.set("stroke-linecap", "round")
-        for child in element:
-            darken(child, radius, scale, original_width)
-
-    shadow = ET.Element(f"{{{SVG}}}g", {
-        "fill": "#08080c", "transform": f"translate(0 {unit * 0.35})",
+    defs = ET.SubElement(root, f"{{{SVG}}}defs")
+    effect = ET.SubElement(defs, f"{{{SVG}}}filter", {
+        "id": "soft-glow", "x": "-30%", "y": "-50%",
+        "width": "160%", "height": "200%", "color-interpolation-filters": "sRGB",
     })
-    for radius, opacity in ((1.0, 0.12), (0.65, 0.22), (0.3, 0.38)):
-        layer = ET.SubElement(shadow, f"{{{SVG}}}g", {"opacity": str(opacity)})
-        for child in artwork:
-            copy = deepcopy(child)
-            darken(copy, radius * unit)
-            layer.append(copy)
-    root.insert(0, shadow)
+    # SourceAlpha is the composite silhouette, rather than a glow per path.
+    # Dilation widens thin feathers and merges nearby details at full opacity,
+    # so overlapping shapes cannot add separate light contributions.
+    ET.SubElement(effect, f"{{{SVG}}}feMorphology", {
+        "in": "SourceAlpha", "operator": "dilate",
+        "radius": str(unit * settings["expansion_px"]), "result": "expanded-mask",
+    })
+    ET.SubElement(effect, f"{{{SVG}}}feGaussianBlur", {
+        "in": "expanded-mask", "stdDeviation": str(unit * settings["blur_px"]),
+        "result": "soft-mask",
+    })
+    ET.SubElement(effect, f"{{{SVG}}}feFlood", {
+        "flood-color": color, "result": "palette",
+    })
+    ET.SubElement(effect, f"{{{SVG}}}feComposite", {
+        "in": "palette", "in2": "soft-mask", "operator": "in",
+    })
+    glow = ET.Element(f"{{{SVG}}}g", {
+        "fill": color, "opacity": str(settings["opacity"]), "filter": "url(#soft-glow)",
+    })
+    for child in artwork:
+        copy = deepcopy(child)
+        for element in copy.iter():
+            element.attrib.pop("id", None)
+            for paint in ("fill", "stroke"):
+                if element.get(paint, "none") != "none":
+                    element.set(paint, color)
+        glow.append(copy)
+    root.insert(0, glow)
 
 
 def main():
+    settings = json.loads((ROOT / "glow.json").read_text())
+    for section, keys in (("decorations", ("expansion_px", "blur_px", "opacity")),
+                          ("boxes", ("blur_px", "opacity"))):
+        for key in keys:
+            value = settings[section][key]
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(value) or value < 0
+                    or (key == "opacity" and value > 1)):
+                raise ValueError(f"glow.json: invalid {section}.{key}")
     palette = ROOT / "wallust/colors-waybar.css"
     colors = dict(re.findall(r"@define-color\s+(\w+)\s+(#[0-9a-fA-F]{6})\s*;",
                              palette.read_text() if palette.exists() else ""))
-    color = (muted_color(colors["foreground"], colors["background"])
-             if {"foreground", "background"} <= colors.keys() else None)
-    output = ROOT / "wallust/shadowed"
+    color = colors.get("foreground")
+    output = ROOT / "wallust/glowing"
     output.mkdir(parents=True, exist_ok=True)
     rules = []
     for selector, filename in DECORATIONS:
         source = ROOT / "assets" / filename
-        target = source
-        if color:
-            target = output / filename
-            tinted(source, target, color)
+        target = output / Path(filename).with_suffix(".png")
+        glowing(source, target, color, settings["decorations"])
         rules.append(f'{selector} {{\n    background-image: url("{target.as_uri()}");\n}}\n')
-    (ROOT / "wallust/angel-paths.css").write_text("\n".join(rules))
+    boxes = settings["boxes"]
+    rules.append(
+        "#window, #mpris, #workspaces, #clock,\n"
+        "#custom-swaync, #tray, #temperature, #network,\n"
+        "#pulseaudio, #battery, #custom-power {\n"
+        f'    box-shadow: 0 0 {boxes["blur_px"]}px '
+        f'alpha(@foreground, {boxes["opacity"]});\n'
+        "}\n"
+    )
+    (ROOT / "wallust/angel-paths.css").write_text(
+        "/* Generated from waybar/glow.json; edit that file to tune the glow. */\n"
+        + "\n".join(rules)
+    )
 
 
 if __name__ == "__main__":
