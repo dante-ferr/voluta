@@ -82,10 +82,10 @@ window#waybar.empty #window,
 
 #custom-angel-left,
 #custom-angel-right {
-    min-width: 137px;
-    /* Preserve the 2064:512 proportions of assets/angels.svg.
+    min-width: 100px;
+    /* Preserve the 1664:512 proportions of assets/angels.svg.
        The left asset has its mirror baked in for GTK 3. */
-    background-size: 121px 30px;
+    background-size: 97.5px 30px;
 }
 
 #custom-angel-left {
