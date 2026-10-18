@@ -145,56 +145,13 @@ for conf in ("~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini
     printf '%s\n' "${wallpapers[@]}"
 }
 
-# GTK resolves CSS url() against waybar's working directory (often $HOME),
-# not the stylesheet, so relative assets/angel-*.svg paths vanish on any
-# machine that does not start waybar from ~/.config/waybar. Write absolute
-# file:// URLs after every refresh; style.css imports this when it exists.
+# Rebuild SVG tints from the freshly rendered Wallust palette and write
+# absolute image URLs, since GTK can resolve CSS URLs against the working dir.
 write_waybar_angel_css() {
-    local waybar_dir css left right
-    local spread_left spread_right
-    local volute_left note note_paused patera
+    local waybar_dir
     waybar_dir=$(imperium_waybar_dir)
     [[ -d $waybar_dir ]] || return
-    mkdir -p "$waybar_dir/wallust"
-    left="$waybar_dir/assets/angels-left.svg"
-    right="$waybar_dir/assets/angels.svg"
-    spread_left="$waybar_dir/assets/ornaments-left.svg"
-    spread_right="$waybar_dir/assets/ornaments-right.svg"
-    volute_left="$waybar_dir/assets/volute-left.svg"
-    note="$waybar_dir/assets/note.svg"
-    note_paused="$waybar_dir/assets/note-paused.svg"
-    patera="$waybar_dir/assets/patera.svg"
-    [[ -f $left && -f $right ]] || return
-
-    css="$waybar_dir/wallust/angel-paths.css"
-    cat >"$css" <<EOF
-#custom-angel-left {
-    background-image: url("file://${left}");
-}
-#custom-angel-right {
-    background-image: url("file://${right}");
-}
-.modules-left,
-box.modules-left {
-    background-image: url("file://${spread_left}");
-}
-.modules-right,
-box.modules-right {
-    background-image: url("file://${spread_right}");
-}
-#window {
-    background-image: url("file://${volute_left}");
-}
-#mpris {
-    background-image: url("file://${note}");
-}
-#mpris.paused {
-    background-image: url("file://${note_paused}");
-}
-#custom-patera {
-    background-image: url("file://${patera}");
-}
-EOF
+    python3 "$waybar_dir/scripts/render-decorations.py"
 }
 
 # Restart the bar. SIGUSR2 does not reload GTK @import of wallust/colors-waybar.css,
