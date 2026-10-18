@@ -1,37 +1,21 @@
-/* Relative fallbacks for the flanking angels, putti and ornaments. GTK often
+/* Relative fallbacks for the flanking angels and ornaments. GTK often
    resolves url() against waybar's working directory rather than this
    stylesheet; the generated wallust/angel-paths.css overrides these with
    file:// URLs after combined_wallust.sh runs. Keep both @imports at the
    top of style.css — later @import is ignored by the CSS spec. */
 
 #custom-angel-left {
-    background-image: url("assets/angel-left.svg");
+    background-image: url("assets/angels-left.svg");
 }
 
 #custom-angel-right {
-    background-image: url("assets/angel-right.svg");
+    background-image: url("assets/angels.svg");
 }
 
-#custom-cherub-left {
-    background-image: url("assets/cherub-left.svg");
-}
 
-#custom-cherub-right {
-    background-image: url("assets/cherub-right.svg");
-}
 
-#custom-cherub-outer-left {
-    background-image: url("assets/cherub-outer-left.svg");
-}
 
-#custom-cherub-outer-right {
-    background-image: url("assets/cherub-outer-right.svg");
-}
 
-.modules-center,
-box.modules-center {
-    background-image: url("assets/rinceau-left.svg"), url("assets/rinceau-right.svg");
-}
 
 .modules-left,
 box.modules-left {
@@ -57,58 +41,4 @@ box.modules-right {
 
 #custom-patera {
     background-image: url("assets/patera.svg");
-}
-
-@keyframes angel-flare-left {
-    0% {
-        background-image: url("wallust/angel-left-lit.svg");
-    }
-    100% {
-        background-image: url("assets/angel-left.svg");
-    }
-}
-
-@keyframes angel-flare-right {
-    0% {
-        background-image: url("wallust/angel-right-lit.svg");
-    }
-    100% {
-        background-image: url("assets/angel-right.svg");
-    }
-}
-
-@keyframes cherub-flare-left {
-    0% {
-        background-image: url("wallust/cherub-left-lit.svg");
-    }
-    100% {
-        background-image: url("assets/cherub-left.svg");
-    }
-}
-
-@keyframes cherub-flare-right {
-    0% {
-        background-image: url("wallust/cherub-right-lit.svg");
-    }
-    100% {
-        background-image: url("assets/cherub-right.svg");
-    }
-}
-
-@keyframes cherub-outer-flare-left {
-    0% {
-        background-image: url("wallust/cherub-outer-left-lit.svg");
-    }
-    100% {
-        background-image: url("assets/cherub-outer-left.svg");
-    }
-}
-
-@keyframes cherub-outer-flare-right {
-    0% {
-        background-image: url("wallust/cherub-outer-right-lit.svg");
-    }
-    100% {
-        background-image: url("assets/cherub-outer-right.svg");
-    }
 }

@@ -10,14 +10,10 @@
         "mpris"
     ],
     "modules-center": [
-        "custom/cherub-outer-left",
-        "custom/cherub-left",
         "custom/angel-left",
         "hyprland/workspaces",
         "clock",
-        "custom/angel-right",
-        "custom/cherub-right",
-        "custom/cherub-outer-right"
+        "custom/angel-right"
     ],
     "modules-right": [
         "custom/swaync",
@@ -47,39 +43,11 @@
         "tooltip": true
     },
     "custom/angel-left": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
+        "format": " ",
         "tooltip": false
     },
     "custom/angel-right": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
-        "tooltip": false
-    },
-    "custom/cherub-left": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
-        "tooltip": false
-    },
-    "custom/cherub-right": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
-        "tooltip": false
-    },
-    "custom/cherub-outer-left": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
-        "tooltip": false
-    },
-    "custom/cherub-outer-right": {
-        "exec": "$HOME/.config/waybar/scripts/angel-flare.py",
-        "return-type": "json",
-        "restart-interval": 5,
+        "format": " ",
         "tooltip": false
     },
     "hyprland/workspaces": {

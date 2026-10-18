@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate waybar plate ornaments: cairo draw → contour → SVG.
 
-Not part of the runtime bar. Incised marks (volute, corbel, mascaron)
-are contour-only so they read on the #0A0A0E plates. The mpris mark is a
-single quaver, drawn directly so it stays legible at bar size. The patera
+Not part of the runtime bar. The incised volute uses a contour so it reads
+on the #0A0A0E plates. The mpris mark is a single quaver, drawn directly
+so it stays legible at bar size. The patera
 is filled stone: it sits in the gap between the two right-hand plates.
 """
 from __future__ import annotations
@@ -40,17 +40,6 @@ def ellipse(ctx, x, y, rx, ry, deg=0):
     ctx.arc(0, 0, 1, 0, 2 * math.pi)
     ctx.restore()
     ctx.fill()
-
-
-def capsule(ctx, x1, y1, x2, y2, radius):
-    ctx.save()
-    ctx.set_line_width(radius * 2)
-    ctx.set_line_cap(cairo.LINE_CAP_ROUND)
-    ctx.set_line_join(cairo.LINE_JOIN_ROUND)
-    ctx.move_to(x1, y1)
-    ctx.line_to(x2, y2)
-    ctx.stroke()
-    ctx.restore()
 
 
 def rasterize(draw_fn, w, h):
@@ -158,22 +147,6 @@ def contour_of(draw_fn, w, h):
     return body, max(xs) - minx, max(ys) - miny
 
 
-def svg_incised(body, cw, ch, note, extra="", mirror=False):
-    xf = f' transform="translate({cw:.2f} 0) scale(-1 1)"' if mirror else ""
-    vb_w, vb_h = cw + PAD * 2, ch + PAD * 2
-    extra_xml = f"\n    {extra}" if extra else ""
-    inner = f"""  <g fill="none" stroke="{PLATE_STROKE}" stroke-width="{INC_STROKE}" stroke-linejoin="round" stroke-linecap="round"{xf}>
-    <path d="{body}"/>{extra_xml}
-  </g>"""
-    return (
-        f"<!-- Imperium waybar - {note}. Incised contour on the plate. -->\n"
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'viewBox="{-PAD} {-PAD} {vb_w:.2f} {vb_h:.2f}" width="{vb_w:.0f}" height="{vb_h:.0f}">\n'
-        f"{inner}\n"
-        f"</svg>\n"
-    )
-
-
 def svg_filled(body, hole, cw, ch, note):
     vb_w, vb_h = cw + PAD * 2, ch + PAD * 2
     paths = f'      <path d="{body}"/>'
@@ -231,75 +204,6 @@ def volute_paths():
     ]
 
 
-def mascaron_paths():
-    """Sun-face: rays survive at 16px; rings would collapse to noise."""
-    paths = ["M40,50 a16,18 0 1 1 0.01,0"]
-    for i in range(8):
-        a = math.radians(-90 + i * 45)
-        x0 = 40 + math.cos(a) * 20
-        y0 = 50 + math.sin(a) * 22
-        x1 = 40 + math.cos(a) * 30
-        y1 = 50 + math.sin(a) * 32
-        paths.append(f"M{x0:.2f},{y0:.2f} {x1:.2f},{y1:.2f}")
-    paths += [
-        "M28,44 Q40,36 52,44",
-        "M33,52 m-2,0 a2,2.4 0 1 1 0.01,0",
-        "M47,52 m-2,0 a2,2.4 0 1 1 0.01,0",
-        "M40,56 38,64 40,62 42,64",
-        "M34,70 Q40,75 46,70",
-    ]
-    return paths
-
-
-def emit_incised(stem, draw_fn, w, h, note, extra="", mirror_too=False):
-    body, cw, ch = contour_of(draw_fn, w, h)
-    if mirror_too:
-        (ASSETS / f"{stem}-left.svg").write_text(svg_incised(body, cw, ch, f"{note} (left)"))
-        (ASSETS / f"{stem}-right.svg").write_text(
-            svg_incised(body, cw, ch, f"{note} (right)", extra=extra, mirror=True)
-        )
-    else:
-        (ASSETS / f"{stem}.svg").write_text(svg_incised(body, cw, ch, note, extra=extra))
-    print(f"{stem}: {cw:.0f}x{ch:.0f}")
-
-
-def emit_filled(stem, draw_fn, w, h, note, hole=None):
-    body, cw, ch = contour_of(draw_fn, w, h)
-    (ASSETS / f"{stem}.svg").write_text(svg_filled(body, hole, cw, ch, note))
-    print(f"{stem}: {cw:.0f}x{ch:.0f}")
-
-
-def draw_volute(ctx):
-    """Ionic-ish scroll for the left edge of the window plate."""
-    cx, cy, r = 58, 70, 28
-    prev = (cx + r, cy)
-    n = 32
-    for i in range(1, n + 1):
-        t = i / n
-        ang = math.radians(-20 + t * 400)
-        rr = r * (1.0 - t * 0.7)
-        p = (cx + math.cos(ang) * rr, cy + math.sin(ang) * rr)
-        capsule(ctx, *prev, *p, max(2.4, 7.2 * (1.0 - t * 0.55)))
-        prev = p
-    capsule(ctx, cx + r - 2, cy, 92, 118, 5.5)
-    capsule(ctx, 92, 118, 78, 138, 4.2)
-    ellipse(ctx, 88, 128, 10, 6, 40)
-    circle(ctx, cx, cy, 6)
-
-
-def draw_corbel(ctx):
-    """Vertical acanthus console, drawn for the left side of a plate."""
-    capsule(ctx, 48, 18, 48, 52, 8)
-    ellipse(ctx, 48, 18, 16, 7, 0)
-    capsule(ctx, 48, 50, 32, 78, 7)
-    capsule(ctx, 32, 78, 44, 108, 6)
-    capsule(ctx, 44, 108, 28, 132, 5)
-    ellipse(ctx, 24, 138, 12, 8, -30)
-    circle(ctx, 18, 144, 6)
-    ellipse(ctx, 38, 70, 14, 7, -50)
-    ellipse(ctx, 52, 96, 12, 6, 35)
-
-
 def note_svg(paused=False):
     """Eighth note drawn as strokes so it stays legible at bar size."""
     slash = '\n    <path d="M8,18 L50,74"/>' if paused else ""
@@ -313,20 +217,6 @@ def note_svg(paused=False):
   </g>
 </svg>
 """
-
-
-def draw_mascaron(ctx):
-    """Sun-lion face: mane of curls around a short snout."""
-    cx, cy = 70, 72
-    circle(ctx, cx, cy, 28)
-    for i in range(12):
-        a = math.radians(-90 + i * 30)
-        circle(ctx, cx + math.cos(a) * 34, cy + math.sin(a) * 34, 9 if i % 2 == 0 else 7)
-    ellipse(ctx, cx, cy - 8, 22, 10, 0)
-    ellipse(ctx, cx, cy + 10, 12, 10, 0)
-    circle(ctx, cx, cy + 18, 8)
-    ellipse(ctx, cx - 10, cy - 2, 6, 5, -10)
-    ellipse(ctx, cx + 10, cy - 2, 6, 5, 10)
 
 
 def draw_patera(ctx):
@@ -354,17 +244,10 @@ def main():
     ASSETS.mkdir(exist_ok=True)
     vp = volute_paths()
     (ASSETS / "volute-left.svg").write_text(svg_strokes(vp, 90, 128, "window-plate volute (left)", stroke=8))
-    (ASSETS / "volute-right.svg").write_text(
-        svg_strokes(vp, 90, 128, "window-plate volute (right)", mirror=True, stroke=8)
-    )
     print("volute: stroke")
-    emit_incised("corbel", draw_corbel, 90, 170, "plate corbel", mirror_too=True)
     (ASSETS / "note.svg").write_text(note_svg())
     (ASSETS / "note-paused.svg").write_text(note_svg(paused=True))
     print("note: stroke")
-    mp = mascaron_paths()
-    (ASSETS / "mascaron.svg").write_text(svg_strokes(mp, 80, 100, "power mascaron", stroke=6))
-    print("mascaron: stroke")
 
     body, cw, ch = contour_of(draw_patera, 140, 140)
     hole = hole_patera(cw / 2.0, ch / 2.0, 9.0, 4.5)

@@ -66,18 +66,12 @@ window#waybar.empty #window,
 }
 
 /* ====================================================
-   CENTER: FLANKING ANGELS, PUTTI, ANIMATED WORKSPACES & CLOCK
+   CENTER: FLANKING ANGELS, ANIMATED WORKSPACES & CLOCK
    ==================================================== */
 
-/* The standing angels bear the central tablet; two pairs of flying putti
-   attend them on the outer flanks, and mirrored ornaments extend from the plates behind them.
-   The standing pair is left at its original size and placement. */
+/* The wide angel artwork is mirrored on the left. */
 #custom-angel-left,
-#custom-angel-right,
-#custom-cherub-left,
-#custom-cherub-right,
-#custom-cherub-outer-left,
-#custom-cherub-outer-right {
+#custom-angel-right {
     padding: 0px;
     margin: 0px;
     background-color: transparent;
@@ -88,60 +82,20 @@ window#waybar.empty #window,
 
 #custom-angel-left,
 #custom-angel-right {
-    min-width: 22px;
-    /* Sized explicitly: GTK scales the image to cover the box, which crops the
-       wingtips and the hem. Keep the 225:376 ratio of the padded artwork. */
-    background-size: 20px 34px;
-}
-
-#custom-cherub-left,
-#custom-cherub-right,
-#custom-cherub-outer-left,
-#custom-cherub-outer-right {
-    min-width: 23px;
-    background-size: 23px 26px;
-}
-
-/* Inner putti sit high; outer putti sit low. The clockwise tilt of the
-   outer pair is baked into the SVG — GTK 3 has no CSS transform. */
-#custom-cherub-left {
-    background-position: right 0px;
-    margin-left: 2px;
-}
-
-#custom-cherub-right {
-    background-position: left 0px;
-    margin-right: 2px;
-}
-
-#custom-cherub-outer-left {
-    background-position: right 8px;
-    margin-left: 2px;
-}
-
-#custom-cherub-outer-right {
-    background-position: left 8px;
-    margin-right: 2px;
+    min-width: 137px;
+    /* Preserve the 2064:512 proportions of assets/angels.svg.
+       The left asset has its mirror baked in for GTK 3. */
+    background-size: 121px 30px;
 }
 
 #custom-angel-left {
-    background-position: right center;
+    background-position: right 3px;
     margin-left: 2px;
 }
 
 #custom-angel-right {
-    background-position: left center;
+    background-position: left 3px;
     margin-right: 2px;
-}
-
-/* Original incised vines frame the centre tablet. */
-.modules-center,
-box.modules-center {
-    padding-left: 16px;
-    padding-right: 16px;
-    background-repeat: no-repeat, no-repeat;
-    background-position: left center, right center;
-    background-size: 120px 30px, 120px 30px;
 }
 
 .modules-left,
@@ -160,33 +114,6 @@ box.modules-right {
     background-repeat: no-repeat;
     background-position: left center;
     background-size: 75px 28px;
-}
-
-/* scripts/angel-flare.py adds .flare on every workspace switch. Image URLs
-   live in angel-paths.css so GTK @import can override them with file://
-   paths on other machines. Only the contour ignites, in the wallust accent. */
-#custom-angel-left.flare {
-    animation: angel-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-#custom-angel-right.flare {
-    animation: angel-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-#custom-cherub-left.flare {
-    animation: cherub-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-#custom-cherub-right.flare {
-    animation: cherub-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-#custom-cherub-outer-left.flare {
-    animation: cherub-outer-flare-left 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-#custom-cherub-outer-right.flare {
-    animation: cherub-outer-flare-right 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 /* Workspaces and clock share one uninterrupted slab so the angels read as
