@@ -44,6 +44,17 @@ DISPLAY_WIDTHS = {
 
 def glowing(source, target, glow_color, settings):
     root = ET.parse(source).getroot()
+    if source.name in ("ornaments-left.svg", "ornaments-right.svg"):
+        # Flip only the rendered ornaments, including their glow, in place.
+        _, y, _, height = map(float, root.get("viewBox").split())
+        flipped = ET.Element(f"{{{SVG}}}g", {
+            "transform": f"translate(0 {2 * y + height:g}) scale(1 -1)",
+        })
+        for child in list(root):
+            if child.tag.rsplit("}", 1)[-1] not in ("defs", "metadata", "title", "desc"):
+                root.remove(child)
+                flipped.append(child)
+        root.append(flipped)
     # Preserve negative space, existing icon strokes and all transforms.
     # Change only explicit paint colors; filled shapes otherwise default black.
     root.set("fill", "#0A0A0E")
