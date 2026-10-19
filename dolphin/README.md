@@ -50,9 +50,11 @@ Unchanged launches reuse the compiled library. Logs are at
 
 Already-running Dolphin processes retain their loaded code and view settings.
 After an update, fully quit Dolphin and reopen it when the notification asks.
-Launch and apply inspect the actual Dolphin executable and loaded hook inode;
-the shell launcher is ignored, and a healthy process never triggers a warning.
-Each stale process/library version produces at most one restart notification.
+Ordinary launches and unchanged refreshes do not check for or emit restart
+reminders. After a successful hook rebuild, the installer checks whether an
+actual Dolphin process still maps the replaced library. Only that confirmed
+update can produce a reminder, once per build fingerprint across process IDs.
+Unwrapped processes and shell launchers are not treated as stale libraries.
 Refresh never kills an active Dolphin process or interrupts file transfers.
 
 Fonts and system Qt/KDE assets must also be installed on both hosts; the shared

@@ -23,6 +23,7 @@ if [[ -f "$lib" && -f "$lib.sha256" && $(< "$lib.sha256") == "$signature" ]]; th
 fi
 
 log="$libdir/dolphin-live-build.log"
+previous_library=$(stat -Lc '%d:%i' "$lib" 2>/dev/null || true)
 build_tmp=$(mktemp "$libdir/.libdolphin-live.XXXXXX.so")
 trap 'rm -f -- "$build_tmp"' EXIT
 if ! g++ -shared -fPIC -O2 -std=c++17 -pthread -o "$build_tmp" "$here/live.cpp" \
@@ -34,3 +35,10 @@ fi
 chmod 755 "$build_tmp"
 mv -f -- "$build_tmp" "$lib"
 printf '%s\n' "$signature" >"$lib.sha256"
+
+# Ordinary launches and unchanged refreshes are silent. Only a successful
+# replacement can require a restart, and only for apps mapping that old file.
+if [[ -n "$previous_library" ]]; then
+    python3 "$here/notify-restart.py" --previous-library "$previous_library" \
+        --revision "$signature" || true
+fi

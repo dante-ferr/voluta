@@ -14,10 +14,6 @@ if ! bash "$here/build.sh"; then
 fi
 [[ ${1:-} == --prepare ]] && exit 0
 
-# An existing application can retain old code; the shell wrapper itself is
-# not such a process. The shared check also suppresses repeated warnings.
-python3 "$here/notify-restart.py" || true
-
 export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
 export QT_QPA_PLATFORMTHEME=qt6ct
 export FONTCONFIG_FILE="$here/fonts.conf"

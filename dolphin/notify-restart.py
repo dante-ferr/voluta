@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Notify once when a real Dolphin process is using an outdated/missing hook."""
+"""Notify once per successful hook update when Dolphin still maps the old file."""
 
+import argparse
 import fcntl
 import json
 import os
@@ -9,12 +10,8 @@ import subprocess
 import tempfile
 
 
-def stale_processes(proc, library, uid):
-    try:
-        current = library.stat()
-    except FileNotFoundError:
-        return []
-    stale = []
+def processes_using(proc, device, inode, uid):
+    users = []
     for process in proc.iterdir():
         if not process.name.isdecimal():
             continue
@@ -29,49 +26,54 @@ def stale_processes(proc, library, uid):
             mappings = (process / "maps").read_text().splitlines()
             if not mappings:  # Already exiting; no application to restart.
                 continue
-            loaded = False
             for line in mappings:
                 fields = line.split(maxsplit=5)
-                if len(fields) != 6 or fields[5] != str(library):
+                if len(fields) != 6:
                     continue
                 major, minor = (int(part, 16) for part in fields[3].split(":"))
-                if os.makedev(major, minor) == current.st_dev and int(fields[4]) == current.st_ino:
-                    loaded = True
+                if os.makedev(major, minor) == device and int(fields[4]) == inode:
+                    # Paths can change or acquire " (deleted)" on replacement.
+                    # Only the actual file identity proves this app uses it.
+                    users.append(process.name)
                     break
-            if not loaded:
-                # PID plus kernel start time distinguishes reused process IDs.
-                start = (process / "stat").read_text().rsplit(")", 1)[1].split()[19]
-                stale.append(f"{process.name}:{start}:{current.st_dev}:{current.st_ino}")
         except (OSError, ValueError, IndexError):
             # Processes can exit or exec between reads. Unknown is not stale.
             continue
-    return stale
+    return users
 
 
-def notify_once(stale, state, notify):
-    if not stale:
-        return
+def notify_once(revision, state, notify):
     state.mkdir(parents=True, exist_ok=True)
     with (state / "dolphin-restart.lock").open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         marker = state / "dolphin-restart.json"
         try:
-            previous = set(json.loads(marker.read_text()))
-        except (OSError, ValueError, TypeError):
-            previous = set()
-        if set(stale) <= previous:
+            previous = json.loads(marker.read_text())["revisions"]
+            if not isinstance(previous, list) or not all(isinstance(item, str) for item in previous):
+                previous = []
+        except (OSError, ValueError, TypeError, KeyError):
+            # Older versions stored PID/inode tokens in a JSON list.
+            previous = []
+        if revision in previous:
             return
         if not notify():
             return
-        # Only retain currently stale processes; the file stays bounded.
+        # Deduplicate by code update, not PID. Restarting an unwrapped Dolphin
+        # or changing its process ID cannot create another reminder.
         with tempfile.NamedTemporaryFile(mode="w", dir=state, delete=False) as handle:
-            json.dump(stale, handle)
+            json.dump({"revisions": previous[-63:] + [revision]}, handle)
         os.replace(handle.name, marker)
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--previous-library", required=True, help="device:inode of the replaced hook")
+    parser.add_argument("--revision", required=True, help="successful build fingerprint")
+    args = parser.parse_args()
+    device, inode = map(int, args.previous_library.split(":"))
     home = Path.home()
-    library = home / ".local/lib/imperium/libdolphin-live.so"
+    if not processes_using(Path("/proc"), device, inode, os.getuid()):
+        return
 
     def notify():
         try:
@@ -82,8 +84,7 @@ def main():
         except OSError:
             return False
 
-    notify_once(stale_processes(Path("/proc"), library, os.getuid()),
-                home / ".local/state/imperium", notify)
+    notify_once(args.revision, home / ".local/state/imperium", notify)
 
 
 if __name__ == "__main__":

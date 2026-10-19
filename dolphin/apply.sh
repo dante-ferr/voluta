@@ -28,5 +28,3 @@ fi
 bash "$root/hypr/scripts/SetDefaultFileManager.sh"
 bash "$here/launch.sh" --prepare
 bash "$root/hypr/UserScripts/paint_dolphin_theme.sh"
-
-python3 "$here/notify-restart.py" || true
