@@ -28,7 +28,7 @@ hl.config({
     general = {
         gaps_in = 8,
         -- Top, right, bottom, left: keep windows closer to Waybar.
-        gaps_out = { top = 6, right = 16, bottom = 16, left = 16 },
+        gaps_out = { top = 8, right = 16, bottom = 16, left = 16 },
         border_size = 2,
         resize_on_border = true,
         layout = "dwindle",
