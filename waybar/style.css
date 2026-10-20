@@ -135,35 +135,24 @@ box.modules-right {
     border-radius: 0px;
     border-right: 1px solid #22222E;
     font-weight: 700;
+    box-shadow: none;
     transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-                color 0.25s ease-in-out,
-                box-shadow 0.25s ease-in-out;
-}
-
-/* Keyframe animation triggered on workspace switch */
-@keyframes workspace-activate {
-    0% {
-        background-color: #101017;
-        color: @foreground;
-        box-shadow: inset 0 -3px 0 @color1;
-    }
-    40% {
-        background-color: @color2;
-        color: #FFFFFF;
-        box-shadow: inset 0 -3px 0 #FFFFFF;
-    }
-    100% {
-        background-color: @color1;
-        color: #0A0A0E;
-        box-shadow: none;
-    }
+                color 0.25s ease-in-out;
 }
 
 #workspaces button.active {
-    animation: workspace-activate 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
     background-color: @color1;
     color: #0A0A0E; /* Dark engraved text on solid accent */
-    font-weight: 900;
+    /* Draw inside the button so selection never changes its size or text position. */
+    box-shadow: inset 0 0 0 2px #000000;
+}
+
+/* The native helper paints one sliding selection behind these fixed buttons. */
+#workspaces.sliding-selection button,
+#workspaces.sliding-selection button.active,
+#workspaces.sliding-selection button:hover {
+    background-color: transparent;
+    background-image: none;
     box-shadow: none;
 }
 
