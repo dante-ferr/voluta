@@ -99,11 +99,7 @@ static gboolean selection_draw(GtkWidget *box, cairo_t *cr, gpointer data) {
     g_list_free(children);
 
     if (s->ready && s->width > 2 && height > 4) {
-        cairo_set_source_rgba(cr, 0, 0, 0, s->opacity);
-        cairo_set_line_width(cr, 2);
-        cairo_rectangle(cr, s->x + 1, margin.top + 2, s->width - 2, height - 4);
-        cairo_stroke(cr);
-        /* Paint a softer halo over the outline so the border catches its light. */
+        /* Paint the soft exterior halo before the border and its lighting. */
         GdkRGBA accent = {0.7, 0.5, 0.2, 1.0};
         gtk_style_context_lookup_color(style, "workspace-accent", &accent);
         cairo_save(cr);
@@ -115,6 +111,33 @@ static gboolean selection_draw(GtkWidget *box, cairo_t *cr, gpointer data) {
             cairo_stroke(cr);
         }
         cairo_restore(cr);
+        /* Restore a solid black border over the exterior halo, then let light
+         * from the filled interior spill onto its inner edge. The outer edge
+         * stays black; there is no separate bright outline. */
+        cairo_set_source_rgba(cr, 0, 0, 0, s->opacity);
+        cairo_set_line_width(cr, 2);
+        cairo_rectangle(cr, s->x + 1, margin.top + 2, s->width - 2, height - 4);
+        cairo_stroke(cr);
+
+        double left = s->x, top = margin.top + 1;
+        double right = left + s->width, bottom = top + height - 2;
+        const double edges[4][8] = {
+            {left, top, left + 2, top, left, top, 2, height - 2},
+            {right, top, right - 2, top, right - 2, top, 2, height - 2},
+            {left, top, left, top + 2, left + 2, top, s->width - 4, 2},
+            {left, bottom, left, bottom - 2, left + 2, bottom - 2, s->width - 4, 2},
+        };
+        for (int side = 0; side < 4; ++side) {
+            const double *e = edges[side];
+            cairo_pattern_t *light = cairo_pattern_create_linear(e[0], e[1], e[2], e[3]);
+            cairo_pattern_add_color_stop_rgba(light, 0, accent.red, accent.green, accent.blue, 0);
+            cairo_pattern_add_color_stop_rgba(light, 1, accent.red, accent.green, accent.blue,
+                                             accent.alpha * s->opacity * 0.45);
+            cairo_set_source(cr, light);
+            cairo_rectangle(cr, e[4], e[5], e[6], e[7]);
+            cairo_fill(cr);
+            cairo_pattern_destroy(light);
+        }
     }
     /* We have painted the container and its children in the required order. */
     return TRUE;
