@@ -6,6 +6,15 @@
 /* Generated decoration images and plate glow settings from glow.json. */
 @import "wallust/angel-paths.css";
 
+/* Bright palette accents stay readable even with a dark wallpaper palette. */
+@define-color accent9 mix(@color9, #FFFFFF, 0.25);
+@define-color accent10 mix(@color10, #FFFFFF, 0.25);
+@define-color accent11 mix(@color11, #FFFFFF, 0.25);
+@define-color accent12 mix(@color12, #FFFFFF, 0.25);
+@define-color accent13 mix(@color13, #FFFFFF, 0.25);
+@define-color accent14 mix(@color14, #FFFFFF, 0.25);
+@define-color workspace-accent @accent12;
+
 * {
     border: none;
     border-radius: 0px; /* Strict 0px sharp geometric corners */
@@ -38,7 +47,7 @@ window#waybar {
 }
 
 #window {
-    color: @foreground;
+    color: @accent12;
     font-weight: 700;
     padding-left: 22px;
     background-repeat: no-repeat;
@@ -47,6 +56,7 @@ window#waybar {
 }
 
 #mpris {
+    color: @accent13;
     padding-left: 24px;
     background-repeat: no-repeat;
     background-position: -2px center;
@@ -140,11 +150,19 @@ box.modules-right {
                 color 0.25s ease-in-out;
 }
 
+#workspaces button:nth-child(6n+1) { color: @accent9; }
+#workspaces button:nth-child(6n+2) { color: @accent10; }
+#workspaces button:nth-child(6n+3) { color: @accent11; }
+#workspaces button:nth-child(6n+4) { color: @accent12; }
+#workspaces button:nth-child(6n+5) { color: @accent13; }
+#workspaces button:nth-child(6n+6) { color: @accent14; }
+
 #workspaces button.active {
-    background-color: @color1;
+    background-color: @workspace-accent;
     color: #0A0A0E; /* Dark engraved text on solid accent */
     /* Draw inside the button so selection never changes its size or text position. */
-    box-shadow: inset 0 0 0 2px #000000;
+    box-shadow: inset 0 0 0 2px mix(#000000, @workspace-accent, 0.23),
+                0 0 5px alpha(@workspace-accent, 0.4);
 }
 
 /* The native helper paints one sliding selection behind these fixed buttons. */
@@ -182,7 +200,7 @@ box.modules-right {
     padding: 3px 14px;
     margin: 4px 0px;
     background-color: #0A0A0E;
-    color: @foreground;
+    color: @accent11;
     border: 1px solid #2A2A38;
     border-left: 1px solid #22222E;
     font-family: "JetBrainsMono Nerd Font", monospace;
@@ -220,7 +238,7 @@ box.modules-right {
 /* Left outer edge of the first plate. */
 #custom-swaync {
     border-left: 1px solid #2A2A38;
-    color: @color1;
+    color: @accent13;
     font-size: 13px;
     padding-left: 11px;
     margin-left: 4px;
@@ -233,7 +251,7 @@ box.modules-right {
 
 /* Network (Icon Only) */
 #network {
-    color: @color1;
+    color: @accent12;
     font-size: 13px;
 }
 
@@ -244,14 +262,14 @@ box.modules-right {
 
 #network.disconnected,
 #network.disabled {
-    color: #7A0016;
+    color: @accent9;
 }
 
 /* PulseAudio (Icon Only) - right outer edge of the first plate */
 #pulseaudio {
     border-right: 1px solid #2A2A38;
     margin-right: 2px;
-    color: @color1;
+    color: @accent14;
     font-size: 13px;
     padding-right: 11px;
 }
@@ -262,7 +280,7 @@ box.modules-right {
 
 /* Temperature (Icon Only) */
 #temperature {
-    color: @foreground;
+    color: @accent11;
     font-size: 13px;
 }
 
@@ -275,16 +293,16 @@ box.modules-right {
 #battery {
     border-left: 1px solid #2A2A38;
     padding-left: 11px;
-    color: @foreground;
+    color: @accent10;
 }
 
 #battery.charging,
 #battery.plugged {
-    color: @color1;
+    color: @accent14;
 }
 
 #battery.warning:not(.charging) {
-    color: #FFD700;
+    color: @accent11;
 }
 
 #battery.critical:not(.charging) {
@@ -317,7 +335,7 @@ box.modules-right {
 #custom-power {
     border-right: 1px solid #2A2A38;
     margin-right: 6px;
-    color: @color1;
+    color: @accent9;
     font-size: 13px;
     padding-left: 10px;
     padding-right: 12px;

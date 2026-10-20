@@ -86,7 +86,7 @@ static gboolean selection_draw(GtkWidget *box, cairo_t *cr, gpointer data) {
 
     if (s->ready) {
         GdkRGBA accent = {0.7, 0.5, 0.2, 1.0};
-        gtk_style_context_lookup_color(style, "color1", &accent);
+        gtk_style_context_lookup_color(style, "workspace-accent", &accent);
         accent.alpha *= s->opacity;
         gdk_cairo_set_source_rgba(cr, &accent);
         cairo_rectangle(cr, s->x, margin.top + 1, s->width, height - 2);
@@ -103,6 +103,18 @@ static gboolean selection_draw(GtkWidget *box, cairo_t *cr, gpointer data) {
         cairo_set_line_width(cr, 2);
         cairo_rectangle(cr, s->x + 1, margin.top + 2, s->width - 2, height - 4);
         cairo_stroke(cr);
+        /* Paint a softer halo over the outline so the border catches its light. */
+        GdkRGBA accent = {0.7, 0.5, 0.2, 1.0};
+        gtk_style_context_lookup_color(style, "workspace-accent", &accent);
+        cairo_save(cr);
+        for (int radius = 5; radius >= 1; --radius) {
+            cairo_set_source_rgba(cr, accent.red, accent.green, accent.blue,
+                                  accent.alpha * s->opacity * 0.05);
+            cairo_set_line_width(cr, radius * 2.0);
+            cairo_rectangle(cr, s->x + 1, margin.top + 2, s->width - 2, height - 4);
+            cairo_stroke(cr);
+        }
+        cairo_restore(cr);
     }
     /* We have painted the container and its children in the required order. */
     return TRUE;
