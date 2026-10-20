@@ -12,13 +12,14 @@ else
     TOGGLE_MSG="󰖪  Disable Wi-Fi"
 fi
 
-# Get currently connected SSID
-ACTIVE_SSID=$(nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep '^yes:' | cut -d':' -f2 | head -n1)
-
-# Generate available network list if Wi-Fi is enabled
+# Read NetworkManager's cached access points once. Automatic rescans can block
+# for several seconds before Rofi appears; scanning is an explicit menu action.
+ACTIVE_SSID=""
 NETWORKS=""
 if [[ "$WIFI_STATE" =~ "enabled" ]]; then
-    NETWORKS=$(nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list 2>/dev/null | awk -F':' '
+    WIFI_NETWORKS=$(nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list --rescan no 2>/dev/null)
+    ACTIVE_SSID=$(printf '%s\n' "$WIFI_NETWORKS" | awk -F':' '$1 == "*" { print $2; exit }')
+    NETWORKS=$(printf '%s\n' "$WIFI_NETWORKS" | awk -F':' '
     $2 != "" {
         ssid = $2
         in_use = $1
@@ -86,7 +87,8 @@ elif [[ "$CHOSEN" =~ "Disconnect from" ]]; then
 elif [[ "$CHOSEN" =~ "Connection Settings" ]]; then
     nm-connection-editor &
 elif [[ "$CHOSEN" =~ "Rescan Networks" ]]; then
-    nmcli dev wifi rescan 2>/dev/null
+    # Wait for fresh results before reopening the cached menu.
+    nmcli dev wifi list --rescan yes >/dev/null 2>&1
     exec "$0"
 else
     # Clean string to get raw SSID
