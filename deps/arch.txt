@@ -16,6 +16,7 @@ swaync
 wlogout
 kitty
 rofi
+atuin
 
 # Wallpaper & theming
 waypaper-git|waypaper

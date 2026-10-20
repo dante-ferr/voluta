@@ -135,5 +135,5 @@
   <Action name="toggle_filter" priority="0" />
   <Action name="go_back" shortcut="Alt+Left" />
   <Action name="show_terminal_panel" shortcut="F4" />
- <Action name="focus_inactive_split_view" shortcut="Ctrl+F3; Tab" /></ActionProperties>
+ <Action name="focus_inactive_split_view" shortcut="Ctrl+F3; Tab" /><Action name="focus_inactive_split_view" shortcut="Ctrl+F3; Tab" /></ActionProperties>
 </gui>

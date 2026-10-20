@@ -21,6 +21,13 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+# Atuin provides searchable shell history and contributes history-based
+# autosuggestions to zsh-autosuggestions. Keep it on the interactive path:
+# this file returns above for SDDM's non-interactive login shell.
+if command -v atuin >/dev/null 2>&1; then
+    eval "$(atuin init zsh)"
+fi
+
 # Check archlinux plugin commands here
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/archlinux
 
