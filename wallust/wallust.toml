@@ -67,3 +67,21 @@ wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
 
 #zathura.template = 'colors-zathura'
 #zathura.target = '~/.config/zathura/zathurarc'
+
+# Mirrored notification corners are recolored alongside the SwayNC stylesheet.
+
+[templates.notification_corner_tl]
+template = "corner-tl.svg"
+target = "~/.config/wallust/generated/corner-tl.svg"
+
+[templates.notification_corner_tr]
+template = "corner-tr.svg"
+target = "~/.config/wallust/generated/corner-tr.svg"
+
+[templates.notification_corner_bl]
+template = "corner-bl.svg"
+target = "~/.config/wallust/generated/corner-bl.svg"
+
+[templates.notification_corner_br]
+template = "corner-br.svg"
+target = "~/.config/wallust/generated/corner-br.svg"

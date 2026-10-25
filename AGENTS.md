@@ -29,3 +29,11 @@ Rules:
 - A fatal error in `hyprland.lua` at startup has the same effect as a GPU open failure. `hyprctl reload` on a running session does not. Check `hyprctl configerrors` before logging out.
 
 Each graphical login appends one line to `~/.local/state/graphical-login.log`.
+
+## Wallust colors for SVGs and text
+
+- SVG artwork and UI text must use the active Wallust palette. Do not introduce fixed SVG paint colors or fixed text colors.
+- Use Wallust color tokens in stylesheets and Wallust templates for SVG fills and strokes. Derive muted, hover, and contrast colors from those tokens rather than hard-coded colors.
+- Regenerate palette-dependent assets and reload their consumers when the wallpaper changes, so artwork and text follow the current palette on both hosts.
+
+- Keep reusable SVG source assets in `wallust/assets/` and palette-rendered SVGs in `wallust/generated/`; consumers should share these assets instead of keeping private copies.

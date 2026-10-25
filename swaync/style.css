@@ -1,15 +1,14 @@
-/* SwayNC Imperium Monumental Classical Style */
-/* Shares the waybar vocabulary: Cinzel lettering, sharp 0px edges, opaque basalt
-   slabs, darker 1px hairlines and the wallust accent for every gilded detail. */
+/* Imperium notification salon: Dolphin typography, Waybar scrollwork.
+   Keep ornament in the frame and generous quiet space around the message. */
 
 @import "wallust/colors-swaync.css";
 
 * {
     border-radius: 0px; /* Strict 0px sharp geometric corners */
-    font-family: "Cinzel", "JetBrainsMono Nerd Font", "FiraCode Nerd Font", serif, monospace;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
+    font-family: "Monaspace Argon", "JetBrainsMono Nerd Font", monospace;
+    font-size: 10pt;
+    font-weight: 400;
+    letter-spacing: 0;
     text-shadow: none;
     box-shadow: none;
 }
@@ -32,32 +31,35 @@
 
 .notification-row:focus .notification,
 .notification-row:hover .notification {
-    background: #101017;
+    background-color: #101017;
 }
 
 .notification-row .notification-background {
-    padding: 4px 8px;
+    padding: 6px 10px;
+}
+
+/* The daemon keeps its initial window width across a configuration reload. */
+.floating-notifications .notification {
+    min-width: 390px;
 }
 
 .notification-row .notification-background .notification {
-    padding: 0;
-    background: #0A0A0E; /* Opaque Basalt Slate */
+    padding: 24px 20px;
+    background-color: @background;
+    background-image: url("../wallust/generated/corner-tl.svg"), url("../wallust/generated/corner-tr.svg"),
+                      url("../wallust/generated/corner-bl.svg"), url("../wallust/generated/corner-br.svg");
+    background-repeat: no-repeat;
+    background-position: 8px 8px, calc(100% - 8px) 8px,
+                         8px calc(100% - 8px), calc(100% - 8px) calc(100% - 8px);
+    background-size: 48px 48px;
     border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
-    /* Gilded spine on the leading edge, echoing the active workspace numeral */
-    box-shadow: inset 3px 0 0 0 @color1, 0 2px 6px rgba(0, 0, 0, 0.7);
+    /* A fine illuminated edge joins the four corner carvings. */
+    box-shadow: inset 0 1px 0 alpha(@color1, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
     transition: background 0.15s ease-in-out;
 }
 
-.notification-row .notification-background .notification.critical {
-    box-shadow: inset 3px 0 0 0 #7A0016, 0 2px 6px rgba(0, 0, 0, 0.7);
-}
-
-.notification-row .notification-background .notification.low {
-    box-shadow: inset 3px 0 0 0 #2A2A38, 0 2px 6px rgba(0, 0, 0, 0.7);
-}
-
 .notification-row .notification-background .notification .notification-default-action {
-    padding: 6px 10px;
+    padding: 14px 20px;
     margin: 0;
     background: transparent;
     border: none;
@@ -79,30 +81,30 @@
 }
 
 .summary {
-    color: @color1;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 1.2px;
+    color: @foreground;
+    font-size: 10pt;
+    font-weight: 400;
+    letter-spacing: 0;
     background: transparent;
 }
 
 .notification.critical .summary {
-    color: #FFFFFF;
+    color: @foreground;
 }
 
 .time {
-    color: @color8;
-    font-size: 10.5px;
-    font-weight: 700;
+    color: mix(@foreground, @background, 0.32);
+    font-size: 8pt;
+    font-weight: 400;
     margin-right: 26px;
     background: transparent;
 }
 
 .body {
     color: @foreground;
-    font-size: 11.5px;
-    font-weight: 500;
-    letter-spacing: 0.4px;
+    font-size: 10pt;
+    font-weight: 400;
+    letter-spacing: 0;
     background: transparent;
 }
 
@@ -131,7 +133,7 @@
 
 .close-button:hover {
     background: #7A0016;
-    color: #FFFFFF;
+    color: @foreground;
     border: 1px solid #7A0016;
 }
 
@@ -153,7 +155,7 @@
 .notification-action > button:hover,
 .inline-reply-button:hover {
     background: @color1;
-    color: #0A0A0E;
+    color: @background;
 }
 
 .inline-reply-entry {
@@ -168,7 +170,7 @@
 .notification-group .notification-group-buttons {
     margin: 0 14px;
     color: @color1;
-    letter-spacing: 1.2px;
+    letter-spacing: 0;
 }
 
 .notification-group .notification-group-headers .notification-group-icon {
@@ -176,7 +178,7 @@
 }
 
 .notification-group.collapsed.not-expanded {
-    opacity: 0.45;
+    opacity: 1;
 }
 
 /* ====================================================
@@ -184,9 +186,15 @@
    ==================================================== */
 
 .control-center {
-    background: #0A0A0E;
+    background-color: @background;
+    background-image: url("../wallust/generated/corner-tl.svg"), url("../wallust/generated/corner-tr.svg"),
+                      url("../wallust/generated/corner-bl.svg"), url("../wallust/generated/corner-br.svg");
+    background-repeat: no-repeat;
+    background-position: 10px 10px, calc(100% - 10px) 10px,
+                         10px calc(100% - 10px), calc(100% - 10px) calc(100% - 10px);
+    background-size: 68px 68px;
     color: @foreground;
-    padding: 10px;
+    padding: 38px 28px;
     border: 1px solid #2A2A38;
     /* Gilded lintel across the top of the tablet */
     box-shadow: inset 0 2px 0 0 @color1, 0 4px 14px rgba(0, 0, 0, 0.8);
@@ -222,17 +230,9 @@ scrollbar slider:hover {
 }
 
 .control-center .control-center-list-placeholder {
-    color: @color8;
+    color: mix(@foreground, @background, 0.32);
     opacity: 1;
-    letter-spacing: 1.4px;
-}
-
-.control-center .control-center-list .notification {
-    box-shadow: inset 3px 0 0 0 @color1;
-}
-
-.control-center .control-center-list .notification.critical {
-    box-shadow: inset 3px 0 0 0 #7A0016;
+    letter-spacing: 0;
 }
 
 /* ====================================================
@@ -241,23 +241,25 @@ scrollbar slider:hover {
 
 .widget {
     margin: 5px 4px;
-    padding: 8px 10px;
+    padding: 12px 16px;
     background: #101017;
     border: 1px solid #22222E;
 }
 
 /* Title */
 .widget-title {
-    background: transparent;
+    background-color: transparent;
     border: none;
-    padding: 4px 6px;
-    margin-bottom: 0;
+    border-bottom: 1px solid alpha(@color1, 0.25);
+    padding: 12px 14px 16px;
+    margin-bottom: 8px;
 }
 
 .widget-title > label {
-    color: @color1;
-    font-size: 15px;
-    letter-spacing: 2px;
+    color: @foreground;
+    font-size: 12pt;
+    font-weight: 600;
+    letter-spacing: 0;
     margin-right: 8px;
 }
 
@@ -272,14 +274,14 @@ scrollbar slider:hover {
 
 .widget-title > button:hover {
     background: @color1;
-    color: #0A0A0E;
+    color: @background;
 }
 
 /* Do Not Disturb */
 .widget-dnd > label {
     color: @foreground;
-    font-size: 12px;
-    letter-spacing: 1.2px;
+    font-size: 10pt;
+    letter-spacing: 0;
 }
 
 .widget-dnd > switch {
@@ -330,12 +332,12 @@ scrollbar slider:hover {
 .widget-buttons-grid > flowbox > flowboxchild > button:hover,
 .widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked {
     background: @color1;
-    color: #0A0A0E;
+    color: @background;
 }
 
 .widget-buttons-grid > flowbox > flowboxchild > button:hover label,
 .widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked label {
-    color: #0A0A0E;
+    color: @background;
 }
 
 /* Volume & backlight sliders */
@@ -354,21 +356,23 @@ scrollbar slider:hover {
 .widget-backlight scale trough {
     background: #0A0A0E;
     border: 1px solid #2A2A38;
-    min-height: 8px;
+    min-height: 4px;
 }
 
 .widget-volume scale highlight,
 .widget-backlight scale highlight {
     background: @color1;
-    min-height: 8px;
+    min-height: 4px;
 }
 
 .widget-volume scale slider,
 .widget-backlight scale slider {
     background: @foreground;
     border: 1px solid #0A0A0E;
-    min-width: 10px;
-    min-height: 10px;
+    min-width: 12px;
+    min-height: 12px;
+    margin: -5px 0;
+    padding: 0;
 }
 
 .per-app-volume {
@@ -404,15 +408,15 @@ scrollbar slider:hover {
 }
 
 .widget-mpris .widget-mpris-player .widget-mpris-title {
-    color: @color1;
-    font-size: 13px;
-    letter-spacing: 1.2px;
+    color: @foreground;
+    font-size: 10pt;
+    letter-spacing: 0;
 }
 
 .widget-mpris .widget-mpris-player .widget-mpris-subtitle {
     color: @foreground;
-    font-size: 11.5px;
-    font-weight: 500;
+    font-size: 10pt;
+    font-weight: 400;
 }
 
 .widget-mpris .widget-mpris-player .mpris-overlay button,
@@ -425,9 +429,27 @@ scrollbar slider:hover {
 .widget-mpris .widget-mpris-player .mpris-overlay button:hover,
 .widget-mpris > box > button:hover {
     background: @color1;
-    color: #0A0A0E;
+    color: @background;
 }
 
 .widget-mpris > box > button:disabled {
-    color: @color8;
+    color: mix(@foreground, @background, 0.32);
+}
+
+/* Emphasis belongs to headings; the message keeps Dolphin's regular weight. */
+.summary,
+.widget-mpris .widget-mpris-player .widget-mpris-title {
+    font-weight: 600;
+}
+
+/* Reserve corner artwork for the outer panel; keep archived messages quiet. */
+.control-center .notification-row .notification-background .notification {
+    background-image: none;
+    padding: 8px 4px;
+}
+
+.widget-buttons-grid button label,
+.widget-volume > box > label,
+.widget-backlight > box > label {
+    font-family: "JetBrainsMono Nerd Font", monospace;
 }

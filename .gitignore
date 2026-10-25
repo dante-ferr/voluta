@@ -23,3 +23,6 @@ hypr/workspaces.conf
 __pycache__/
 *.pyc
 
+
+# Shared, palette-rendered SVG assets.
+wallust/generated/
