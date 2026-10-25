@@ -74,5 +74,23 @@ int main(int argc, char **argv)
     window.addDockWidget(Qt::RightDockWidgetArea, places);
     applyInitialPanelLayout(&window);
     check(window.dockWidgetArea(places) == Qt::RightDockWidgetArea, "layout reset repeated within the same window");
+    QImageReader artwork(home + QStringLiteral("/.config/wallust/generated/dolphin-corner.svg"));
+    check(!artwork.read().isNull(), "Qt cannot render the shared corner SVG");
+    check(!headingOrnament(1.0).isNull(), "Qt cannot render the shared heading ornament SVG");
+    const QRect heading(6, 4, 220, 24);
+    const QRect ornament = headingOrnamentRect(heading, 72);
+    check(!ornament.isEmpty() && heading.contains(ornament)
+              && ornament.left() >= heading.left() + 72 + 18,
+          "heading ornament overlaps its label or panel edge");
+    check(headingOrnamentRect(QRect(0, 0, 140, 24), 72).isEmpty(),
+          "narrow headings must omit artwork instead of covering text");
+    auto *frame = new CornerFrame(&window);
+    frame->refresh();
+    check(frame->testAttribute(Qt::WA_TransparentForMouseEvents)
+              && frame->focusPolicy() == Qt::NoFocus,
+          "corner artwork can intercept file interactions");
+    window.resize(1100, 850);
+    app.processEvents();
+    check(frame->geometry() == window.rect(), "corner frame did not follow window resizing");
     std::puts("PASS: Qt parses matching Regular fonts and repairs Places below Folders without changing visibility");
 }

@@ -64,6 +64,13 @@ newly added dependencies automatically.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.
 
+Shared corner and scroll artwork lives in `../wallust/assets/`. The theme
+generator recolors it into `~/.config/wallust/generated/` for the current
+palette. The hook frames each window and adds small ornaments to the panel
+headings. Decorations never receive clicks or keyboard focus. Existing
+windows need one full quit and relaunch to load a changed hook; later palette
+changes refresh the artwork in place.
+
 Run `python3 tools/check-dolphin-theme.py` from the checkout to check existing
 install migration, generated themes, Qt font parsing, and panel positioning in
 an isolated home with Qt's offscreen platform. The checks require the build

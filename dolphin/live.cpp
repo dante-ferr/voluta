@@ -22,6 +22,8 @@
 #include <QFont>
 #include <QGraphicsView>
 #include <QGraphicsWidget>
+#include <QHash>
+#include <QImageReader>
 #include <QListView>
 #include <QMainWindow>
 #include <QMouseEvent>
@@ -56,6 +58,37 @@ constexpr int kPlacesSpacing = 1;
 constexpr int kPlacesIconSize = 24;
 constexpr int kPlacesExtraIconGap = 8;
 constexpr int kSidebarDefaultWidth = 240;
+
+QString homeConfig(const char *leaf);
+
+QHash<qreal, QPixmap> &headingOrnamentCache()
+{
+    static QHash<qreal, QPixmap> cache;
+    return cache;
+}
+
+QPixmap headingOrnament(qreal ratio)
+{
+    auto &cache = headingOrnamentCache();
+    auto found = cache.constFind(ratio);
+    if (found == cache.constEnd()) {
+        QImageReader reader(homeConfig("/.config/wallust/generated/dolphin-ornaments.svg"));
+        reader.setScaledSize(QSize(qRound(64 * ratio), qRound(16 * ratio)));
+        QPixmap image = QPixmap::fromImage(reader.read());
+        image.setDevicePixelRatio(ratio);
+        cache.insert(ratio, image);
+        return image;
+    }
+    return found.value();
+}
+
+QRect headingOrnamentRect(const QRect &heading, int textWidth)
+{
+    // Keep a full gap after the label and before the panel's edge. Narrow
+    // panels retain their complete title instead of squeezing in artwork.
+    const QRect ornament(heading.right() - 64 - 12 + 1, heading.center().y() - 8, 64, 16);
+    return ornament.left() >= heading.left() + textWidth + 18 ? ornament : QRect();
+}
 
 QFont imperiumFont()
 {
@@ -188,6 +221,18 @@ public:
         // Keep group titles at the original position; only the item body gains
         // a gap. Native text elision already accounts for the reduced width.
         copy(QRectF(0, 0, width, headerHeight), QRectF(0, 0, width, headerHeight));
+        if (index.row() == 0 && headerHeight >= 16 && groupRole >= 0) {
+            const QRect header(option.rect.x(), option.rect.y(), width, headerHeight);
+            const int titleWidth = m_view->fontMetrics().horizontalAdvance(index.data(groupRole).toString());
+            QRect ornament = headingOrnamentRect(header, titleWidth + 6);
+            ornament = QStyle::visualRect(option.direction, header, ornament);
+            if (!ornament.isEmpty()) {
+                painter->save();
+                painter->setOpacity(0.70);
+                painter->drawPixmap(ornament.topLeft(), headingOrnament(dpr));
+                painter->restore();
+            }
+        }
         const int bodyHeight = height - headerHeight;
         const int split = option.direction == Qt::LeftToRight ? iconSize + 6 : width - iconSize - 6;
         // RTL shifts the label side away from the right-hand icon; the action
@@ -532,6 +577,63 @@ private:
     QPoint m_pointer{-1, -1};
 };
 
+// Paint only in the window's existing outer margins. The overlay never takes
+// focus or mouse input and never places decoration over the file viewport.
+class CornerFrame : public QWidget
+{
+public:
+    explicit CornerFrame(QMainWindow *window) : QWidget(window)
+    {
+        setObjectName(QStringLiteral("imperiumCornerFrame"));
+        setAttribute(Qt::WA_TransparentForMouseEvents);
+        setAttribute(Qt::WA_NoSystemBackground);
+        setFocusPolicy(Qt::NoFocus);
+        window->installEventFilter(this);
+        setGeometry(window->rect());
+        show();
+    }
+
+    void refresh()
+    {
+        QImageReader reader(homeConfig("/.config/wallust/generated/dolphin-corner.svg"));
+        const qreal ratio = devicePixelRatioF();
+        reader.setScaledSize(QSize(qRound(60 * ratio), qRound(60 * ratio)));
+        m_corner = QPixmap::fromImage(reader.read());
+        m_corner.setDevicePixelRatio(ratio);
+        raise();
+        update();
+    }
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        if (watched == parentWidget() && (event->type() == QEvent::Resize || event->type() == QEvent::Show)) {
+            setGeometry(parentWidget()->rect());
+            raise();
+        }
+        return QWidget::eventFilter(watched, event);
+    }
+
+    void paintEvent(QPaintEvent *) override
+    {
+        if (m_corner.isNull()) return;
+        QPainter painter(this);
+        painter.setOpacity(0.70);
+        for (int x : {0, 1}) {
+            for (int y : {0, 1}) {
+                painter.save();
+                painter.translate(x ? width() - 6 : 6, y ? height() - 6 : 6);
+                painter.scale(x ? -1 : 1, y ? -1 : 1);
+                painter.drawPixmap(0, 0, m_corner);
+                painter.restore();
+            }
+        }
+    }
+
+private:
+    QPixmap m_corner;
+};
+
 class LiveTheme : public QObject
 {
 public:
@@ -613,6 +715,11 @@ private:
             return;
         }
 
+        // The artwork can change even when the icon accent stays identical.
+        // Reload heading paints on every palette application, independently
+        // of the global icon pixmap cache's accent comparison.
+        headingOrnamentCache().clear();
+
         // A new path misses KColorScheme's thread-local cache. DolphinView
         // then reads the wallpaper's colors, including the background alpha.
         qApp->setProperty("KDE_COLOR_SCHEME_PATH", schemePath);
@@ -631,6 +738,9 @@ private:
         for (QWidget *widget : widgets) {
             if (auto *window = qobject_cast<QMainWindow *>(widget); window && window->inherits("DolphinMainWindow")) {
                 applyInitialPanelLayout(window);
+                auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly);
+                auto *corners = frame ? static_cast<CornerFrame *>(frame) : new CornerFrame(window);
+                corners->refresh();
             }
         }
         for (QWidget *widget : widgets) {

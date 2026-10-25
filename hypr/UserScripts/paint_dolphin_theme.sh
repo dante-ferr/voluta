@@ -25,6 +25,7 @@ import sys
 import time
 import urllib.parse
 import zlib
+import xml.etree.ElementTree as ET
 
 root, colors_path, home = sys.argv[1:4]
 
@@ -298,6 +299,26 @@ hover_hex = hx(hover)
 edge = hx(mix(accent, mantle, 0.45))
 panel = hx(base)
 quiet = hx(muted)
+# Shared artwork stays outside Dolphin's private configuration. Repaint it
+# from the same readable palette before publishing the live refresh marker.
+asset_dir = os.path.join(home, ".config", "wallust", "generated")
+os.makedirs(asset_dir, exist_ok=True)
+ET.register_namespace("", "http://www.w3.org/2000/svg")
+for source_name, output_name, size in (
+    ("corner.svg", "dolphin-corner.svg", (64, 64)),
+    ("ornaments.svg", "dolphin-ornaments.svg", (64, 16)),
+):
+    artwork = ET.parse(os.path.join(root, "wallust", "assets", source_name))
+    svg = artwork.getroot()
+    svg.set("width", str(size[0]))
+    svg.set("height", str(size[1]))
+    for element in svg.iter():
+        for paint in ("fill", "stroke"):
+            value = element.get(paint)
+            if value and value not in ("none", "transparent"):
+                element.set(paint, "#" + hx(mix(text, mantle, 0.30)))
+    artwork.write(os.path.join(asset_dir, output_name), encoding="unicode")
+ornament_url = os.path.join(asset_dir, "dolphin-ornaments.svg").replace("\\", "/")
 with open(qss_path, "w", encoding="utf-8") as handle:
     handle.write(f"""
 DolphinMainWindow {{
@@ -362,6 +383,14 @@ DolphinMainWindow QDockWidget::title {{
     color: #{quiet};
     padding: 10px 14px 4px 14px;
     border: none;
+}}
+DolphinMainWindow QDockWidget#placesDock::title,
+DolphinMainWindow QDockWidget#foldersDock::title,
+DolphinMainWindow QDockWidget#infoDock::title {{
+    background-image: url("{ornament_url}");
+    background-repeat: no-repeat;
+    background-position: right center;
+    padding-right: 78px;
 }}
 QDockWidget#terminalDock {{
     min-height: 220px;
