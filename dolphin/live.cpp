@@ -595,7 +595,7 @@ public:
 
     void refresh()
     {
-        QImageReader reader(homeConfig("/.config/wallust/assets/generated/dolphin-corner.svg"));
+        QImageReader reader(homeConfig("/.config/wallust/assets/generated/big-corner-tl.svg"));
         const qreal ratio = devicePixelRatioF();
         reader.setScaledSize(QSize(qRound(60 * ratio), qRound(60 * ratio)));
         m_corner = QPixmap::fromImage(reader.read());

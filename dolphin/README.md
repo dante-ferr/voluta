@@ -66,7 +66,9 @@ system package versions can cause remaining differences.
 
 Shared corner and scroll artwork lives in `../wallust/assets/`. The theme
 generator recolors it into `~/.config/wallust/assets/generated/` for the current
-palette. The hook frames each window and adds small ornaments to the panel
+palette. Dolphin uses the big corner design; notifications use the small
+design. All three sizes have mirrored variants in the shared asset folder.
+The hook frames each window and adds small ornaments to the panel
 headings. Decorations never receive clicks or keyboard focus. Existing
 windows need one full quit and relaunch to load a changed hook; later palette
 changes refresh the artwork in place.

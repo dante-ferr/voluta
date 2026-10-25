@@ -2,6 +2,7 @@
  /* Deliberately mirrors colors-waybar so both stylesheets share token names */
 
  @define-color foreground {{foreground | lighten(0.30)}};
+ @define-color corner-ornament {{foreground | darken(0.30)}};
  @define-color background {{background}};
  @define-color background-alt rgba({{background | rgb}},0.25);
  @define-color cursor {{cursor | lighten(0.30)}};

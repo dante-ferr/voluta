@@ -68,20 +68,52 @@ wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
 #zathura.template = 'colors-zathura'
 #zathura.target = '~/.config/zathura/zathurarc'
 
-# Mirrored notification corners are recolored alongside the SwayNC stylesheet.
+# Shared corner families, recolored for every consumer by Wallust.
 
-[templates.notification_corner_tl]
-template = "../assets/corner-tl.svg"
-target = "~/.config/wallust/assets/generated/corner-tl.svg"
+[templates.corner_small_tl]
+template = "../assets/small-corner-tl.svg"
+target = "~/.config/wallust/assets/generated/small-corner-tl.svg"
 
-[templates.notification_corner_tr]
-template = "../assets/corner-tr.svg"
-target = "~/.config/wallust/assets/generated/corner-tr.svg"
+[templates.corner_small_tr]
+template = "../assets/small-corner-tr.svg"
+target = "~/.config/wallust/assets/generated/small-corner-tr.svg"
 
-[templates.notification_corner_bl]
-template = "../assets/corner-bl.svg"
-target = "~/.config/wallust/assets/generated/corner-bl.svg"
+[templates.corner_small_bl]
+template = "../assets/small-corner-bl.svg"
+target = "~/.config/wallust/assets/generated/small-corner-bl.svg"
 
-[templates.notification_corner_br]
-template = "../assets/corner-br.svg"
-target = "~/.config/wallust/assets/generated/corner-br.svg"
+[templates.corner_small_br]
+template = "../assets/small-corner-br.svg"
+target = "~/.config/wallust/assets/generated/small-corner-br.svg"
+
+[templates.corner_medium_tl]
+template = "../assets/medium-corner-tl.svg"
+target = "~/.config/wallust/assets/generated/medium-corner-tl.svg"
+
+[templates.corner_medium_tr]
+template = "../assets/medium-corner-tr.svg"
+target = "~/.config/wallust/assets/generated/medium-corner-tr.svg"
+
+[templates.corner_medium_bl]
+template = "../assets/medium-corner-bl.svg"
+target = "~/.config/wallust/assets/generated/medium-corner-bl.svg"
+
+[templates.corner_medium_br]
+template = "../assets/medium-corner-br.svg"
+target = "~/.config/wallust/assets/generated/medium-corner-br.svg"
+
+[templates.corner_big_tl]
+template = "../assets/big-corner-tl.svg"
+target = "~/.config/wallust/assets/generated/big-corner-tl.svg"
+
+[templates.corner_big_tr]
+template = "../assets/big-corner-tr.svg"
+target = "~/.config/wallust/assets/generated/big-corner-tr.svg"
+
+[templates.corner_big_bl]
+template = "../assets/big-corner-bl.svg"
+target = "~/.config/wallust/assets/generated/big-corner-bl.svg"
+
+[templates.corner_big_br]
+template = "../assets/big-corner-br.svg"
+target = "~/.config/wallust/assets/generated/big-corner-br.svg"

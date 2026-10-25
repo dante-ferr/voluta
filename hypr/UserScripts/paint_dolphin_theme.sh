@@ -313,8 +313,16 @@ quiet = hx(muted)
 asset_dir = os.path.join(home, ".config", "wallust", "assets", "generated")
 os.makedirs(asset_dir, exist_ok=True)
 ET.register_namespace("", "http://www.w3.org/2000/svg")
+# Match the shared Wallust artwork when its rendered palette is available.
+corner_ink = "#" + hx(darken(fg, 0.30))
+notification_palette = os.path.join(home, ".config", "swaync", "wallust", "colors-swaync.css")
+if os.path.isfile(notification_palette):
+    with open(notification_palette, encoding="utf-8") as handle:
+        match = re.search(r"@define-color\s+corner-ornament\s+(#[0-9A-Fa-f]{6})\s*;", handle.read())
+    if match:
+        corner_ink = match.group(1)
 for source_name, output_name, size in (
-    ("corner.svg", "dolphin-corner.svg", (64, 64)),
+    ("big-corner-tl.svg", "big-corner-tl.svg", (64, 64)),
     ("ornaments.svg", "dolphin-ornaments.svg", (64, 16)),
 ):
     artwork = ET.parse(os.path.join(root, "wallust", "assets", source_name))
@@ -325,7 +333,7 @@ for source_name, output_name, size in (
         for paint in ("fill", "stroke"):
             value = element.get(paint)
             if value and value not in ("none", "transparent"):
-                element.set(paint, "#" + hx(mix(text, mantle, 0.30)))
+                element.set(paint, corner_ink if source_name == "big-corner-tl.svg" else "#" + hx(mix(text, mantle, 0.30)))
     artwork.write(os.path.join(asset_dir, output_name), encoding="unicode")
 ornament_url = os.path.join(asset_dir, "dolphin-ornaments.svg").replace("\\", "/")
 with open(qss_path, "w", encoding="utf-8") as handle:

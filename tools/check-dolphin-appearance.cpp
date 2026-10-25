@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     window.addDockWidget(Qt::RightDockWidgetArea, places);
     applyInitialPanelLayout(&window);
     check(window.dockWidgetArea(places) == Qt::RightDockWidgetArea, "layout reset repeated within the same window");
-    QImageReader artwork(home + QStringLiteral("/.config/wallust/assets/generated/dolphin-corner.svg"));
+    QImageReader artwork(home + QStringLiteral("/.config/wallust/assets/generated/big-corner-tl.svg"));
     check(!artwork.read().isNull(), "Qt cannot render the shared corner SVG");
     check(!headingOrnament(1.0).isNull(), "Qt cannot render the shared heading ornament SVG");
     const QRect heading(6, 4, 220, 24);
