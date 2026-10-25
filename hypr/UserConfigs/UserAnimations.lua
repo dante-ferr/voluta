@@ -40,3 +40,12 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3, bezier = "fast
 hl.animation({ leaf = "layers", enabled = true, speed = 4, bezier = "fluidDecel", style = "fade" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "snappySpring", style = "fade" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 3, bezier = "fastOut", style = "fade" })
+
+-- Reopening the notification panel must replay its entrance. GTK keyframes
+-- only run on first construction; the compositor animates every layer map.
+-- Layer slide animations also fade alpha from zero to one.
+hl.layer_rule({
+    name = "notification-panel-drop",
+    match = { namespace = "^swaync-control-center$" },
+    animation = "slide top",
+})
