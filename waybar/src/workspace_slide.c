@@ -4,25 +4,35 @@
  */
 #define _GNU_SOURCE
 #include <dlfcn.h>
+#include <math.h>
 #include <gtk/gtk.h>
 #include <string.h>
 
 typedef struct {
-    double x, width, from_x, from_width, to_x, to_width;
-    gint64 started;
+    double x, width, to_x, to_width;
+    gint64 last_frame;
     gboolean ready;
-    double opacity, from_opacity;
+    double opacity;
 } Selection;
 
-static void advance(Selection *s, gint64 now) {
-    double t = CLAMP((now - s->started) / 280000.0, 0.0, 1.0);
-    double ease = t * t * (3.0 - 2.0 * t);
-    s->x = s->from_x + (s->to_x - s->from_x) * ease;
-    s->width = s->from_width + (s->to_width - s->from_width) * ease;
-    double edge = t < 0.5 ? 1.0 - 2.0 * t : 2.0 * t - 1.0;
-    s->opacity = 0.5 + 0.5 * edge * edge * (3.0 - 2.0 * edge);
-    if (t < 0.5)
-        s->opacity = 0.5 + (s->from_opacity - 0.5) * edge * edge * (3.0 - 2.0 * edge);
+static gboolean advance(Selection *s, gint64 now) {
+    /* Exponential, frame-time-scaled lerp keeps the selection moving at a
+     * proportional rate and makes interrupted moves continue smoothly. */
+    double dt = CLAMP((now - s->last_frame) / 1000000.0, 0.0, 0.1);
+    /* A 120 ms time constant takes about 360 ms to settle while preserving
+     * the quick-start, slow-finish glide. */
+    double amount = 1.0 - exp(-dt / 0.12);
+    s->last_frame = now;
+    s->x += (s->to_x - s->x) * amount;
+    s->width += (s->to_width - s->width) * amount;
+    s->opacity += (1.0 - s->opacity) * amount;
+    if (fabs(s->to_x - s->x) < 0.15 && fabs(s->to_width - s->width) < 0.15) {
+        s->x = s->to_x;
+        s->width = s->to_width;
+        s->opacity = 1.0;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 static gboolean selection_tick(GtkWidget *box, GdkFrameClock *clock, gpointer data) {
@@ -43,24 +53,19 @@ static gboolean selection_tick(GtkWidget *box, GdkFrameClock *clock, gpointer da
         gtk_widget_translate_coordinates(active, box, 0, 0, &x, &y);
         double width = gtk_widget_get_allocated_width(active);
         if (!s->ready) {
-            s->x = s->from_x = s->to_x = x;
-            s->width = s->from_width = s->to_width = width;
-            s->started = now - 280000;
+            s->x = s->to_x = x;
+            s->width = s->to_width = width;
+            s->last_frame = now;
             s->ready = TRUE;
-            s->opacity = s->from_opacity = 1.0;
+            s->opacity = 1.0;
             gtk_widget_queue_draw(box);
         } else {
-            advance(s, now);
-            if (s->to_x != x || s->to_width != width) {
-                s->from_x = s->x;
-                s->from_width = s->width;
+            gboolean target_changed = s->to_x != x || s->to_width != width;
+            if (target_changed) {
                 s->to_x = x;
                 s->to_width = width;
-                s->from_opacity = s->opacity;
-                s->started = now;
             }
-            /* Include the last frame, so the outline reaches its exact target. */
-            if (now - s->started <= 320000)
+            if (advance(s, now) || target_changed)
                 gtk_widget_queue_draw(box);
         }
     } else if (s->ready) {

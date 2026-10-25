@@ -26,6 +26,11 @@ if pgrep -x waybar >/dev/null 2>&1; then
 fi
 
 waybar_dir=$(readlink -f "${HOME}/.config/waybar" 2>/dev/null || true)
+if [[ -f "${waybar_dir}/Makefile" ]]; then
+    if ! make -C "$waybar_dir"; then
+        notify-send -u critical "Waybar build failed" "The existing Waybar shim will be used. Check the build output and run Refresh again."
+    fi
+fi
 shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
 if [[ -f $shim ]]; then
     export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
