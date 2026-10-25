@@ -29,11 +29,6 @@
     outline: none;
 }
 
-.notification-row:focus .notification,
-.notification-row:hover .notification {
-    background-color: #101017;
-}
-
 .notification-row .notification-background {
     padding: 6px 10px;
 }
@@ -66,8 +61,10 @@
     color: @foreground;
 }
 
+/* Keep the message surface transparent when hovered so it never paints
+   over the corner artwork. Actions and the close button retain feedback. */
 .notification-row .notification-background .notification .notification-default-action:hover {
-    background: #161622;
+    background: transparent;
 }
 
 .notification-content {
