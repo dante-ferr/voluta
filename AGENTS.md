@@ -36,4 +36,4 @@ Each graphical login appends one line to `~/.local/state/graphical-login.log`.
 - Use Wallust color tokens in stylesheets and Wallust templates for SVG fills and strokes. Derive muted, hover, and contrast colors from those tokens rather than hard-coded colors.
 - Regenerate palette-dependent assets and reload their consumers when the wallpaper changes, so artwork and text follow the current palette on both hosts.
 
-- Keep reusable SVG source assets in `wallust/assets/` and palette-rendered SVGs in `wallust/generated/`; consumers should share these assets instead of keeping private copies.
+- Keep reusable SVG source assets in `wallust/assets/` and palette-rendered SVGs in `wallust/assets/generated/`; consumers should share these assets instead of keeping private copies.

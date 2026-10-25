@@ -25,4 +25,4 @@ __pycache__/
 
 
 # Shared, palette-rendered SVG assets.
-wallust/generated/
+wallust/assets/generated/

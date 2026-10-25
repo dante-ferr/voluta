@@ -5,35 +5,35 @@
    top of style.css — later @import is ignored by the CSS spec. */
 
 #custom-angel-left {
-    background-image: url("assets/angels-left.svg");
+    background-image: url("../wallust/assets/angels-left.svg");
 }
 
 #custom-angel-right {
-    background-image: url("assets/angels.svg");
+    background-image: url("../wallust/assets/angels.svg");
 }
 
 .modules-left,
 box.modules-left {
-    background-image: url("assets/ornaments-left.svg");
+    background-image: url("../wallust/assets/ornaments-left.svg");
 }
 
 .modules-right,
 box.modules-right {
-    background-image: url("assets/ornaments-right.svg");
+    background-image: url("../wallust/assets/ornaments-right.svg");
 }
 
 #window {
-    background-image: url("assets/volute-left.svg");
+    background-image: url("../wallust/assets/volute-left.svg");
 }
 
 #mpris {
-    background-image: url("assets/note.svg");
+    background-image: url("../wallust/assets/note.svg");
 }
 
 #mpris.paused {
-    background-image: url("assets/note-paused.svg");
+    background-image: url("../wallust/assets/note-paused.svg");
 }
 
 #custom-patera {
-    background-image: url("assets/patera.svg");
+    background-image: url("../wallust/assets/patera.svg");
 }

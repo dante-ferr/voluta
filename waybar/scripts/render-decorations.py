@@ -142,7 +142,7 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     rules = []
     for selector, filename in DECORATIONS:
-        source = ROOT / "assets" / filename
+        source = ROOT.parent / "wallust/assets" / filename
         target = output / Path(filename).with_suffix(".png")
         glowing(source, target, color, settings["decorations"])
         rules.append(f'{selector} {{\n    background-image: url("{target.as_uri()}");\n}}\n')

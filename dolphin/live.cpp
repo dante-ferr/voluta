@@ -72,7 +72,7 @@ QPixmap headingOrnament(qreal ratio)
     auto &cache = headingOrnamentCache();
     auto found = cache.constFind(ratio);
     if (found == cache.constEnd()) {
-        QImageReader reader(homeConfig("/.config/wallust/generated/dolphin-ornaments.svg"));
+        QImageReader reader(homeConfig("/.config/wallust/assets/generated/dolphin-ornaments.svg"));
         reader.setScaledSize(QSize(qRound(64 * ratio), qRound(16 * ratio)));
         QPixmap image = QPixmap::fromImage(reader.read());
         image.setDevicePixelRatio(ratio);
@@ -595,7 +595,7 @@ public:
 
     void refresh()
     {
-        QImageReader reader(homeConfig("/.config/wallust/generated/dolphin-corner.svg"));
+        QImageReader reader(homeConfig("/.config/wallust/assets/generated/dolphin-corner.svg"));
         const qreal ratio = devicePixelRatioF();
         reader.setScaledSize(QSize(qRound(60 * ratio), qRound(60 * ratio)));
         m_corner = QPixmap::fromImage(reader.read());

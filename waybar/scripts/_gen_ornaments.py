@@ -18,7 +18,7 @@ from PIL import Image
 from PIL import ImageFilter
 
 ROOT = Path(__file__).resolve().parents[1]
-ASSETS = ROOT / "assets"
+ASSETS = ROOT.parent / "wallust/assets"
 
 PAD = 14
 PLATE_STROKE = "#C4C4D0"

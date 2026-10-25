@@ -41,8 +41,8 @@
 .notification-row .notification-background .notification {
     padding: 24px 20px;
     background-color: @background;
-    background-image: url("../wallust/generated/corner-tl.svg"), url("../wallust/generated/corner-tr.svg"),
-                      url("../wallust/generated/corner-bl.svg"), url("../wallust/generated/corner-br.svg");
+    background-image: url("../wallust/assets/generated/corner-tl.svg"), url("../wallust/assets/generated/corner-tr.svg"),
+                      url("../wallust/assets/generated/corner-bl.svg"), url("../wallust/assets/generated/corner-br.svg");
     background-repeat: no-repeat;
     background-position: 8px 8px, calc(100% - 8px) 8px,
                          8px calc(100% - 8px), calc(100% - 8px) calc(100% - 8px);
@@ -184,8 +184,8 @@
 
 .control-center {
     background-color: @background;
-    background-image: url("../wallust/generated/corner-tl.svg"), url("../wallust/generated/corner-tr.svg"),
-                      url("../wallust/generated/corner-bl.svg"), url("../wallust/generated/corner-br.svg");
+    background-image: url("../wallust/assets/generated/corner-tl.svg"), url("../wallust/assets/generated/corner-tr.svg"),
+                      url("../wallust/assets/generated/corner-bl.svg"), url("../wallust/assets/generated/corner-br.svg");
     background-repeat: no-repeat;
     background-position: 10px 10px, calc(100% - 10px) 10px,
                          10px calc(100% - 10px), calc(100% - 10px) calc(100% - 10px);

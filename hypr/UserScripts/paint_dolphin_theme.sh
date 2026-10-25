@@ -173,7 +173,7 @@ tokens = {
 }
 
 template_dir = os.path.join(root, "kvantum")
-svg_in = os.path.join(template_dir, "imperium.svg.in")
+svg_in = os.path.join(root, "wallust", "assets", "imperium.svg.in")
 kv_in = os.path.join(template_dir, "imperium.kvconfig.in")
 if not (os.path.isfile(svg_in) and os.path.isfile(kv_in)):
     sys.exit(0)
@@ -187,8 +187,15 @@ def fill(path, overrides=None):
 
 theme_dir = os.path.join(home, ".config", "Kvantum", "imperium")
 os.makedirs(theme_dir, exist_ok=True)
-with open(os.path.join(theme_dir, "imperium.svg"), "w", encoding="utf-8") as handle:
+shared_svg_dir = os.path.join(home, ".config", "wallust", "assets", "generated")
+os.makedirs(shared_svg_dir, exist_ok=True)
+shared_imperium_svg = os.path.join(shared_svg_dir, "kvantum-imperium.svg")
+with open(shared_imperium_svg, "w", encoding="utf-8") as handle:
     handle.write(fill(svg_in))
+installed_svg = os.path.join(theme_dir, "imperium.svg")
+if os.path.lexists(installed_svg):
+    os.remove(installed_svg)
+os.symlink(shared_imperium_svg, installed_svg)
 filled_kv = fill(kv_in)
 with open(os.path.join(theme_dir, "imperium.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(filled_kv)
@@ -207,10 +214,12 @@ dolphin_kv = dolphin_kv.replace("splitter_width=7", "splitter_width=2", 1)
 with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(dolphin_kv)
 svg_path = os.path.join(dolphin_theme, "dolphin.svg")
-if os.path.islink(svg_path):
-    os.remove(svg_path)
-with open(svg_path, "w", encoding="utf-8") as handle:
+shared_dolphin_svg = os.path.join(shared_svg_dir, "kvantum-dolphin.svg")
+with open(shared_dolphin_svg, "w", encoding="utf-8") as handle:
     handle.write(fill(svg_in, dolphin_tokens))
+if os.path.lexists(svg_path):
+    os.remove(svg_path)
+os.symlink(shared_dolphin_svg, svg_path)
 
 kvantum_rc = os.path.join(home, ".config", "Kvantum", "kvantum.kvconfig")
 if os.path.isfile(kvantum_rc):
@@ -301,7 +310,7 @@ panel = hx(base)
 quiet = hx(muted)
 # Shared artwork stays outside Dolphin's private configuration. Repaint it
 # from the same readable palette before publishing the live refresh marker.
-asset_dir = os.path.join(home, ".config", "wallust", "generated")
+asset_dir = os.path.join(home, ".config", "wallust", "assets", "generated")
 os.makedirs(asset_dir, exist_ok=True)
 ET.register_namespace("", "http://www.w3.org/2000/svg")
 for source_name, output_name, size in (

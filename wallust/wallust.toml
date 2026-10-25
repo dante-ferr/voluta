@@ -71,17 +71,17 @@ wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
 # Mirrored notification corners are recolored alongside the SwayNC stylesheet.
 
 [templates.notification_corner_tl]
-template = "corner-tl.svg"
-target = "~/.config/wallust/generated/corner-tl.svg"
+template = "../assets/corner-tl.svg"
+target = "~/.config/wallust/assets/generated/corner-tl.svg"
 
 [templates.notification_corner_tr]
-template = "corner-tr.svg"
-target = "~/.config/wallust/generated/corner-tr.svg"
+template = "../assets/corner-tr.svg"
+target = "~/.config/wallust/assets/generated/corner-tr.svg"
 
 [templates.notification_corner_bl]
-template = "corner-bl.svg"
-target = "~/.config/wallust/generated/corner-bl.svg"
+template = "../assets/corner-bl.svg"
+target = "~/.config/wallust/assets/generated/corner-bl.svg"
 
 [templates.notification_corner_br]
-template = "corner-br.svg"
-target = "~/.config/wallust/generated/corner-br.svg"
+template = "../assets/corner-br.svg"
+target = "~/.config/wallust/assets/generated/corner-br.svg"

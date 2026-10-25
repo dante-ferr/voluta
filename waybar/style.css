@@ -93,7 +93,7 @@ window#waybar.empty #window,
 #custom-angel-left,
 #custom-angel-right {
     min-width: 108px;
-    /* Preserve the 1664:512 proportions of assets/angels.svg.
+    /* Preserve the 1664:512 proportions of ../wallust/assets/angels.svg.
        Generated images add 8px of glow space on each side.
        Offset that padding at the box edge to preserve contact. */
     background-size: 113.5px 46px;
