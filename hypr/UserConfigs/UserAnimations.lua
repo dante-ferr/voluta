@@ -12,6 +12,9 @@ hl.curve("fluidDecel", { type = "bezier", points = { { 0.16, 1.0 }, { 0.30, 1.0 
 hl.curve("snappySpring", { type = "bezier", points = { { 0.05, 0.95 }, { 0.15, 1.05 } } })
 hl.curve("softEaseInOut", { type = "bezier", points = { { 0.42, 0.0 }, { 0.58, 1.0 } } })
 hl.curve("fastOut", { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
+-- A gentle lift before acceleration keeps small notification cards visible
+-- while their full-height layer surface starts travelling off-screen.
+hl.curve("inertialLift", { type = "bezier", points = { { 0.65, 0.0 }, { 0.85, 0.35 } } })
 
 -- Window Animations
 hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "fluidDecel", style = "slide" })
@@ -39,13 +42,14 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3, bezier = "fast
 -- Layer Surface Animations (Rofi, Waybar, Notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4, bezier = "fluidDecel", style = "fade" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "snappySpring", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 3, bezier = "fastOut", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 5, bezier = "inertialLift", style = "fade" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 5, bezier = "softEaseInOut" })
 
--- Reopening the notification panel must replay its entrance. GTK keyframes
--- only run on first construction; the compositor animates every layer map.
--- Layer slide animations also fade alpha from zero to one.
+-- Popup and panel share the same entrance, exit, and inertial easing.
+-- These layers inherit snappySpring on entry and inertialLift on exit above;
+-- slide also animates alpha from zero to one and back on every map/unmap.
 hl.layer_rule({
-    name = "notification-panel-drop",
-    match = { namespace = "^swaync-control-center$" },
+    name = "notification-drop",
+    match = { namespace = "^swaync-(control-center|notification-window)$" },
     animation = "slide top",
 })
