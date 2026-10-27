@@ -12,6 +12,9 @@ hyprsunset
 
 # Shell UI
 waybar
+python-pillow
+librsvg
+json-glib
 swaync
 wlogout
 kitty
