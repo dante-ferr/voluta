@@ -1,20 +1,13 @@
-# /* wallust template - colors-starship */
-# Starship Prompt - Dynamic Wallust Palette (Roman Imperium Cyber-Sacred Rice)
-#
-# Colours are ANSI palette indices, not hex, so the prompt follows the terminal
-# palette live: after a wallpaper change wallust pushes the new colours to kitty
-# and the whole scrollback recolours at once. Baked-in hex would leave every
-# prompt already on screen stuck on the previous theme.
-#
-# NOTE: the separators/icons are Nerd Font glyphs, several of them in the
-# private use area. Editors that strip those codepoints will silently gut the
-# powerline caps, so regenerate this file rather than retyping the symbols.
+# Imperium — an open, two-line cartouche.
+# ANSI indices inherit the live Wallust palette, including existing scrollback.
+# After editing, run tools/gen-starship-template.py to sync the optional template.
 
 add_newline = true
 command_timeout = 5000
-continuation_prompt = "[▸▸ ](bold fg:5)"
+continuation_prompt = "[│](fg:8) [· ](fg:3)"
 
 format = """
+[╭─](fg:8)[ ❦ ](fg:3)\
 $username\
 $hostname\
 $directory\
@@ -32,125 +25,106 @@ $fill\
 $cmd_duration\
 $time\
 $line_break\
-$character"""
+[╰─](fg:8)$character"""
 
-# Rule joining the left insignia to the right chronometer
+# Space keeps the context and clock apart without a rule across the window.
 [fill]
-symbol = "─"
-style = "fg:6"
+symbol = " "
 
-# Prompt Symbols
 [character]
-success_symbol = "[](bold fg:1)[ ❯](bold fg:15)"
-error_symbol = "[󰞇](bold fg:15)[ ❯](bold fg:1)"
-vimcmd_symbol = "[󰊠](bold fg:7)[ ❯](bold fg:15)"
+success_symbol = "[❯](bold fg:1)"
+error_symbol = "[× ❯](bold fg:9)"
+vimcmd_symbol = "[◆](bold fg:3)"
 
-# User & Host
 [username]
 show_always = false
-style_user = "bold fg:0 bg:2"
-style_root = "bold fg:0 bg:2"
-format = "[](fg:2)[ 󰀘 $user ]($style)[](fg:2) "
-disabled = false
+style_user = "fg:7"
+style_root = "bold fg:9"
+format = "[$user]($style) [·](fg:8) "
 
 [hostname]
 ssh_only = true
-style = "bold fg:0 bg:2"
-format = "[](fg:2)[ 󰒋 $hostname ]($style)[](fg:2) "
-disabled = false
+style = "fg:7"
+format = "[$hostname]($style) [·](fg:8) "
 
-# Directory / Arx
 [directory]
-truncation_length = 4
+truncation_length = 3
 truncation_symbol = "…/"
-home_symbol = " ~"
-read_only = "󰌾 "
-read_only_style = "bold fg:0 bg:1"
-style = "bold fg:0 bg:1"
-format = "[](fg:1)[ $path ]($style)[$read_only]($read_only_style)[](fg:1) "
+home_symbol = "~"
+read_only = " 󰌾"
+read_only_style = "fg:3"
+style = "bold fg:15"
+format = "[$path]($style)[$read_only]($read_only_style) "
 
-[directory.substitutions]
-"Desktop" = " Desktop"
-"Documents" = " Documents"
-"Downloads" = " Downloads"
-"Music" = " Music"
-"Pictures" = " Pictures"
-"Videos" = " Videos"
-
-# Git Branch / Cohors
 [git_branch]
 symbol = ""
-style = "bold fg:0 bg:2"
-format = "[](fg:2)[ $symbol $branch ]($style)"
+truncation_length = 24
+style = "fg:1"
+format = "[·](fg:8) [$symbol $branch]($style) "
 
-# Git Status / Tactical Military & Archival Indicators
-# The closing cap lives here so the branch pill stays sealed on clean trees.
 [git_status]
-style = "bold fg:0 bg:2"
-format = '([](fg:6 bg:2)[ $all_status$ahead_behind]($style))[](fg:2) '
-conflicted = " ${count} "
-ahead = "⇡${count} "
-behind = "⇣${count} "
-diverged = "⇡${ahead_count} ⇣${behind_count} "
-untracked = "◈ ${count} "
-modified = " ${count} "
-staged = " ${count} "
-renamed = "» ${count} "
-deleted = " ${count} "
-stashed = " ${count} "
+style = "fg:3"
+format = '([$all_status$ahead_behind]($style) )'
+conflicted = "×${count} "
+ahead = "↑${count} "
+behind = "↓${count} "
+diverged = "↑${ahead_count} ↓${behind_count} "
+untracked = "?${count} "
+modified = "~${count} "
+staged = "+${count} "
+renamed = "»${count} "
+deleted = "−${count} "
+stashed = "≡${count} "
 
 [git_state]
-style = "bold fg:0 bg:1"
-format = '[](fg:1)[ $state( $progress_current/$progress_total) ]($style)[](fg:1) '
+style = "bold fg:9"
+format = '[$state( $progress_current/$progress_total)]($style) '
 
-# Command Duration / Celeritas
 [cmd_duration]
 min_time = 2000
-style = "bold fg:0 bg:2"
-format = "[](fg:2)[ 󰔟 $duration ]($style)[](fg:2) "
+style = "fg:3"
+format = "[$duration]($style) [·](fg:8) "
 
-# Chronometer / Horologium
 [time]
 disabled = false
 time_format = "%H:%M"
-style = "bold fg:15 bg:6"
-format = "[](fg:6)[ 󰥔 $time ]($style)[](fg:6)"
+style = "fg:8"
+format = "[$time]($style)"
 
-# Package / Languages
 [package]
 disabled = true
 
 [conda]
 symbol = "󰆧"
-style = "bold fg:1"
-format = "[$symbol]($style)[ $environment ](fg:7) "
-
-[lua]
-symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
+style = "fg:2"
+format = "[·](fg:8) [$symbol $environment]($style) "
 
 [python]
 symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version( $virtualenv)]($style) "
 
 [nodejs]
 symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
-
-[golang]
-symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version]($style) "
 
 [rust]
 symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version]($style) "
+
+[golang]
+symbol = ""
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version]($style) "
+
+[lua]
+symbol = ""
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version]($style) "
 
 [c]
 symbol = ""
-style = "bold fg:1"
-format = "[$symbol]($style)[ $version ](fg:7) "
+style = "fg:2"
+format = "[·](fg:8) [$symbol $version]($style) "

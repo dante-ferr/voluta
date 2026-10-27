@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# fetch.sh - Smart responsive Fastfetch runner with 100% original aspect ratio & colors
+# Responsive crown-and-angels banner, with the original image and its proportions.
 
-# Below this the info box wraps into a mess, so nothing is printed at all. zshrc
+# Below this the information column wraps, so nothing is printed at all. zshrc
 # reads the same two variables for its banner bookkeeping, so keep the names and
 # the defaults in step with it.
 MIN_COLS=${IMPERIUM_FETCH_MIN_COLS:-60}
@@ -37,10 +37,10 @@ if [[ ! -f "$ORIGINAL_IMG" ]]; then
     ORIGINAL_IMG="$ASSET_DIR/crown-angels.jpg"
 fi
 
-# Widest line the modules draw, which is the box rule in config.jsonc, and the
+# Widest line the modules draw, which is the ornamental rule in config.jsonc, and the
 # gap that config keeps between the logo and it. The image gets the columns left
-# over from these two; take one away and the box folds onto a second line.
-BOX_COLS=56
+# over from these two; take one away and the rule folds onto a second line.
+BOX_COLS=48
 LOGO_PAD=3
 LOGO_ROWS=13
 

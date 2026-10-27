@@ -142,9 +142,9 @@ typeset -gi _IMPERIUM_SEEN_COLS=0 _IMPERIUM_SEEN_LINES=0
 # those rows instead of clearing the screen out from under the prompt.
 typeset -gi _IMPERIUM_BANNER_ROWS=0
 
-# Smallest window the banner is still readable in. The box the info sits in is 55
+# Smallest window the banner is still readable in. Its information column is 48
 # columns wide, and the whole block is 13 rows even with the logo dropped, so
-# anything under this wraps the box and pushes the prompt off the top. fetch.sh
+# anything under this risks wrapping and pushes the prompt off the top. fetch.sh
 # enforces the same rule from the same two variables, and the thresholds have to
 # agree: a fetch.sh that printed nothing while we recorded a banner would leave
 # the first command clearing a screen that has the prompt on it.
