@@ -557,6 +557,11 @@ QPlainTextEdit, QTextEdit, KTextEdit {{
 QTextEdit, KTextEdit {{
     padding: 8px;
 }}
+/* F2 uses a one-line KTextEdit. Extra padding clips its initial filename
+   until textChanged makes Dolphin recalculate the editor's height. */
+KItemListRoleEditor {{
+    padding: 0px;
+}}
 KMessageWidget {{
     background-color: #{panel};
     color: #{ivory};

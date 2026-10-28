@@ -1,6 +1,7 @@
 # Shared by dolphin/apply.sh and the full Imperium installer.
 dolphin
 dolphin-plugins
+ark
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk

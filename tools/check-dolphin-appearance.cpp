@@ -2,8 +2,19 @@
 // Include the real hook to exercise the same font/layout code as Dolphin.
 #include "../dolphin/live.cpp"
 #include <QSettings>
+#include <QTextEdit>
+#include <QTextDocument>
 #include <cstdio>
 #include <cstdlib>
+
+// Match the inline editor's Qt class selector and zero document margin without
+// depending on Dolphin's private headers. Its initial height is one text line.
+class KItemListRoleEditor : public QTextEdit
+{
+    Q_OBJECT
+public:
+    using QTextEdit::QTextEdit;
+};
 
 static void check(bool ok, const char *message)
 {
@@ -22,6 +33,26 @@ int main(int argc, char **argv)
     // Pass an isolated generated home as the first remaining argument.
     check(argc > 1, "expected generated home argument");
     const QString home = QString::fromLocal8Bit(argv[1]);
+    QFile stylesheet(home + QStringLiteral("/.config/qt6ct/qss/imperium.qss"));
+    check(stylesheet.open(QIODevice::ReadOnly), "cannot read generated stylesheet");
+    app.setStyleSheet(QString::fromUtf8(stylesheet.readAll()));
+    KItemListRoleEditor renameEditor;
+    app.setFont(expected);
+    renameEditor.setFont(expected);
+    renameEditor.document()->setDocumentMargin(0);
+    renameEditor.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    renameEditor.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    renameEditor.setPlainText(QStringLiteral("arquivo.txt"));
+    // The initial file-label rectangle has room for a line and a thin border;
+    // it must remain readable before textChanged expands the editor.
+    renameEditor.resize(240, renameEditor.fontMetrics().height() + 2);
+    renameEditor.selectAll();
+    renameEditor.show();
+    app.processEvents();
+    check(renameEditor.viewport()->height() >= renameEditor.fontMetrics().height(),
+          "F2 editor clips the initial filename before typing");
+    renameEditor.hide();
+    app.setStyleSheet({});
     for (const auto &entry : {
              qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"), QStringLiteral("Fonts/general")),
              qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"), QStringLiteral("Fonts/fixed")),
@@ -92,5 +123,7 @@ int main(int argc, char **argv)
     window.resize(1100, 850);
     app.processEvents();
     check(frame->geometry() == window.rect(), "corner frame did not follow window resizing");
-    std::puts("PASS: Qt parses matching Regular fonts and repairs Places below Folders without changing visibility");
+    std::puts("PASS: Qt font parsing, initial F2 editor visibility, and panel layout");
 }
+
+#include "check-dolphin-appearance.moc"

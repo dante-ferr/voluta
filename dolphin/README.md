@@ -61,6 +61,7 @@ Fonts and system Qt/KDE assets must also be installed on both hosts; the shared
 dependency list includes `otf-monaspace`, Kvantum, Breeze, qt6ct and the build
 dependencies. Both `dolphin/apply.sh` and `rice-switch.sh imperium` install
 newly added dependencies automatically.
+Ark supplies the native Extract context menu for ZIP and other archives.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.
 

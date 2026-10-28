@@ -312,8 +312,12 @@ def verify_qt_appearance(home: Path, base: Path) -> None:
     # identical INI strings imply identical font weights or panel placement.
     flags = subprocess.check_output(["pkg-config", "--cflags", "--libs", "Qt6Widgets"], text=True).split()
     binary = base / "appearance-check"
+    libexec = subprocess.check_output(["pkg-config", "--variable=libexecdir", "Qt6Core"], text=True).strip()
+    subprocess.run([str(Path(libexec) / "moc"), str(ROOT / "tools/check-dolphin-appearance.cpp"),
+                    "-o", str(base / "check-dolphin-appearance.moc")], check=True)
     subprocess.run([
         "g++", "-fPIC", "-std=c++17", "-pthread",
+        "-I" + str(base),
         "-I/usr/include/KF6/KIconThemes", "-I/usr/include/KF6/KParts",
         str(ROOT / "tools/check-dolphin-appearance.cpp"), "-o", str(binary),
         *flags, "-lKF6IconThemes",
