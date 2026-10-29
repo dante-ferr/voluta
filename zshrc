@@ -15,18 +15,23 @@ export ZSH="$HOME/.oh-my-zsh"
 plugins=(
     git
     archlinux
-    zsh-autosuggestions
     zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
 
-# Atuin provides searchable shell history and contributes history-based
-# autosuggestions to zsh-autosuggestions. Keep it on the interactive path:
-# this file returns above for SDDM's non-interactive login shell.
-if command -v atuin >/dev/null 2>&1; then
-    eval "$(atuin init zsh)"
-fi
+# Inline suggestions from local Zsh history; Right Arrow accepts a suggestion.
+ZSH_AUTOSUGGEST_STRATEGY=(history)
+# Support both an existing Oh My Zsh checkout and the Arch package.
+for _autosuggest_file in \
+    "${ZSH_CUSTOM:-$ZSH/custom}/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" \
+    /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh; do
+    if [[ -r $_autosuggest_file ]]; then
+        source "$_autosuggest_file"
+        break
+    fi
+done
+unset _autosuggest_file
 
 # Check archlinux plugin commands here
 # https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/archlinux

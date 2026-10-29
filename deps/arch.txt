@@ -19,7 +19,7 @@ swaync
 wlogout
 kitty
 rofi
-atuin
+zsh-autosuggestions
 
 # Wallpaper & theming
 waypaper-git|waypaper
