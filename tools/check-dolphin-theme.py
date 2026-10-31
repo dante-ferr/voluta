@@ -161,8 +161,8 @@ def contrast(a: tuple[int, ...], b: tuple[int, ...]) -> float:
 
 def dolphin_background(value: str) -> str:
     color = tuple(int(value.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4))
-    lifted = tuple(round(channel * 0.97 + 255 * 0.03) for channel in color)
-    return "#" + "".join(f"{channel:02x}" for channel in lifted)
+    darkened = tuple(round(channel * 0.65) for channel in color)
+    return "#" + "".join(f"{channel:02x}" for channel in darkened)
 
 
 def verify_colors(home: Path, expected_bg: str, label: str) -> None:

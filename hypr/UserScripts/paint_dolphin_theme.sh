@@ -117,9 +117,9 @@ if not palette:
 
 bg = palette["bg"]
 fg = palette["fg"]
-# Match Kitty's wallust background (lighten(0.03)), with less glass showing
+# Match Kitty's wallust background (darken(0.35)), with less glass showing
 # through Dolphin. Other Qt apps keep their existing Imperium surfaces.
-dolphin_bg = lighten(bg, 0.03)
+dolphin_bg = darken(bg, 0.35)
 accent_src = palette.get("1") or fg
 secondary_src = palette.get("2") or accent_src
 negative_src = palette.get("3") or accent_src
