@@ -3,7 +3,7 @@
 
 # If not running inside Kitty or if called from Hyprland keybind, spawn in dedicated floating window
 if [[ "$1" != "--internal" ]]; then
-    kitty --class "system-hud" --title "Imperium System Telemetry HUD" bash "$0" --internal
+    kitty --class "system-hud" --title "Voluta System Telemetry HUD" bash "$0" --internal
     exit 0
 fi
 

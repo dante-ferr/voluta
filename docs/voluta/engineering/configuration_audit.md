@@ -1,10 +1,11 @@
 # Configuration separation audit
 
 Historical audit from planning on 2026-11-02. Recheck source files before implementing.
-The first foundation has since retired the host-copy script and unified the
-alternate startup module. See [current implementation](../architecture/settings.md)
-for those changes and the new override/feature controls. Remaining rows describe
-the legacy source inventory, not a completed migration.
+Host profiles, input/app preferences, personal developer shell, login environment,
+Waybar connector, Qt RHI, idle/resume policy and display fallbacks have since moved
+to the private companion. The safe installer replaces the old destructive rice
+switcher. See [current implementation](../architecture/settings.md). The inventory
+below is historical evidence, not a claim those old paths remain active.
 
 These are verified source locations, not an exhaustive publication/privacy audit.
 Move personal values to the selected personal layer; retain reusable loaders and
@@ -34,3 +35,7 @@ theme behavior, preferences, and hardware fixes.
 | `sddm/install.sh`, `sddm/theme.conf` | System-wide installation, external base-theme/font assumptions and fixed display dimensions need a separate optional setup policy. |
 | `deps/arch.txt`, `deps/dolphin.txt`, `zshrc` | Distinguish desktop requirements, optional app/build dependencies and personal development tools. Public portability is not currently distribution-independent. |
 | `waybar/lib/`, `fastfetch/`, `hypr/assets/`, `swaync/` | Before publication, check generated/build artifacts and artwork/font provenance and redistribution rights. Ignore rules do not untrack files already committed. |
+
+Extraction does not rewrite Git history: earlier commits still contain former
+personal configuration. Choose a publication-history policy before making the
+repository public. No history rewrite was performed during this migration.

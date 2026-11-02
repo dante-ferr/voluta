@@ -26,7 +26,7 @@ def main():
         base = Path(temporary)
         binaries = base / "bin"
         binaries.mkdir()
-        for name in ("bash", "dirname", "readlink", "mktemp", "tee", "rm", "grep"):
+        for name in ("bash", "dirname", "readlink", "mktemp", "tee", "rm", "grep", "python3"):
             (binaries / name).symlink_to(shutil.which(name))
         installed, calls = base / "installed", base / "calls"
         installed.write_text("")

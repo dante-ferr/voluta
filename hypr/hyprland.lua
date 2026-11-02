@@ -18,6 +18,7 @@ end
 -- hyprctl reload, so a cached module would keep the previous wallpaper's
 -- palette on borders and window rules.
 package.loaded["UserConfigs.wallust"] = nil
+package.loaded["configs.Voluta"] = nil
 
 -- 1. Visuals, Animations & Decorations
 load_module("UserConfigs.UserDecorations")
@@ -36,43 +37,22 @@ load_module("configs.Startup_Apps")
 load_module("monitors")
 load_module("workspaces")
 
--- 6. Host overrides. hosts/<hostname>.lua, then hosts/<hostname>-power.lua.
-local function machine_hostname()
-    local f = io.open("/etc/hostname", "r")
-    if not f then
-        return ""
-    end
-    local name = f:read("*l") or ""
-    f:close()
-    return (name:gsub("%s+$", ""))
-end
-
-local hostname = machine_hostname()
-
-local function load_host_file(path)
-    local f = io.open(path, "r")
-    if not f then
-        return
-    end
-    f:close()
-    local ok, err = pcall(dofile, path)
-    if not ok then
-        print(string.format("[Hyprland.lua] Error loading %s: %s", path, tostring(err)))
-    end
-end
-
-if hostname ~= "" then
-    -- hosts/frank-notebook.lua turns shadows off. It was never sourced, so
-    -- the notebook kept the desktop shadow path.
-    load_host_file(hypr_dir .. "/hosts/" .. hostname .. ".lua")
-    load_host_file(hypr_dir .. "/hosts/" .. hostname .. "-power.lua")
-end
-
--- Personal JSON overrides are last, after the existing host/power profiles.
--- Clear on every reload so settings edits never reuse the previous generation.
+-- 6. Personal Lua hooks live in the private companion, never in the public core.
 package.loaded["configs.Voluta"] = nil
 local settings_ok, settings = pcall(require, "configs.Voluta")
-if settings_ok and settings.initialized and next(settings.hyprland) then
+local function personal_file(path)
+    local f = io.open(path, "r")
+    if not f then return end
+    f:close()
+    local ok, err = pcall(dofile, path)
+    if not ok then print("[Voluta] Personal hook failed: " .. tostring(err)) end
+end
+if settings_ok and settings.initialized then
+    personal_file(settings.personal_dir .. "/shared.lua")
+    personal_file(settings.personal_dir .. "/hosts/" .. settings.host .. ".lua")
+    personal_file(settings.personal_dir .. "/hosts/" .. settings.host .. "-power.lua")
     local applied, err = pcall(hl.config, settings.hyprland)
     if not applied then print("[Voluta] Invalid Hyprland override: " .. tostring(err)) end
+    for _, monitor in ipairs(settings.monitors or {}) do hl.monitor(monitor) end
+    for _, workspace in ipairs(settings.workspaces or {}) do hl.workspace_rule(workspace) end
 end

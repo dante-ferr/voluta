@@ -12,11 +12,12 @@ _rice_paths="$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
 source "$_rice_paths"
 
 root=$(imperium_rice_root) || exit 0
-# Respect the optional integration on every refresh, including existing windows.
-python3 "$root/voluta/cli.py" enabled dolphin --legacy || exit 0
+# Generic Qt colors remain core; advanced Dolphin mutations are optional.
+dolphin_enabled=false
+python3 "$root/voluta/cli.py" enabled dolphin --legacy && dolphin_enabled=true
 colors="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallust/colors-shell.sh"
 
-exec python3 - "$root" "$colors" "$HOME" <<'PY'
+exec python3 - "$root" "$colors" "$HOME" "$dolphin_enabled" <<'PY'
 import json
 import os
 import re
@@ -30,6 +31,7 @@ import zlib
 import xml.etree.ElementTree as ET
 
 root, colors_path, home = sys.argv[1:4]
+dolphin_enabled = len(sys.argv) <= 4 or sys.argv[4] == "true"
 
 def parse_hex(value):
     value = value.strip().lstrip("#")
@@ -1107,8 +1109,9 @@ with open(konsolerc, "w", encoding="utf-8") as handle:
     handle.writelines(konsole_lines)
 
 # Converge existing installations too; appearance is owned by the repo.
-subprocess.run([sys.executable, os.path.join(root, "dolphin", "apply-config.py"),
-                "--home", home], check=True)
+if dolphin_enabled:
+    subprocess.run([sys.executable, os.path.join(root, "dolphin", "apply-config.py"),
+                    "--home", home], check=True)
 
 def session_env():
     env = os.environ.copy()
@@ -1163,6 +1166,7 @@ with open(pending_conf, "w", encoding="utf-8") as handle:
     handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}:workers-v2\nterminal={terminal_live}\n")
 os.replace(pending_conf, live_conf)
 
-with open(qss_path, encoding="utf-8") as handle:
-    push_open_windows(handle.read())
+if dolphin_enabled:
+    with open(qss_path, encoding="utf-8") as handle:
+        push_open_windows(handle.read())
 PY

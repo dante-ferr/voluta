@@ -3,6 +3,7 @@
 set -euo pipefail
 here=$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")
 root=${here%/*}
+python3 "$root/voluta/cli.py" enabled dolphin --legacy || exit 0
 # Install before touching appearance files or building the hook. The full
 # rice installer includes the same manifest, so both entry points converge.
 source "$root/deps/packages.sh"

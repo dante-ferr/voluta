@@ -1,8 +1,7 @@
 # Core and optional features
 
-Status: complete themed desktop scope accepted. Dolphin customization is enabled
-by default; session restoration is optional and disabled unless selected. Other
-module classifications below remain the working proposal.
+Status: implemented preset. Dolphin customization is enabled by default; all
+other integrations below are opt-in and can be changed after installation.
 
 Core means the maintained baseline for a complete Voluta desktop, not an
 unconfigurable choice of every application. Optional integrations must be
@@ -10,7 +9,7 @@ independently enabled, install dependencies only when selected, and leave the
 core usable when disabled or unavailable. The companion stores selections and
 personal values; reusable integration implementations belong in the public core.
 
-| Proposed classification | Features |
+| Classification | Features |
 | --- | --- |
 | Core desktop | Hyprland session, window/workspace controls and base keybindings; Waybar, launcher, notifications/OSD; wallpaper and Wallust palette pipeline; shared artwork, typography and application styling; lock/idle controls, screenshots, clipboard, audio/media/brightness controls; a default terminal and file-manager experience. |
 | Optional integrations | SDDM theme installation; browser-specific theming/extensions (Brave/Floorp); developer shell tooling (conda, Android SDK, Linuxbrew, etc.); OBS controls; RGB device support; session save/restore; switching to a second rice; advanced Dolphin injection/build tooling. |
@@ -31,13 +30,12 @@ Users must be able to enable it later without reinstalling Voluta, and disable
 and re-enable it independently. This also applies to default-enabled optional
 integrations such as Dolphin customization.
 
-The future feature manager must:
+The feature lifecycle contract is:
 
 - Persist explicit enable/disable selections in personal settings, with host
   overrides where appropriate; updates must preserve an installation-time decline.
 - Offer the same feature discovery and selection after installation. CLI/UI
-  syntax for the remaining modules is undecided. `bin/voluta feature` currently
-  manages Dolphin and session restoration; see [settings](settings.md).
+  selections use `voluta feature`; see [settings](settings.md).
 - On enable, check capabilities and dependencies, install only the selected
   module’s missing dependencies through the normal setup flow, and configure and
   start/reload its consumers. Separate requested state from activation success;
@@ -49,5 +47,5 @@ The future feature manager must:
   keybindings or startup actions.
 
 Validate skipped-at-install → enabled-later → disabled → re-enabled, plus core
-updates while a feature is explicitly disabled. The complete lifecycle remains an
-implementation target; the first two module controls are implemented with the limits documented in [settings](settings.md).
+updates while a feature is explicitly disabled. See [settings](settings.md) for implemented activation, privilege and restart
+semantics. External dependencies and physical hardware still require validation.

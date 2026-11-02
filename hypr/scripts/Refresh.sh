@@ -10,7 +10,7 @@ refresh_script=$(readlink -f -- "${BASH_SOURCE[0]}")
 rice_root=$(cd -- "$(dirname -- "$refresh_script")/../.." && pwd)
 if [[ -f "$rice_root/dolphin/apply.sh" ]]; then
     if ! bash "$rice_root/dolphin/apply.sh"; then
-        notify-send "Dolphin refresh failed" "Run bash ~/imperivm-dotfiles/dolphin/apply.sh in a terminal for details."
+        notify-send "Dolphin refresh failed" "Run voluta update in a terminal for details."
     fi
 fi
 

@@ -1,0 +1,2 @@
+# Exact-model access only; reconnect the keyboard after installing this rule.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="16c6", TAG+="uaccess"

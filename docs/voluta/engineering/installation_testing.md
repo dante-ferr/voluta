@@ -1,31 +1,61 @@
 # Installation testing
 
-Status: proposed workflow; no VM has been created or tested.
+Arch Linux is the supported platform. QEMU is installed; KVM was unavailable
+from both the initial agent environment and the host check, so testing used TCG.
 
-The initial public release officially supports Arch Linux only. Use a clean Arch
-guest as the installation and update acceptance target. Other distributions and
-Arch derivatives are outside the initial support commitment; do not add package
-manager abstractions or distribution-specific installers for them in this phase.
+## Repeatable disposable guest
 
-The owner wants a minimal VM workflow instead of manually configuring VirtualBox.
-Recommend QEMU/KVM with Quickemu for convenient interactive setup, followed by a
-reproducible Arch guest image and disposable qcow2 overlays for repeated tests.
-`systemd-vmspawn` is another image-oriented frontend worth evaluating, not a
-replacement for preparing the guest image or satisfying QEMU/KVM requirements.
-No VM has been created or tested; installation work remains deferred.
+No VirtualBox project or installed guest disk is required for the config
+acceptance suite. Supply an Arch ISO and run:
 
-Use SSH for unattended installation checks and a graphical guest for login,
-Hyprland and visual checks. Test a fresh public-only install with an unknown
-hostname and non-owner username, repeat installation, update without overrides,
-update with overrides, and a companion-enabled install. Verify optional modules
-can remain absent and can be enabled after being declined at install, disabled,
-and re-enabled without reinstalling. Check that default-enabled Dolphin can be
-disabled and session restoration stays off unless selected on a fresh install. Use fake host/device fixtures to test profile selection without
-applying the physical desktop's GPU settings inside the VM. Keep disk images,
-downloads and VM state outside the core repo. A VM cannot establish correctness
-of physical NVIDIA suspend/resume or real peripheral RGB behavior.
+```sh
+python3 tools/vm-test.py --iso /path/to/archlinux.iso
+```
 
-Initial read-only inspection found `systemd-vmspawn` and VirtualBox commands but
-no `qemu-system-x86_64` or Quickemu in PATH, and `/dev/kvm` was not visible from
-the agent environment. Recheck on the actual host before claiming accelerated
-VM support is available; sandbox visibility is not proof of BIOS/module status.
+The helper snapshots committed HEAD, extracts the matching kernel/initramfs from
+the ISO, boots disposable Arch live userspace, logs in on its serial console and
+runs the acceptance suites automatically. KVM is selected when accessible;
+otherwise software emulation is used. The guest sees only a read-only public
+source share, has no network adapter, and cannot access the host’s home configs.
+Logs are under `${XDG_CACHE_HOME:-~/.cache}/voluta/vm/last-run.log`. VM temporary
+files are deleted afterward. `--source-dir` accepts an explicitly prepared public
+snapshot when validating uncommitted implementation; never point it at personal
+settings or an unrestricted home directory.
+
+## Coverage
+
+Automated tests exercise a clean unknown-host user home, installation twice,
+updates with explicit preferences, skipped-then-enabled modules, disabling and
+re-enabling, generated/app state preservation, backup/rollback, installed CLI
+update delegation, companion host precedence, custom binding replacement and
+Hyprland’s early-child-reaping behavior. System integration tests use a staging
+root to verify narrow HID rules and SDDM palette/drop-in restoration.
+
+The guest runs configuration-only installation (`--skip-deps`). This validates
+file ownership and behavior, not downloading/building every AUR dependency, a full
+graphical login, or a different distro. Native checks additionally cover Dolphin
+theme generation, Lua/shell/Python syntax and SDDM QML. The running desktop was
+reloaded and its input layout/options inspected explicitly; configerrors alone
+misses a loader that silently falls back to public defaults.
+
+## Hardware and publication limits
+
+A VM cannot validate physical NVIDIA suspend/resume, notebook battery policy or
+peripheral RGB. Both host profiles are stored in the private companion; install
+it on the notebook before updating that machine. Physical RGB application still
+requires dependencies and the owner’s privileged setup; see [RGB](../integrations/rgb.md).
+Do not describe packet mocks as hardware tests or the live Arch suite as a full
+fresh graphical-system installation. Public release still needs artwork/font
+redistribution review and a user-selected remote/license policy.
+
+
+## Recorded run: 2026-11-02
+
+The final offline QEMU/TCG run passed 22 Voluta acceptance tests and 12 session
+manager tests. The same 34 tests passed locally. Additional local checks passed:
+Dolphin theme/Qt layout generation, fake-package-manager dependency checks,
+Lua/Python/shell syntax, SDDM QML linting and the mdBook build. Live reload checks
+confirmed loaded companion preferences, the original browser command, US/BR input
+and Alt+Shift options, with no compositor configerrors. The temporary shortcut
+regression was fixed by eliminating the unreliable pclose-status check and has
+an explicit regression test. Privileged real-device RGB setup remains unverified.

@@ -26,8 +26,8 @@ export QT_QPA_PLATFORMTHEME=qt6ct
 export FONTCONFIG_FILE="$here/fonts.conf"
 
 platform_args=()
-host=$(< /etc/hostname)
-if [[ "$host" == frank && -n "${WAYLAND_DISPLAY:-}" ]]; then
+rhi=$(python3 "$here/../voluta/cli.py" get dolphin_rhi 2>/dev/null || echo false)
+if [[ "$rhi" == true && -n "${WAYLAND_DISPLAY:-}" ]]; then
     # Qt's default shared-memory presentation stalls during selection on DP-2.
     # The native Wayland RHI path was verified smooth in the interactive test.
     # Keep this workaround in Dolphin's launcher, away from session-wide Qt

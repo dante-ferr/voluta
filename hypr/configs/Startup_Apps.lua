@@ -13,8 +13,11 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE QT_QPA_PLATFORMTHEME")
     hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE QT_QPA_PLATFORMTHEME")
 
+    local settings = require("configs.Voluta")
     -- Apps also use FileManager1 over D-Bus, independently of MIME defaults.
-    hl.exec_cmd("bash " .. Scripts .. "/SetDefaultFileManager.sh")
+    if settings.apps.file_manager == "dolphin" then
+        hl.exec_cmd("bash " .. Scripts .. "/SetDefaultFileManager.sh")
+    end
 
     -- Notification Daemon (SwayNC) - Critical for OSD volume & media popups
     hl.exec_cmd("sh -c 'pgrep -x swaync >/dev/null || swaync &'")
@@ -35,6 +38,12 @@ hl.on("hyprland.start", function()
 
     -- Clipboard manager
     hl.exec_cmd("sh -c 'pgrep -x cliphist >/dev/null || (wl-paste --type text --watch cliphist store & wl-paste --type image --watch cliphist store &)'")
+
+    -- Companion startup commands replace by name; false disables a custom entry.
+    for _, command in pairs(settings.startup or {}) do
+        if type(command) == "string" then hl.exec_cmd(command) end
+    end
+    hl.exec_cmd("python3 " .. Scripts .. "/../../voluta/runtime.py watch")
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.
     -- It notices enable/disable selections during this session.

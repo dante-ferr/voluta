@@ -3,12 +3,13 @@
 The repo owns the visual keys in `../dolphinrc`, the global view defaults in
 `view-properties`, the toolbar/shortcuts in `dolphinui.rc`, and the customization
 in `live.cpp`. Both hosts use the same files. The existing desktop-only Qt RHI
-workaround remains gated to `frank` in `launch.sh`.
+workaround is selected by `dolphin_rhi` in the private host settings.
 
 After pulling, press **Super+Alt+R**, or apply just Dolphin:
 
 ```bash
-bash ~/imperivm-dotfiles/dolphin/apply.sh
+voluta feature enable dolphin
+voluta update
 ```
 
 This installs the launcher and desktop/D-Bus routing, merges the managed visual
@@ -20,8 +21,8 @@ A keybind invocation opens Kitty for authentication when needed; a terminal
 invocation uses that terminal. Installation failures stop the apply before
 appearance files are changed and report the remaining packages and a log path.
 The generator also applies managed settings
-on wallpaper changes. Switching to Imperium installs dependencies and prepares
-the hook before restoring the desktop.
+on wallpaper changes. The Voluta installer selects dependencies from enabled modules; the feature can
+be disabled and re-enabled after installation.
 
 `apply-config.py` converts the old `dolphinrc` symlink to a local merged file so
 Dolphin cannot write its session state into the tracked baseline. Keys present
@@ -59,8 +60,7 @@ Refresh never kills an active Dolphin process or interrupts file transfers.
 
 Fonts and system Qt/KDE assets must also be installed on both hosts; the shared
 dependency list includes `otf-monaspace`, Kvantum, Breeze, qt6ct and the build
-dependencies. Both `dolphin/apply.sh` and `rice-switch.sh imperium` install
-newly added dependencies automatically.
+dependencies. `voluta update` installs newly selected dependencies unless `--skip-deps` is used.
 Ark supplies the native Extract context menu for ZIP and other archives.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.

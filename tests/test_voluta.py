@@ -28,6 +28,7 @@ class SettingsTests(unittest.TestCase):
                     "XDG_STATE_HOME": str(self.root / "state")}
 
     def run_cli(self, *args, code=0):
+        self.env.pop("HYPRLAND_INSTANCE_SIGNATURE", None)
         result = subprocess.run([str(ROOT / "bin/voluta"), "--host", "test-desktop", *args],
                                 env=self.env, text=True, capture_output=True)
         self.assertEqual(result.returncode, code, result.stderr)
@@ -154,6 +155,53 @@ class SettingsTests(unittest.TestCase):
             result = subprocess.run(["lua", "-e", code.replace("EXPECTED", expected)],
                                     env=self.env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_lua_accepts_complete_stdout_when_hyprland_reaps_child_early(self):
+        self.directory.parent.mkdir(parents=True)
+        (self.directory.parent / 'hypr').symlink_to(ROOT / 'hypr', target_is_directory=True)
+        self.write('settings.json', {'apps': {'browser': 'test-browser'}, 'hyprland': {'input': {'kb_layout': 'us,br'}}})
+        script = self.root / 'early-reap.lua'
+        script.write_text("""
+local original = io.popen
+io.popen = function(command)
+    local pipe = original(command)
+    return { read=function(_, ...) return pipe:read(...) end,
+             close=function() pipe:close(); return nil, "No child processes", 10 end }
+end
+local result = dofile(SOURCE)
+assert(result.initialized)
+assert(result.apps.browser == "test-browser")
+assert(result.hyprland.input.kb_layout == "us,br")
+""".replace('SOURCE', cli.lua(str(ROOT / 'hypr/configs/Voluta.lua'))))
+        result = subprocess.run(['lua', str(script)], env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
+    def test_full_compositor_loads_private_host_and_binding_replacements(self):
+        import socket
+        self.directory.parent.mkdir(parents=True)
+        (self.directory.parent / 'hypr').symlink_to(ROOT / 'hypr', target_is_directory=True)
+        self.write('settings.json', {'hyprland': {'input': {'repeat_rate': 48}},
+                                     'keybindings': {'SUPER + B': False, 'SUPER + F12': 'custom-command'},
+                                     'monitors': [{'output':'TEST-1','mode':'preferred','position':'auto','scale':1}]})
+        host = socket.gethostname()
+        (self.directory / 'hosts').mkdir()
+        (self.directory / 'hosts' / (host + '.lua')).write_text('hl.env("PRIVATE_HOST_MARKER", "yes")')
+        script = self.root / 'load.lua'
+        script.write_text("""
+local dispatcher = {}
+setmetatable(dispatcher, {__index=function() return dispatcher end, __call=function() return {} end})
+local bindings, env, last = {}, {}, {}
+hl = {dsp=dispatcher, on=function() end, window_rule=function() end, monitor=function() end,
+      workspace_rule=function() end, env=function(k,v) env[k]=v end,
+      bind=function(k) bindings[k]=true end, config=function(c) last=c end}
+dofile(SOURCE)
+assert(env.PRIVATE_HOST_MARKER == "yes")
+assert(bindings["SUPER + B"] == nil)
+assert(bindings["SUPER + F12"] == true)
+assert(last.input.repeat_rate == 48)
+""".replace('SOURCE', cli.lua(str(ROOT / 'hypr/hyprland.lua'))))
+        result = subprocess.run(['lua', str(script)], env=self.env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
 
 class SupervisorTests(unittest.TestCase):

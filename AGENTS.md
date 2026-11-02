@@ -1,7 +1,8 @@
 # Agent guide
 
 Voluta is the selected public name for this cyber baroque Hyprland desktop.
-The checkout still contains the personal setup for `frank` and `frank-notebook`.
+Personal preferences and host policy live in the separate companion repository;
+keep the public defaults portable.
 
 ## Documentation and scope
 
@@ -12,8 +13,8 @@ The checkout still contains the personal setup for `frank` and `frank-notebook`.
   persistent settings under `${XDG_CONFIG_HOME:-$HOME/.config}/voluta/`. Core
   updates must preserve explicit user overrides.
 - Read [decisions and scope](docs/voluta/architecture/decisions.md) before migration
-  work. Implementation is now authorized; VM testing is deferred while QEMU
-  installs. Track implemented behavior and remaining work in the docs. Remote
+  work. Implementation is authorized; use the documented local and Arch VM checks.
+  Track behavior and validation limits in the docs. Remote
   repository creation/publication still requires a concrete destination.
 - Inspect `git status` and preserve unrelated changes. Do not invoke
   legacy host-copy behavior (the script is now retired) or run the rice switcher

@@ -72,14 +72,3 @@ hl.config({
         },
     },
 })
-
--- Brave stays opaque. Blur, shadows, and the popin animation on that class
--- are what preceded the GPU reset (media-process SIGILL, then Hyprland ABRT
--- in CHyprOpenGLImpl::begin).
-hl.window_rule({
-    name = "brave-skip-effects",
-    match = { class = "^(brave-browser|Brave-browser)$" },
-    no_blur = true,
-    no_shadow = true,
-    no_anim = true,
-})

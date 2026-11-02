@@ -4,15 +4,15 @@ These describe the current personal setup, not portable public defaults. Preserv
 these behaviors until an explicitly authorized migration replaces them.
 
 This repository is the shared Hyprland configuration for two machines.
-`hyprland.lua` loads `hypr/hosts/<hostname>.lua`, then
-`hypr/hosts/<hostname>-power.lua`.
+`hyprland.lua` loads companion `shared.lua`, then
+`~/.config/voluta/hosts/<hostname>.lua`, then `<hostname>-power.lua`.
 
 ## Hosts
 
 | Hostname | Hyprland GPU | Do not do |
 | --- | --- | --- |
-| `frank` | NVIDIA. `__GLX_VENDOR_LIBRARY_NAME=nvidia` is set in `hypr/hosts/frank.lua`. | Do not set `LIBVA_DRIVER_NAME=nvidia`, `NVD_BACKEND=direct`, or `GBM_BACKEND`. |
-| `frank-notebook` | Intel iGPU only. Mesa GLX and `LIBVA_DRIVER_NAME=iHD` in `hypr/hosts/frank-notebook-power.lua`. | Do not load `hosts/frank.lua`. Do not set `CUDA_VISIBLE_DEVICES` empty. ML jobs must still be able to open the discrete GPU. |
+| `frank` | NVIDIA. `__GLX_VENDOR_LIBRARY_NAME=nvidia` is set in `~/.config/voluta/hosts/frank.lua`. | Do not set `LIBVA_DRIVER_NAME=nvidia`, `NVD_BACKEND=direct`, or `GBM_BACKEND`. |
+| `frank-notebook` | Intel iGPU only. Mesa GLX and `LIBVA_DRIVER_NAME=iHD` in `~/.config/voluta/hosts/frank-notebook-power.lua`. | Do not load `hosts/frank.lua`. Do not set `CUDA_VISIBLE_DEVICES` empty. ML jobs must still be able to open the discrete GPU. |
 
 `hosts/frank.lua` is desktop-only. A hostname check is the gate. Do not copy those variables into `UserSettings.lua`, `zshrc`, or `~/.config/uwsm/env`.
 
@@ -20,7 +20,8 @@ This repository is the shared Hyprland configuration for two machines.
 
 Symptom: the password is accepted, the screen waits one or two seconds, then the password field clears and the greeter asks again. Hyprland never stays up.
 
-SDDM runs `zsh --login`, which sources `zprofile`, then execs `uwsm`. If that shell exits, or Hyprland exits while opening the GPU, SDDM restarts the greeter. That is the loop.
+SDDM runs `zsh --login`, which sources `zprofile` and its generated
+`voluta-login-env.sh`, then execs `uwsm`. If that shell exits, or Hyprland exits while opening the GPU, SDDM restarts the greeter. That is the loop.
 
 Rules:
 
@@ -32,3 +33,14 @@ Rules:
 - A fatal error in `hyprland.lua` at startup has the same effect as a GPU open failure. `hyprctl reload` on a running session does not. Check `hyprctl configerrors` before logging out.
 
 Each graphical login appends one line to `~/.local/state/graphical-login.log`.
+
+
+## Migrated settings and reload validation
+
+Personal host Lua, login environment, desktop Waybar connector, Qt RHI policy,
+idle profiles and renderer-resume hooks live in `~/voluta-personal`. Public
+`UserSettings.lua` has portable input/cursor defaults. The compositor resolver
+must load the private values before relying on those defaults for the owner's
+session. Check both `input:kb_layout` and `input:kb_options`, plus the resolved
+browser preference, after a migration reload. A successful configerrors query
+alone does not prove that the intended preferences were applied.

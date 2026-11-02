@@ -26,3 +26,9 @@ __pycache__/
 
 # Shared, palette-rendered SVG assets.
 wallust/assets/generated/
+
+# Machine-local build products and secrets are never public configuration.
+waybar/lib/*.so
+.env
+.env.*
+!.env.example

@@ -16,6 +16,12 @@ ROOT = Path(__file__).resolve().parents[1]
 FEATURES = {
     "dolphin": "Custom styling and live palette hook (takes effect on next launch)",
     "session_restore": "Window restore on login and background session saving",
+    "rgb": "Wallust lighting for explicitly selected compatible peripherals",
+    "browser": "Browser-specific palette integration",
+    "developer_shell": "Personal developer shell hooks",
+    "obs": "OBS recording keybindings",
+    "sddm": "System-wide Voluta login theme (explicit privileged setup)",
+    "rice_switch": "Switch between Voluta and another local rice",
 }
 
 
@@ -50,15 +56,30 @@ def read(path):
         data = json.load(handle)
     if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
         raise ValueError(f"{path}: expected settings version 1")
-    unknown = set(data) - {"version", "features", "hyprland"}
+    unknown = set(data) - {"version", "features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "monitors", "workspaces", "waybar_output", "dolphin_rhi", "rgb"}
     if unknown:
         raise ValueError(f"{path}: unknown sections: {', '.join(sorted(unknown))}")
-    for section in ("features", "hyprland"):
+    for section in ("features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "rgb"):
         if not isinstance(data.get(section, {}), dict):
             raise ValueError(f"{path}: {section} must be an object")
     for key, value in data.get("features", {}).items():
         if key not in FEATURES or type(value) is not bool:
             raise ValueError(f"{path}: unsupported feature or non-boolean selection: {key}")
+    for key, value in data.get("environment", {}).items():
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key) or (value is not None and not isinstance(value, str)):
+            raise ValueError(f"{path}: invalid environment entry")
+        if key == "GBM_BACKEND" and value is not None or key == "LIBVA_DRIVER_NAME" and value == "nvidia" or key == "NVD_BACKEND" and value == "direct":
+            raise ValueError(f"{path}: unsafe GPU environment override: {key}")
+    for section in ("keybindings", "startup"):
+        if any(not isinstance(v, str) and v is not False for v in data.get(section, {}).values()):
+            raise ValueError(f"{path}: {section} values must be commands or false")
+    for section in ("monitors", "workspaces"):
+        if section in data and not isinstance(data[section], list):
+            raise ValueError(f"{path}: {section} must be a list")
+    if "dolphin_rhi" in data and type(data["dolphin_rhi"]) is not bool:
+        raise ValueError(f"{path}: dolphin_rhi must be boolean")
+    if data.get("waybar_output") is not None and not isinstance(data["waybar_output"], str):
+        raise ValueError(f"{path}: waybar_output must be a connector name or null")
     validate_value(data)
     return data
 
@@ -120,14 +141,31 @@ def lua(value):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(prog="voluta", description=__doc__)
     parser.add_argument("--config-dir", type=Path, default=config_home())
     parser.add_argument("--host", default=socket.gethostname())
     commands = parser.add_subparsers(dest="command", required=True)
     init = commands.add_parser("init", help="create empty overrides; never overwrite settings")
     init.add_argument("--preserve-session", action="store_true", help="retain legacy session restoration")
     commands.add_parser("show", help="show resolved settings")
-    commands.add_parser("render-lua", help=argparse.SUPPRESS)
+    commands.add_parser("render-lua", help="render preferences for the compositor")
+    get = commands.add_parser("get", help="read a resolved setting as JSON")
+    get.add_argument("key")
+    commands.add_parser("shell-env", help="render safely quoted login environment")
+    for name in ("install", "update"):
+        install = commands.add_parser(name, help="deploy/update managed Arch configuration")
+        install.add_argument("--skip-deps", action="store_true")
+        install.add_argument("--dry-run", action="store_true")
+    commands.add_parser("uninstall", help="restore files replaced by the installer")
+    system_setup = commands.add_parser("system-setup", help="install/remove privileged optional integration")
+    system_setup.add_argument("module", choices=("sddm", "rgb"))
+    system_setup.add_argument("--disable", action="store_true")
+    commands.add_parser("rice-switch", help="toggle a configured external rice without deleting config")
+    commands.add_parser("doctor", help="check configuration, dependencies and device access")
+    commands.add_parser("apply", help="activate enabled integrations and refresh managed config")
+    rgb = commands.add_parser("rgb", help="apply Wallust lighting to selected devices")
+    rgb.add_argument("--dry-run", action="store_true")
+    rgb.add_argument("--force", action="store_true")
     check = commands.add_parser("enabled", help="exit 0 if a feature is enabled, 1 if disabled")
     check.add_argument("name", choices=FEATURES)
     check.add_argument("--legacy", action="store_true", help=argparse.SUPPRESS)
@@ -146,6 +184,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     directory = args.config_dir.expanduser().absolute()
     host = hostname(args.host)
+    if args.command in ("install", "update", "uninstall", "doctor", "apply", "rgb", "system-setup", "rice-switch"):
+        from deploy import dispatch
+        return dispatch(args, directory, host)
     if args.command == "companion":
         source = args.path.expanduser().resolve(strict=True)
         if source == directory or not (source / "settings.json").is_file():
@@ -221,16 +262,35 @@ def main(argv=None):
             atomic_write(path, data)
         effective, _ = resolve(directory, host)
         if args.command == "feature":
+            from deploy import reconcile_if_installed
+            try:
+                reconcile_if_installed(directory, host)
+            except Exception as error:
+                print(f"voluta: selection saved; activation needs attention: {error}", file=sys.stderr)
+                return 2
+        if args.command == "feature" and args.name in ("obs", "rice_switch") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+            import subprocess
+            subprocess.run(["hyprctl", "reload"], check=False, timeout=10, stdout=subprocess.DEVNULL)
+        if args.command == "feature":
             print(f"{args.name}: effective={str(effective['features'][args.name]).lower()} ({args.scope} override updated)")
             print("Session changes are picked up by the login supervisor; Dolphin changes apply on next launch.")
         else:
             print("Override saved; reload Hyprland to apply it")
         return 0
     settings, initialized = resolve(directory, host)
-    if args.command == "show":
+    if args.command == "get":
+        value = settings
+        for key in args.key.split("."):
+            value = value[key]
+        print(json.dumps(value))
+    elif args.command == "shell-env":
+        import shlex
+        for key, value in settings.get("environment", {}).items():
+            print(f"unset {key}" if value is None else f"export {key}={shlex.quote(value)}")
+    elif args.command == "show":
         print(json.dumps({"initialized": initialized, "host": host, **settings}, indent=2, ensure_ascii=False))
     elif args.command == "render-lua":
-        print("return " + lua({"initialized": initialized, **settings}))
+        print("return " + lua({"initialized": initialized, "personal_dir": str(directory), "host": host, **settings}))
     elif args.command == "enabled":
         # Before explicit initialization, existing installs retain their startup behavior.
         value = settings["features"][args.name] if initialized or not args.legacy else True
@@ -244,6 +304,6 @@ def main(argv=None):
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (OSError, ValueError, TypeError, RecursionError) as error:
+    except (OSError, ValueError, TypeError, KeyError, RecursionError) as error:
         print(f"voluta: {error}", file=sys.stderr)
         raise SystemExit(2)

@@ -2,7 +2,32 @@
   "version": 1,
   "features": {
     "dolphin": true,
-    "session_restore": false
+    "session_restore": false,
+    "rgb": false,
+    "browser": false,
+    "developer_shell": false,
+    "obs": false,
+    "sddm": false,
+    "rice_switch": false
   },
-  "hyprland": {}
+  "hyprland": {},
+  "environment": {},
+  "apps": {
+    "terminal": "kitty",
+    "file_manager": "dolphin",
+    "browser": "sh -c 'gtk-launch \"$(xdg-settings get default-web-browser)\"'"
+  },
+  "paths": {
+    "wallpapers": "~/Pictures/Wallpapers"
+  },
+  "keybindings": {},
+  "startup": {},
+  "monitors": [],
+  "workspaces": [],
+  "waybar_output": null,
+  "dolphin_rhi": false,
+  "rgb": {
+    "devices": [],
+    "accent": "wc_1"
+  }
 }

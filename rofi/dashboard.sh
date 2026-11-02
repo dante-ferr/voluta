@@ -21,7 +21,7 @@ uptime_str=$(uptime -p 2>/dev/null | sed 's/up //; s/ hours\?/h/g; s/ minutes\?/
 kernel_ver=$(uname -r | cut -d '-' -f 1)
 
 # 3. Format structured telemetry HUD for left panel
-TELEMETRY_HUD="✠ IMPERIVM TELEMETRIA ✠
+TELEMETRY_HUD="✠ VOLUTA TELEMETRY ✠
 ───────────────────────────
 🌡 CPU Temp   : $cpu_temp
 󰍛 Memoria    : $ram_usage

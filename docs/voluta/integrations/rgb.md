@@ -1,48 +1,73 @@
 # Wallust RGB integration
 
-Status: deferred; compatibility research only, no device writes tested.
+Status: implemented bridge with OpenRGB and an experimental HyperX Mars adapter.
+Physical lighting changes are not yet verified on the owner's devices.
 
-The owner wants wallpaper-driven keyboard and mouse lighting after the settings
-boundary is decided. Detected desktop devices are HyperX Mars `0951:16c6` and a
-wired mouse `04d9:fc30` matching the Redragon M711 family. Detection is not proof
-that writing colors works; no installation or device-write test has been done.
+Enable RGB for a particular host and list explicit devices in its companion JSON:
 
-- Keyboard candidate: [NeoGenesis](https://github.com/lexmarcos/NeoGenesis),
-  including its documented HID protocol. Its documented GUI workflow will need
-  evaluation for a headless helper; do not assume a CLI exists.
-- Mouse candidate: [OpenRGB](https://openrgb.org/); its source registers that USB
-  ID and implements a configurable static color. Verify the installed version,
-  detection and device behavior before wiring automatic updates.
-- Keep reusable RGB support optional in the core; store device selection and
-  enablement in the desktop profile. Require both explicit enablement and matching
-  hardware; the notebook and unknown hosts must skip it harmlessly.
-- Consume the generated Wallust palette, initially a static accent. Refresh on
-  wallpaper changes and desktop startup; serialize writes, skip unchanged colors,
-  and let absent devices/tools or permission failures leave desktop startup and
-  palette publication working. Evaluate whether commands save to onboard memory
-  before choosing refresh frequency. Do not add RGB tools to every host's mandatory
-  dependencies or run the whole desktop as root for device access.
+```json
+{
+  "version": 1,
+  "features": {"rgb": true},
+  "rgb": {
+    "accent": "wc_1",
+    "devices": [
+      {"backend": "openrgb", "usb_id": "04d9:fc30", "name": "Redragon M711 Cobra"},
+      {"backend": "hyperx-mars", "usb_id": "0951:16c6", "experimental": true}
+    ]
+  }
+}
+```
 
-## Feasibility and support boundary
+The owner’s desktop profile selects these devices; the notebook disables RGB.
+Other users must supply their own supported device/model selection. Brand names
+alone do not establish compatibility: firmware and wired/wireless mode matter.
 
-RGB control depends on the exact model, firmware, connection mode (USB, wireless
-receiver or Bluetooth), and capabilities exposed by the backend. Support for a
-brand does not establish support for every device.
+```sh
+voluta feature enable rgb --scope host
+voluta rgb --dry-run
+voluta rgb
+```
 
-The proposed public feature is a Wallust-to-backend bridge for compatible
-devices, not universal peripheral support. Prefer an established backend such as
-OpenRGB where the exact device is supported. Start with static accents; negotiate
-capabilities rather than promising per-key colors or effects on every device.
-Unsupported devices must be skipped with a useful status. Do not attempt generic
-HID writes to unknown devices.
+The backend parses the generated Wallust hex token without sourcing shell code,
+checks for the exact connected USB ID, serializes device writes, and caches the
+last successful color/device generation. Reconnects invalidate the cached USB
+generation. Unknown backends are rejected; absent devices are skipped. Permission
+and dependency failures report unavailable status without blocking desktop startup
+or palette generation. The palette watcher retries on wallpaper/settings changes
+and periodically for newly connected devices. Disabling stops future updates;
+it does not restore an undocumented prior hardware profile or turn lights off.
 
-The Mars helper is a separate, model-specific candidate. Keep it experimental
-until its protocol, firmware compatibility and writes are validated on the real
-keyboard. Its reusable implementation may live in an optional adapter; the
-owner’s selection belongs in the desktop companion profile. Building and
-maintaining a broad reverse-engineered device-driver collection is outside the
-proposed scope.
+OpenRGB uses only the selected controller name, static mode and hex accent. Its
+package provides device rules; no blanket root execution is used for color writes.
+The Mars backend requires `python-hidapi`, interface 0/usage page 1, explicit
+experimental selection and exact model matching. Install the narrow rule through
+`voluta system-setup rgb`, then reconnect the keyboard. Do not run the desktop or
+palette watcher as root.
 
-These are proposed limits for implementation review. The mouse has a promising
-existing backend; keyboard automation still needs a prototype. No compatibility
-claim should be upgraded to verified without an actual device test.
+The Mars sends a complete firmware profile transaction and checks handshake,
+header and final acknowledgments. It may save onboard state; identical successful
+colors are skipped to avoid gratuitous writes. Static accent is supported here;
+per-key effects and universal peripheral support are outside this implementation.
+
+Protocol evidence comes from the [NeoGenesis protocol](https://github.com/lexmarcos/NeoGenesis/blob/972018406ea003415a4a669e959f82e338e97f79/PROTOCOL.md)
+and its captured report data. `voluta/mars-keymap.json` contains opaque firmware
+report bytes, not SVG/UI paint choices. Tests check report framing, static color,
+commit, experimental gating, missing-device behavior and unchanged-color caching.
+
+## Validation on 2026-11-02
+
+Both USB IDs were detected and the actual Wallust accent was resolved in dry-run.
+The apply attempt reported OpenRGB and python-hidapi missing. Privileged setup
+requires the owner’s sudo authentication; the agent cannot supply it. Therefore
+no successful physical color write is claimed. In the owner's normal terminal:
+
+```sh
+sudo pacman -S --needed openrgb python-hidapi
+voluta system-setup rgb
+# Reconnect the keyboard, then:
+voluta rgb
+```
+
+Permission errors or a rejected Mars acknowledgment remain actionable device
+validation results; they must not be described as a successful test.

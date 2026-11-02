@@ -6,7 +6,7 @@
 -- re-reads the file so a stale cached table cannot pin the old palette.
 ---@module 'hl'
 
-local home = os.getenv("HOME") or "/home/dante"
+local home = os.getenv("HOME") or ""
 local colors_path = home .. "/.config/hypr/wallust/wallust-hyprland.conf"
 
 -- Imperial gold on obsidian, used until wallust has written a palette.
