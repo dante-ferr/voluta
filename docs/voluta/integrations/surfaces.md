@@ -33,6 +33,16 @@ shortcuts. It does not change the native tab strip or tab-group geometry: those
 controls are drawn by Brave. Choose neutral native group colors separately.
 Prismwing remains responsible for website favicons.
 
+Gallery's background mixes the shared browser background 6% toward the palette
+foreground, giving the page a lighter surface while the native sidebar stays
+dark. Its raised panels and rules derive from that lighter surface.
+
+On opening a tab, the typography enters in a short stagger and the artwork frame
+draws into place. A palette-colored glint travels around the stepped surround,
+and the wallpaper drifts slowly inside its clipped mat. Motion pauses in hidden
+tabs. All of these effects, including hover movement, are disabled when the
+browser reports `prefers-reduced-motion: reduce`; static framing remains intact.
+
 With the browser feature enabled, palette publication prepares the extension at
 `${XDG_DATA_HOME:-$HOME/.local/share}/voluta/gallery`. To prepare it immediately:
 

@@ -125,6 +125,8 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
         # A wallpaper disappearing during a switch must not interrupt core styling.
         wallpaper, wallpaper_version = None, ''
     fg, bg = palette['fg'], palette['bg']
+    # Gallery is a lighter reading surface than the surrounding browser chrome.
+    bg = tuple(round(a * .94 + b * .06) for a, b in zip(bg, fg))
     mix = lambda amount: tuple(round(a * (1 - amount) + b * amount) for a, b in zip(bg, fg))
     colors = {'bg': hex_color(bg), 'fg': hex_color(fg), 'accent': hex_color(palette['1']),
               'muted': hex_color(mix(.58)), 'line': hex_color(mix(.23)), 'raised': hex_color(mix(.05))}

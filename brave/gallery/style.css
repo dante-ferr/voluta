@@ -39,6 +39,7 @@ h2 { margin: 0; font-family: "Noto Serif Display", "Noto Serif", Georgia, serif;
 .architectural-frame path { fill: none; vector-effect: non-scaling-stroke; }
 .outer-edge { stroke: var(--line); stroke-width: 1; }
 .inner-edge { stroke: var(--muted); stroke-width: .6; opacity: .5; }
+.travelling-edge { stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 48 952; opacity: 0; }
 .ornament { position: absolute; width: clamp(74px, 8vw, 128px); height: auto; pointer-events: none; }
 .ornament-tl { left: -5px; top: -5px; }
 .ornament-br { right: -5px; bottom: 26px; }
@@ -66,4 +67,21 @@ dialog::backdrop { background: color-mix(in srgb, var(--bg) 84%, transparent); }
   #wallpaper { min-height: 320px; max-height: calc(100vh - 180px); }
 }
 @media (max-width: 650px) { .gallery { grid-template-columns: 1fr; grid-template-rows: auto; } .masthead { min-height: 48px; } .study { padding: 24px 12px; } .artwork { min-height: 360px; } #wallpaper { height: 370px; min-height: 0; } .edition { font-size: 10px; } h1 { font-size: 90px; } }
-@media (prefers-reduced-motion: no-preference) { .place, .quiet-button, .search-row button { transition: border-color 160ms, background-color 160ms; } }
+@keyframes arrive { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes unveil { from { opacity: 0; } to { opacity: 1; } }
+@keyframes inscribe { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dasharray: 1000; stroke-dashoffset: 0; } }
+@keyframes frame-glint { 0% { stroke-dashoffset: 0; opacity: 0; } 8%, 85% { opacity: .75; } 100% { stroke-dashoffset: -1000; opacity: 0; } }
+@keyframes artwork-drift { from { transform: scale(1.025) translateX(.4%); } to { transform: scale(1.075) translateX(-.4%); } }
+.page-hidden *, .page-hidden *::before, .page-hidden *::after { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: no-preference) {
+  .masthead { animation: arrive 650ms ease-out both; }
+  .time-block { animation: arrive 800ms 100ms ease-out both; }
+  .search-panel { animation: arrive 800ms 180ms ease-out both; }
+  .places, .study-footer { animation: arrive 800ms 260ms ease-out both; }
+  .artwork-mat, figcaption, .ornament { animation: unveil 1400ms ease-out both; }
+  .outer-edge { animation: inscribe 1600ms cubic-bezier(.2,.65,.3,1) both; }
+  .travelling-edge { animation: frame-glint 18s 1600ms linear infinite; }
+  #wallpaper { animation: artwork-drift 32s ease-in-out infinite alternate; }
+  .place, .quiet-button, .search-row button { transition: border-color 160ms, background-color 160ms, transform 180ms; }
+  .place:hover { transform: translateY(-2px); }
+}

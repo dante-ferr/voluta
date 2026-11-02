@@ -54,7 +54,9 @@ class SurfaceTests(unittest.TestCase):
         generated = self.gallery / 'generated'
         packet_path = generated / 'palette.json'
         packet = json.loads(packet_path.read_text())
-        self.assertEqual(packet['colors']['bg'], '#0a151f')
+        self.assertEqual(packet['colors']['bg'], '#172029')
+        # Core frames keep the darker chrome background.
+        self.assertIn('#0a151f', (self.frames / 'panel-frame.svg').read_text())
         self.assertEqual(packet['colors']['accent'], '#aa5577')
         self.assertNotIn(str(self.root), packet_path.read_text())
         wallpaper = generated / packet['wallpaper']

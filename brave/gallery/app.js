@@ -126,15 +126,20 @@ new ResizeObserver(() => {
   const frame = artwork.querySelector('svg');
   frame.setAttribute('viewBox', `0 0 ${width} ${height}`);
   frame.querySelector('.outer-edge').setAttribute('d', framePath(width, height));
+  frame.querySelector('.travelling-edge').setAttribute('d', framePath(width, height));
   frame.querySelector('.inner-edge').setAttribute('d', framePath(width, height, 8));
 }).observe(artwork);
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { clock(); refreshPalette(); } });
+function visibility() {
+  document.body.classList.toggle('page-hidden', document.hidden);
+  if (!document.hidden) { clock(); refreshPalette(); }
+}
+document.addEventListener('visibilitychange', visibility);
 if (extension && chrome.storage.onChanged) chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.links) { links = safeLinks(changes.links.newValue); renderLinks(); }
 });
+visibility();
 clock();
 loadLinks();
-refreshPalette();
 setInterval(clock, 30000);
 setInterval(refreshPalette, 4000);
