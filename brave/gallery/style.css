@@ -32,14 +32,18 @@ h2 { margin: 0; font-family: "Noto Serif Display", "Noto Serif", Georgia, serif;
 .study-footer { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 8px; letter-spacing: .13em; }
 .short-rule { flex: 1; height: 1px; background: var(--line); }
 .artwork { position: relative; margin: 0; min-height: 450px; padding: 24px 24px 58px; display: flex; min-width: 0; }
-.artwork-mat { flex: 1; overflow: hidden; background: var(--raised); clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); }
+.artwork-mat { position: relative; flex: 1; overflow: hidden; background: var(--raised); clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px); }
+.artwork-atmosphere { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; }
+.artwork-mat::before, .artwork-mat::after { content: ""; position: absolute; pointer-events: none; opacity: 0; }
+.artwork-mat::before { inset: 0; background: radial-gradient(ellipse at var(--light-x, 50%) var(--light-y, 50%), color-mix(in srgb, var(--fg) 18%, transparent), transparent 65%); mix-blend-mode: screen; }
+.artwork-mat::after { inset: -35%; background: linear-gradient(112deg, transparent 30%, color-mix(in srgb, var(--accent) 10%, transparent) 43%, color-mix(in srgb, var(--fg) 22%, transparent) 49%, transparent 61%); mix-blend-mode: screen; }
 #wallpaper { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; min-height: 440px; max-height: calc(100vh - 220px); }
 #wallpaper[hidden] { display: none; }
 .architectural-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .architectural-frame path { fill: none; vector-effect: non-scaling-stroke; }
 .outer-edge { stroke: var(--line); stroke-width: 1; }
 .inner-edge { stroke: var(--muted); stroke-width: .6; opacity: .5; }
-.travelling-edge { stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 48 952; opacity: 0; }
+.travelling-edge { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 105 895; opacity: 0; }
 .ornament { position: absolute; width: clamp(74px, 8vw, 128px); height: auto; pointer-events: none; }
 .ornament-tl { left: -5px; top: -5px; }
 .ornament-br { right: -5px; bottom: 26px; }
@@ -86,17 +90,28 @@ dialog { max-height: calc(100vh - 40px); overflow-y: auto; }
 @keyframes unveil { from { opacity: 0; } to { opacity: 1; } }
 @keyframes inscribe { from { stroke-dasharray: 1000; stroke-dashoffset: 1000; } to { stroke-dasharray: 1000; stroke-dashoffset: 0; } }
 @keyframes frame-glint { 0% { stroke-dashoffset: 0; opacity: 0; } 8%, 85% { opacity: .75; } 100% { stroke-dashoffset: -1000; opacity: 0; } }
-@keyframes artwork-drift { from { transform: scale(1.025) translateX(.4%); } to { transform: scale(1.075) translateX(-.4%); } }
+@keyframes artwork-drift { from { transform: scale(1.035) translateX(.7%); } to { transform: scale(1.12) translateX(-.7%); } }
+@keyframes light-sweep { 0% { transform: translateX(-65%) rotate(-8deg); opacity: 0; } 12%, 75% { opacity: .85; } 100% { transform: translateX(65%) rotate(8deg); opacity: 0; } }
+@keyframes frame-emerge { from { opacity: 0; transform: perspective(1600px) rotateY(-13deg) rotateX(5deg) translateY(25px) scale(.96); } to { opacity: 1; transform: perspective(1600px) rotateY(0deg) rotateX(0deg) translateY(0) scale(1); } }
 .page-hidden *, .page-hidden *::before, .page-hidden *::after { animation-play-state: paused !important; }
+.artwork-out-of-view *, .artwork-out-of-view *::before, .artwork-out-of-view *::after { animation-play-state: paused !important; }
 @media (prefers-reduced-motion: no-preference) {
+  .artwork { transform-style: preserve-3d; transform: perspective(1600px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)); animation: frame-emerge 1400ms cubic-bezier(.16,1,.3,1); }
+  .artwork-atmosphere { opacity: 1; }
+  .artwork-mat::before { opacity: .8; }
+  .artwork-mat::after { animation: light-sweep 9s 800ms ease-in-out infinite; }
+  .architectural-frame { transform: translateZ(22px); }
+  .ornament { transform: translateZ(46px); }
+  figcaption { transform: translateZ(28px); }
   .masthead { animation: arrive 650ms ease-out both; }
   .time-block { animation: arrive 800ms 100ms ease-out both; }
   .search-panel { animation: arrive 800ms 180ms ease-out both; }
   .places, .study-footer { animation: arrive 800ms 260ms ease-out both; }
   .artwork-mat, figcaption, .ornament { animation: unveil 1400ms ease-out both; }
   .outer-edge { animation: inscribe 1600ms cubic-bezier(.2,.65,.3,1) both; }
-  .travelling-edge { animation: frame-glint 18s 1600ms linear infinite; }
-  #wallpaper { animation: artwork-drift 32s ease-in-out infinite alternate; }
+  .inner-edge { animation: inscribe 1400ms 180ms cubic-bezier(.2,.65,.3,1) both; }
+  .travelling-edge { animation: frame-glint 8s 1600ms linear infinite; filter: drop-shadow(0 0 5px var(--accent)); }
+  #wallpaper { animation: artwork-drift 20s ease-in-out infinite alternate; }
   .place, .quiet-button, .search-row button { transition: border-color 160ms, background-color 160ms, transform 180ms; }
   .place:hover { transform: translateY(-2px); }
 }

@@ -1,5 +1,6 @@
 import { DEFAULT_LINKS, address, shortcut, safeLinks, framePath } from './logic.mjs';
 import { readArtwork, writeArtwork, validateImage } from './artwork.mjs';
+import { mountArtworkMotion } from './motion.mjs';
 
 const $ = id => document.getElementById(id);
 let links = DEFAULT_LINKS;
@@ -165,6 +166,7 @@ async function refreshPalette() {
       ornament.src = path + '?v=' + encodeURIComponent(packet.version);
     }
     paletteVersion = packet.version;
+    document.dispatchEvent(new Event('voluta-palette-change'));
   } catch { /* Keep the current artwork while palette publication is in flight. */ }
 }
 
@@ -193,6 +195,7 @@ $('shortcut-form').addEventListener('submit', async event => {
 });
 
 const artwork = document.querySelector('.artwork');
+mountArtworkMotion(artwork);
 new ResizeObserver(() => {
   const { width, height } = artwork.getBoundingClientRect();
   const frame = artwork.querySelector('svg');
