@@ -1,39 +1,50 @@
-# Agent notes
+# Agent guide
 
-This repository is the shared Hyprland configuration for two machines.
-`hyprland.lua` loads `hypr/hosts/<hostname>.lua`, then
-`hypr/hosts/<hostname>-power.lua`.
+Voluta is the selected public name for this cyber baroque Hyprland desktop.
+The checkout still contains the personal setup for `frank` and `frank-notebook`.
 
-## Hosts
+## Documentation and scope
 
-| Hostname | Hyprland GPU | Do not do |
-| --- | --- | --- |
-| `frank` | NVIDIA. `__GLX_VENDOR_LIBRARY_NAME=nvidia` is set in `hypr/hosts/frank.lua`. | Do not set `LIBVA_DRIVER_NAME=nvidia`, `NVD_BACKEND=direct`, or `GBM_BACKEND`. |
-| `frank-notebook` | Intel iGPU only. Mesa GLX and `LIBVA_DRIVER_NAME=iHD` in `hypr/hosts/frank-notebook-power.lua`. | Do not load `hosts/frank.lua`. Do not set `CUDA_VISIBLE_DEVICES` empty. ML jobs must still be able to open the discrete GPU. |
+- Start at [docs/voluta/index.md](docs/voluta/index.md); the complete navigation is
+  [SUMMARY.md](docs/voluta/SUMMARY.md). Keep detailed specifications in docs and
+  keep this file limited to essential instructions and links.
+- The accepted direction is a public core plus a private companion repo, with
+  persistent settings under `${XDG_CONFIG_HOME:-$HOME/.config}/voluta/`. Core
+  updates must preserve explicit user overrides.
+- Read [decisions and scope](docs/voluta/architecture/decisions.md) before migration
+  work. This task remains documentation/planning only: migration, renaming,
+  remote-repo creation and RGB installation are deferred pending authorization.
+  The exact core/optional feature boundary remains under review.
+- Inspect `git status` and preserve unrelated changes. Do not invoke
+  `auto_host_link.sh` (it overwrites tracked settings) or run the rice switcher
+  as a documentation check. See the [audit](docs/voluta/engineering/configuration_audit.md).
 
-`hosts/frank.lua` is desktop-only. A hostname check is the gate. Do not copy those variables into `UserSettings.lua`, `zshrc`, or `~/.config/uwsm/env`.
+## Runtime guardrails
 
-## SDDM login loop
+- Read [runtime constraints](docs/voluta/engineering/runtime_constraints.md) before
+  changing GPU, login, locking, or suspend behavior. Keep host overrides scoped:
+  `frank` uses NVIDIA; `frank-notebook` runs the desktop on Intel. Never load the
+  desktop profile on the notebook or mask its CUDA GPU.
+- Never export `GBM_BACKEND`, `LIBVA_DRIVER_NAME=nvidia`, or `NVD_BACKEND=direct`.
+  Keep desktop client GLX in its host profile after compositor startup.
+- Keep `zprofile` non-fatal: no `exit`, `set -e`, or sourcing `zshrc`. `zshrc`
+  must return immediately for noninteractive shells. Check `hyprctl configerrors`
+  before logout after changing compositor configuration.
 
-Symptom: the password is accepted, the screen waits one or two seconds, then the password field clears and the greeter asks again. Hyprland never stays up.
+## Palette and assets
 
-SDDM runs `zsh --login`, which sources `zprofile`, then execs `uwsm`. If that shell exits, or Hyprland exits while opening the GPU, SDDM restarts the greeter. That is the loop.
+- SVG paints and UI text must follow the active Wallust palette. Derive muted,
+  hover and contrast colors from palette tokens; do not introduce fixed colors.
+- Share SVG sources in `wallust/assets/` and rendered assets in
+  `wallust/assets/generated/`. Regenerate and reload consumers on wallpaper changes.
 
-Rules:
+## Secrets and commits
 
-- `zprofile` stays on the login path. No `exit`, no `set -e`, no command that can fail the shell, and do not source `zshrc` from it.
-- `zshrc` returns immediately when the shell is not interactive, so oh-my-zsh, conda, and starship cannot run during login.
-- Do not export `GBM_BACKEND`. `nvidia-drm` makes Hyprland fail the DRM open and return to the password field.
-- Do not export `LIBVA_DRIVER_NAME=nvidia` or `NVD_BACKEND=direct` anywhere. On `frank` that path SIGILL-crashes Brave, exhausts the GPU BAR1 window, and Hyprland aborts on the GL reset. The restarted session is the built-in Hyprland theme.
-- Client GLX for `frank` is set from `hosts/frank.lua` after the compositor is up, not from the login shell.
-- A fatal error in `hyprland.lua` at startup has the same effect as a GPU open failure. `hyprctl reload` on a running session does not. Check `hyprctl configerrors` before logging out.
-
-Each graphical login appends one line to `~/.local/state/graphical-login.log`.
-
-## Wallust colors for SVGs and text
-
-- SVG artwork and UI text must use the active Wallust palette. Do not introduce fixed SVG paint colors or fixed text colors.
-- Use Wallust color tokens in stylesheets and Wallust templates for SVG fills and strokes. Derive muted, hover, and contrast colors from those tokens rather than hard-coded colors.
-- Regenerate palette-dependent assets and reload their consumers when the wallpaper changes, so artwork and text follow the current palette on both hosts.
-
-- Keep reusable SVG source assets in `wallust/assets/` and palette-rendered SVGs in `wallust/assets/generated/`; consumers should share these assets instead of keeping private copies.
+- Never display `.env` contents or secret values, and never commit `.env`. When
+  changing `.env.example` keys, sync `.env` in the same change using a key-only
+  script: append missing keys with empty values, preserve existing values and
+  extra keys, and never copy sample values. Report key names only; use
+  `nonempty=true/false` if necessary.
+- Use Conventional Commits: `<type>[optional scope][!]: <description>`. Use `feat`
+  for features and `fix` for bug fixes; mark breaking changes with `!` or a
+  `BREAKING CHANGE:` footer. Separate optional body/footers with blank lines.

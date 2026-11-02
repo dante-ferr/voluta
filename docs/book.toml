@@ -1,0 +1,7 @@
+[book]
+language = "en"
+src = "voluta"
+title = "Voluta Documentation"
+
+[build]
+build-dir = "book"
