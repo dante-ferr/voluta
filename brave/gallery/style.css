@@ -44,9 +44,9 @@ h2 { margin: 0; font-family: "Noto Serif Display", "Noto Serif", Georgia, serif;
 .outer-edge { stroke: var(--line); stroke-width: 1; }
 .inner-edge { stroke: var(--muted); stroke-width: .6; opacity: .5; }
 .travelling-edge { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 105 895; opacity: 0; }
-.ornament { position: absolute; width: clamp(160px, 18vw, 300px); height: auto; pointer-events: none; }
-.ornament-tl { left: -18px; top: -18px; }
-.ornament-br { right: -18px; bottom: 8px; }
+.ornament { position: absolute; width: clamp(80px, 8vw, 140px); height: auto; pointer-events: none; }
+.ornament-tl { left: -6px; top: -6px; }
+.ornament-br { right: -6px; bottom: 22px; }
 figcaption { position: absolute; bottom: 22px; left: 30px; right: 30px; display: flex; justify-content: space-between; color: var(--muted); gap: 20px; font-size: 8px; letter-spacing: .12em; }
 figcaption { align-items: center; }
 #artwork-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
