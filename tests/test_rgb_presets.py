@@ -125,6 +125,17 @@ assert(bindings['SUPER + CTRL + G'] ~= 'voluta rgb menu')
                 if mouse['color'] is not None:
                     self.assertIn(bytes.fromhex(mouse['color']), {bytes(3)} if preset.name == 'off' else allowed)
 
+    def test_mouse_uses_main_folder_accent_for_every_colored_preset(self):
+        colors = palette()
+        for preset in presets.PRESETS:
+            with self.subTest(preset=preset.name):
+                mouse = presets.mouse_settings(preset, colors)
+                expected = None if preset.mouse_mode == 'Rainbow' else '000000' if preset.name == 'off' else colors['wc_1']
+                self.assertEqual(mouse['color'], expected)
+                self.assertEqual(mouse['mode'], preset.mouse_mode)
+        colors['wc_1'] = 'cc2244'
+        self.assertEqual(presets.mouse_settings(presets.get('velvet'), colors)['color'], 'cc2244')
+
     def test_palette_independent_native_effects_do_not_rewrite_profiles(self):
         selected = devices()
         for device in selected:

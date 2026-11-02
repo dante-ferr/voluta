@@ -114,29 +114,29 @@ mouse exposes one lighting zone, so its companion effect is simpler.
 
 | ID | Keyboard composition | Mouse pairing |
 | --- | --- | --- |
-| `voluta` | Functional palette bands and palette bar | Static palette color 4 |
-| `wasd` | WASD, arrows, Shift and Space highlighted | Static color 10 |
-| `navigation` | Navigation island and arrows | Static color 14 |
-| `vim` | HJKL, Escape and command punctuation | Static color 12 |
-| `shortcuts` | Modifiers and desktop launcher keys | Static color 13 |
-| `constellation` | Deterministic stars across a dim field | Static color 5 |
+| `voluta` | Functional palette bands and palette bar | Static color 1 |
+| `wasd` | WASD, arrows, Shift and Space highlighted | Static color 1 |
+| `navigation` | Navigation island and arrows | Static color 1 |
+| `vim` | HJKL, Escape and command punctuation | Static color 1 |
+| `shortcuts` | Modifiers and desktop launcher keys | Static color 1 |
+| `constellation` | Deterministic stars across a dim field | Static color 1 |
 | `checkerboard` | Alternating colors 1 and 4 | Static color 1 |
-| `ribbons` | A palette ribbon per row | Static color 5 |
-| `numpad` | An illuminated numpad island | Static color 11 |
+| `ribbons` | A palette ribbon per row | Static color 1 |
+| `numpad` | An illuminated numpad island | Static color 1 |
 | `split` | Two palette-colored halves and matching bar | Static color 1 |
 | `accent` | A single palette accent | Static color 1 |
 | `off` | All mapped lights dark | Static black |
-| `velvet` | Slow violet breathing | Breathing color 5 |
-| `moonlight` | Dim, slow cool breathing | Breathing color 4 |
+| `velvet` | Slow violet breathing | Breathing color 1 |
+| `moonlight` | Dim, slow cool breathing | Breathing color 1 |
 | `heartbeat` | Five-color breathing loop | Breathing color 1 |
-| `aurora` | Cool/violet breathing loop | Breathing color 4 |
+| `aurora` | Cool/violet breathing loop | Breathing color 1 |
 | `rose` | Warm/violet breathing loop | Breathing color 1 |
 | `embers` | Dim warm breathing loop | Breathing color 1 |
-| `tide` | Slow cool breathing loop | Breathing color 6 |
-| `fountain` | Palette stack moving up | Breathing color 4 |
-| `rainfall` | Palette stack moving down | Breathing color 6 |
-| `procession` | Palette stack moving right | Breathing color 4 |
-| `reflux` | Faster palette stack moving left | Breathing color 6 |
+| `tide` | Slow cool breathing loop | Breathing color 1 |
+| `fountain` | Palette stack moving up | Breathing color 1 |
+| `rainfall` | Palette stack moving down | Breathing color 1 |
+| `procession` | Palette stack moving right | Breathing color 1 |
+| `reflux` | Faster palette stack moving left | Breathing color 1 |
 | `prism` | Native rainbow wave right | Native Wave |
 | `prism-rain` | Native rainbow wave down | Native Wave |
 | `orbit` | Native spectrum cycle | Native Rainbow |
@@ -148,7 +148,7 @@ colors; the menu identifies these exceptions. The M711's OpenRGB controller
 exposes Static/Wave/Breathing/Rainbow/Flashing, one LED and no speed/brightness
 controls. We use its native modes with exact palette colors. Keyboard-only brightness settings
 remain part of the native effects; mouse colors are not artificially dimmed.
-Different mouse pairings can look similar; spatial keyboard patterns cannot be
+Several keyboard presets share the same mouse pairing; spatial patterns cannot be
 reproduced on its single exposed zone. No timing synchronization between the two
 firmwares is claimed.
 
@@ -221,3 +221,14 @@ The palette-fidelity and shortcut changes passed 41 Voluta tests plus 12 session
 manager tests locally. The active palette was also compared with a fresh
 saturation-25 extraction of the displayed wallpaper; chromatic tokens matched.
 Super+G and the original US/BR and Alt+Shift settings were checked after reload.
+
+## Main mouse accent
+
+Every colored mouse preset now follows Wallust `wc_1`, the source hue used for
+Dolphin folder icons. The preset continues to choose the mouse's native effect;
+keyboard layouts retain their own multi-color compositions. Previously, the
+mouse used the first color of each keyboard composition (for example, color 5
+for Velvet breath), which could select a much paler accent. Dolphin may lift its
+icon color for on-screen contrast; the mouse receives the unmodified main token
+to preserve saturation. Lights out remains black and native Rainbow remains a
+firmware-controlled exception.

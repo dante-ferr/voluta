@@ -172,7 +172,9 @@ def reports(preset, palette, root):
 
 
 def mouse_settings(preset, palette):
-    color = bytes(3) if preset.name == 'off' else token(palette, preset.colors[0])
+    # Dolphin's folder accent also starts at color 1. Per-key compositions can
+    # use other tokens, but the mouse's single zone always follows that main hue.
+    color = bytes(3) if preset.name == 'off' else token(palette, 1)
     # One exposed mouse LED: pair spatial keyboard effects with a native pulse.
     # This controller exposes neither speed nor brightness controls through OpenRGB.
     return {'mode': preset.mouse_mode, 'color': None if preset.mouse_mode == 'Rainbow' else color.hex()}
