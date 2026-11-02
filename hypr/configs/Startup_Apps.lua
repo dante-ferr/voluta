@@ -6,6 +6,13 @@ local config = os.getenv("XDG_CONFIG_HOME") or (home .. "/.config")
 local UserScripts = config .. "/hypr/UserScripts"
 local Scripts = config .. "/hypr/scripts"
 
+-- The palette watcher is safe on reload: its per-session lock prevents duplicates.
+-- Starting here also activates integrations enabled after the current login.
+local function start_palette_watcher()
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}\"; /usr/bin/python3 " .. Scripts .. "/../../voluta/runtime.py watch >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta-palette.log\" 2>&1'")
+end
+start_palette_watcher()
+
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
@@ -43,7 +50,7 @@ hl.on("hyprland.start", function()
     for _, command in pairs(settings.startup or {}) do
         if type(command) == "string" then hl.exec_cmd(command) end
     end
-    hl.exec_cmd("python3 " .. Scripts .. "/../../voluta/runtime.py watch")
+    start_palette_watcher()
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.
     -- It notices enable/disable selections during this session.

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(dirname -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")")
-exec python3 "$root/voluta/cli.py" "$@"
+# Arch packages such as python-hidapi belong to the system interpreter.
+# A Homebrew/Conda Python earlier in PATH cannot import those device bindings.
+exec /usr/bin/python3 "$root/voluta/cli.py" "$@"
