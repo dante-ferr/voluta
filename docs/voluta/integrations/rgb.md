@@ -55,14 +55,17 @@ colors are skipped to avoid gratuitous writes. The Mars supports `"layout": "sta
 The latter writes all 104 keys and 15 light-bar LEDs using the validated E1 custom
 transaction, including its session block and custom-mode commit:
 
-- Typing keys flow through a gradient of Wallust colors 4, 5, 1, 3, 2 and 6.
+- Typing keys use bands of Wallust colors 4, 5, 1, 3, 2 and 6.
 - WASD uses color 10; Super/Fn/Menu use 13, and Ctrl/Alt/Shift use 12.
 - Enter and Space use 11; Escape/Delete/Backspace use 9.
 - Arrows use 14, navigation uses 6, and function keys form three groups (12–14).
-- The numpad has a vertical gradient; the light bar sweeps the full gradient.
+- The numpad has vertical palette bands; the light bar repeats the palette bands.
 
-All displayed colors come from the active palette or interpolation between its
-colors. The captured effect bytes are firmware protocol scaffolding. Per-key
+All configured LED colors are exact active Wallust tokens. Intermediate gradient
+colors and host-side brightness scaling have been removed. Off sends black; the
+three explicitly labeled rainbow presets use the native firmware colors. Native
+engines still modulate brightness during pulses and may transition between
+palette entries internally. The captured effect bytes are firmware protocol scaffolding. Per-key
 layout selection belongs in the desktop companion profile, never shared settings.
 The notebook's `features.rgb=false` returns before palette reads or device access.
 Universal peripheral support remains outside this integration.
@@ -77,11 +80,13 @@ watcher reactions to palette changes.
 
 ## Presets and selector
 
-**Super+Ctrl+G** opens the Rofi selector when RGB is enabled. Pick both devices,
+**Super+G** opens the Rofi selector when RGB is enabled. Pick both devices,
 keyboard, or mouse, then a preset. Type to filter; Escape cancels without changes.
 The current selection is marked. The menu inherits the active Wallust Rofi theme.
 The shortcut is absent on the notebook, and can be replaced or disabled through
-`keybindings["SUPER + CTRL + G"]` in companion settings.
+`keybindings["SUPER + G"]` in companion settings. On RGB-enabled hosts, the
+previous pixel widget moves to Super+Ctrl+G; disabled hosts retain its Super+G
+shortcut.
 
 ```sh
 voluta rgb list                         # IDs and descriptions as JSON
@@ -109,7 +114,7 @@ mouse exposes one lighting zone, so its companion effect is simpler.
 
 | ID | Keyboard composition | Mouse pairing |
 | --- | --- | --- |
-| `voluta` | Original functional gradient and palette bar | Static palette color 4 |
+| `voluta` | Functional palette bands and palette bar | Static palette color 4 |
 | `wasd` | WASD, arrows, Shift and Space highlighted | Static color 10 |
 | `navigation` | Navigation island and arrows | Static color 14 |
 | `vim` | HJKL, Escape and command punctuation | Static color 12 |
@@ -118,16 +123,16 @@ mouse exposes one lighting zone, so its companion effect is simpler.
 | `checkerboard` | Alternating colors 1 and 4 | Static color 1 |
 | `ribbons` | A palette ribbon per row | Static color 5 |
 | `numpad` | An illuminated numpad island | Static color 11 |
-| `split` | Complementary halves and blended bar | Static color 1 |
+| `split` | Two palette-colored halves and matching bar | Static color 1 |
 | `accent` | A single palette accent | Static color 1 |
 | `off` | All mapped lights dark | Static black |
-| `velvet` | Slow violet breathing | Breathing color 5, dimmed |
-| `moonlight` | Dim, slow cool breathing | Breathing color 4, dimmed |
+| `velvet` | Slow violet breathing | Breathing color 5 |
+| `moonlight` | Dim, slow cool breathing | Breathing color 4 |
 | `heartbeat` | Five-color breathing loop | Breathing color 1 |
 | `aurora` | Cool/violet breathing loop | Breathing color 4 |
 | `rose` | Warm/violet breathing loop | Breathing color 1 |
-| `embers` | Dim warm breathing loop | Breathing color 1, dimmed |
-| `tide` | Slow cool breathing loop | Breathing color 6, dimmed |
+| `embers` | Dim warm breathing loop | Breathing color 1 |
+| `tide` | Slow cool breathing loop | Breathing color 6 |
 | `fountain` | Palette stack moving up | Breathing color 4 |
 | `rainfall` | Palette stack moving down | Breathing color 6 |
 | `procession` | Palette stack moving right | Breathing color 4 |
@@ -141,7 +146,8 @@ uses breathing, stacking, wave and spectrum engines with different palette,
 speed, brightness and direction settings. Wave and spectrum use firmware rainbow
 colors; the menu identifies these exceptions. The M711's OpenRGB controller
 exposes Static/Wave/Breathing/Rainbow/Flashing, one LED and no speed/brightness
-controls. We use its native modes and scale palette colors for dim presets.
+controls. We use its native modes with exact palette colors. Keyboard-only brightness settings
+remain part of the native effects; mouse colors are not artificially dimmed.
 Different mouse pairings can look similar; spatial keyboard patterns cannot be
 reproduced on its single exposed zone. No timing synchronization between the two
 firmwares is claimed.
@@ -159,8 +165,9 @@ hardware afterward; multicolor breathing can freeze without its keepalive.
 
 The upstream protocol investigation found no volatile lighting path in the
 observed manufacturer software. We therefore never stream custom animation
-frames or audio levels through onboard profile writes. Cava-style audio-reactive
-animation remains unsupported for these adapters. New engines must use a proven
+frames or audio levels through onboard profile writes. Arbitrary Cava-style per-key frame streaming is not implemented: no safe
+volatile path has been verified for these stock adapters. This does not prove
+that custom animation is impossible. See the [research and remaining leads](rgb_research.md). New engines must use a proven
 RAM/direct mode before implementing frame streaming. The mouse controller also
 marks its modes as automatically saved in
 [upstream OpenRGB](https://github.com/CalcProgrammer1/OpenRGB/blob/master/Controllers/RedragonController/RGBController_RedragonMouse.cpp).
@@ -177,7 +184,7 @@ reload reports no configuration errors; US/BR and Alt+Shift remain configured.
 The isolated RGB source snapshot passed 36 Voluta tests plus 12 session tests
 both locally and in a disposable Arch QEMU/TCG guest (48 in each environment).
 The Rofi theme parsed successfully and the live gallery opened and was cancelled
-without selecting a preset. Super+Ctrl+G was verified in the running compositor.
+without selecting a preset. The gallery shortcut was verified in the running compositor.
 
 Automated checks cover all 26 preset transactions, opaque-prefix preservation,
 valid LED indices, native-engine settings, per-key palette updates, host/target
@@ -197,3 +204,20 @@ voluta rgb
 
 Permission errors or a rejected Mars acknowledgment remain actionable device
 validation results; they must not be described as a successful test.
+
+## Palette fidelity update
+
+Wallust saturation is now 25, increased slightly from 20; pastel intensity and
+the dark style are preserved. Comparing the same sampled wallpaper without
+publishing templates raised mean HSV saturation of its chromatic colors from
+about 71% to 73%. That measurement describes this image, not a promise about every
+wallpaper or the physical LED output. Interpolating different palette colors can
+reduce saturation, while scaling colors mainly changes brightness. Both extra
+host-side RGB transformations have been removed in favor of exact tokens.
+Tests inspect every active non-rainbow color field and mapped key to enforce
+membership in the generated palette, with black allowed only for Lights out.
+
+The palette-fidelity and shortcut changes passed 41 Voluta tests plus 12 session
+manager tests locally. The active palette was also compared with a fresh
+saturation-25 extraction of the displayed wallpaper; chromatic tokens matched.
+Super+G and the original US/BR and Alt+Shift settings were checked after reload.

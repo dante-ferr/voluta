@@ -50,12 +50,9 @@ def mars_custom_reports(palette):
     def color(number):
         return bytes.fromhex(palette[f'wc_{number}'])
 
-    def gradient(position):
+    def palette_band(position):
         stops = [color(n) for n in (4, 5, 1, 3, 2, 6)]
-        point = max(0, min(1, position)) * (len(stops) - 1)
-        index = min(int(point), len(stops) - 2)
-        fraction = point - index
-        return bytes(round(a + (b - a) * fraction) for a, b in zip(stops[index], stops[index + 1]))
+        return stops[min(len(stops) - 1, int(max(0, min(1, position)) * len(stops)))]
 
     frames = [bytearray(row) for row in json.loads((ROOT / 'voluta/mars-keymap.json').read_text())]
     for frame in frames:
@@ -64,9 +61,9 @@ def mars_custom_reports(palette):
     for key in data['keys']:
         index, label = key['index'], key['label']
         # Physical coordinates matter: firmware rows interleave the navigation block.
-        rgb = gradient(key['x'] / 480 + key['y'] / 178 * .12)
+        rgb = palette_band(key['x'] / 480 + key['y'] / 178 * .12)
         if index // 18 == 7:
-            rgb = gradient((index % 18 - 3) / 14)
+            rgb = palette_band((index % 18 - 3) / 14)
         elif label.startswith('F') and label[1:].isdigit():
             rgb = color((12, 13, 14)[(int(label[1:]) - 1) // 4])
         elif label == 'Esc':
@@ -86,7 +83,7 @@ def mars_custom_reports(palette):
         elif label in ('Delete', 'Backspace'):
             rgb = color(9)
         elif label.startswith('Num') or label == 'Decimal':
-            rgb = gradient((key['y'] - 49) / 129)
+            rgb = palette_band((key['y'] - 49) / 129)
         offset = (index % 16) * 4
         frames[index // 16][offset + 1:offset + 4] = rgb
 

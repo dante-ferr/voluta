@@ -7,7 +7,8 @@ prevent the core desktop from starting when unavailable.
 | Document | Purpose |
 | --- | --- |
 | [Shared background](theme.md) | One persistent palette policy for application backgrounds and generated theme exports. |
-| [Wallust RGB integration](rgb.md) | Candidate keyboard/mouse tools, desktop scoping, and deferred implementation requirements. |
+| [Wallust RGB integration](rgb.md) | Preset gallery, native animations, palette fidelity and desktop scoping. |
+| [Custom animation research](rgb_research.md) | Stock protocol evidence, alternative mouse SDKs and remaining firmware leads. |
 
 Existing component notes remain alongside their code:
 [Brave](../../../brave/README.md), [Dolphin](../../../dolphin/README.md),

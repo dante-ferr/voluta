@@ -33,15 +33,18 @@ class PresetTests(unittest.TestCase):
             script = '''
 local dsp = {}
 setmetatable(dsp, {__index=function() return dsp end, __call=function() return {} end})
+dsp.exec_cmd = function(command) return {command=command} end
 local bindings = {}
-hl = {dsp=dsp, bind=function(chord) bindings[chord]=true end, window_rule=function() end}
+hl = {dsp=dsp, bind=function(chord, action) bindings[chord]=type(action)=='table' and action.command or '' end,
+      window_rule=function() end}
 package.loaded['configs.Voluta'] = {
     apps={}, keybindings=OVERRIDE,
     enabled=function(name) return name == 'rgb' and ENABLED end
 }
 dofile(SOURCE)
-assert((bindings['SUPER + CTRL + G'] == true) == EXPECTED)
-'''.replace('OVERRIDE', '{["SUPER + CTRL + G"]=false}' if override else '{}')
+assert((bindings['SUPER + G'] == 'voluta rgb menu') == EXPECTED)
+assert(bindings['SUPER + CTRL + G'] ~= 'voluta rgb menu')
+'''.replace('OVERRIDE', '{["SUPER + G"]=false}' if override else '{}')
             script = script.replace('ENABLED', str(enabled).lower()).replace('EXPECTED', str(expected).lower())
             script = script.replace('SOURCE', json.dumps(str(ROOT / 'hypr/UserConfigs/UserKeybinds.lua')))
             result = subprocess.run(['lua', '-e', script], text=True, capture_output=True)
@@ -101,6 +104,26 @@ assert((bindings['SUPER + CTRL + G'] == true) == EXPECTED)
             presets.custom_frames({0: bytes(3)}, ROOT)
         with self.assertRaises(ValueError):
             presets.get('$(touch /tmp/unsafe)')
+
+    def test_all_nonrainbow_color_payloads_are_exact_palette_tokens(self):
+        colors = palette()
+        allowed = {bytes.fromhex(value) for value in colors.values()}
+        for preset in presets.PRESETS:
+            with self.subTest(preset=preset.name):
+                packets = presets.reports(preset, colors, ROOT)
+                if preset.engine in (1, 8):
+                    frame = packets[4 if preset.engine == 1 else 8]
+                    self.assertTrue(all(frame[i:i + 3] in allowed for i in range(1, 16, 3)))
+                elif not preset.engine:
+                    data = json.loads((ROOT / 'voluta/mars-custom.json').read_text())
+                    for key in data['keys']:
+                        index = key['index']
+                        offset = index % 16 * 4
+                        color = packets[9 + index // 16][offset + 1:offset + 4]
+                        self.assertIn(color, {bytes(3)} if preset.name == 'off' else allowed)
+                mouse = presets.mouse_settings(preset, colors)
+                if mouse['color'] is not None:
+                    self.assertIn(bytes.fromhex(mouse['color']), {bytes(3)} if preset.name == 'off' else allowed)
 
     def test_palette_independent_native_effects_do_not_rewrite_profiles(self):
         selected = devices()

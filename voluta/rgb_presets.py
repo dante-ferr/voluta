@@ -18,7 +18,7 @@ class Preset:
 
 
 PRESETS = (
-    Preset('voluta', 'Voluta', 'Flowing keys, functional accents and a palette light bar'),
+    Preset('voluta', 'Voluta', 'Palette bands, functional accents and a palette light bar'),
     Preset('wasd', 'WASD spotlight', 'Bright movement keys over a quiet palette backdrop', colors=(10,)),
     Preset('navigation', 'Navigator', 'Arrows and the navigation island in relief', colors=(14,)),
     Preset('vim', 'Vim sanctuary', 'H J K L, Escape and command punctuation', colors=(12,)),
@@ -27,16 +27,16 @@ PRESETS = (
     Preset('checkerboard', 'Harlequin', 'Alternating woven colors across the key field', colors=(1, 4)),
     Preset('ribbons', 'Silken ribbons', 'A different palette ribbon on each row', colors=(5,)),
     Preset('numpad', 'Number atelier', 'The numpad becomes a bright, separate island', colors=(11,)),
-    Preset('split', 'Duet', 'Two complementary halves and a blended light bar', colors=(1, 4)),
+    Preset('split', 'Duet', 'Two palette-colored halves, mirrored on the light bar', colors=(1, 4)),
     Preset('accent', 'Monochrome', 'One wallpaper accent across both peripherals', colors=(1,)),
     Preset('off', 'Lights out', 'Darken the selected device without disabling the integration'),
-    Preset('velvet', 'Velvet breath', 'A slow single-color pulse', 1, (5,), 1, 3, loop=False, mouse_mode='Breathing'),
-    Preset('moonlight', 'Moonlit hush', 'A dim, unhurried cool pulse', 1, (4,), 1, 2, loop=False, mouse_mode='Breathing'),
+    Preset('velvet', 'Velvet breath', 'A slow pulse using palette color 5', 1, (5,), 1, 3, loop=False, mouse_mode='Breathing'),
+    Preset('moonlight', 'Moonlit hush', 'A dim, slow pulse using palette color 4', 1, (4,), 1, 2, loop=False, mouse_mode='Breathing'),
     Preset('heartbeat', 'Baroque heartbeat', 'Five colors breathe through the wallpaper palette', 1, (1, 5, 4, 6, 3), 3, mouse_mode='Breathing'),
-    Preset('aurora', 'Aurora', 'Cool colors fold into violet and back', 1, (4, 12, 5, 13, 6), 2, mouse_mode='Breathing'),
-    Preset('rose', 'Rose window', 'Warm and violet colors glow in succession', 1, (1, 9, 5, 13, 3), 2, mouse_mode='Breathing'),
-    Preset('embers', 'Ember chapel', 'A warm, low glow from the active palette', 1, (1, 9, 3, 11, 1), 2, 3, mouse_mode='Breathing'),
-    Preset('tide', 'Midnight tide', 'Five cool colors ebb through a slow breathing cycle', 1, (6, 14, 4, 12, 5), 1, 3, mouse_mode='Breathing'),
+    Preset('aurora', 'Aurora', 'Five Wallust accents in a gentle breathing loop', 1, (4, 12, 5, 13, 6), 2, mouse_mode='Breathing'),
+    Preset('rose', 'Rose window', 'Alternate Wallust accents glow in succession', 1, (1, 9, 5, 13, 3), 2, mouse_mode='Breathing'),
+    Preset('embers', 'Ember chapel', 'A low-brightness breathing loop through the palette', 1, (1, 9, 3, 11, 1), 2, 3, mouse_mode='Breathing'),
+    Preset('tide', 'Midnight tide', 'A slow breathing cycle through the palette', 1, (6, 14, 4, 12, 5), 1, 3, mouse_mode='Breathing'),
     Preset('fountain', 'Fountain', 'Palette colors stack upward across the keyboard', 8, direction=0, mouse_mode='Breathing'),
     Preset('rainfall', 'Stained-glass rain', 'Colors descend in repeating layers', 8, (6, 4, 5, 1, 3), 2, direction=3, mouse_mode='Breathing'),
     Preset('procession', 'Procession', 'A steady procession of palette colors toward the right', 8, speed=2, direction=2, mouse_mode='Breathing'),
@@ -65,15 +65,10 @@ def token(palette, number):
         raise ValueError(f'Wallust RGB token wc_{number} is missing or invalid') from None
 
 
-def blend(first, second, amount):
-    amount = max(0, min(1, amount))
-    return bytes(round(a + (b - a) * amount) for a, b in zip(first, second))
-
-
 def static_colors(preset, palette, keys):
     """Return colors for real key indices only; physical coordinates handle islands."""
     base = token(palette, preset.colors[0])
-    quiet = blend(bytes(3), base, .13)
+    quiet = token(palette, 0)
     result = {}
     for key in keys:
         index, label = key['index'], key['label']
@@ -116,7 +111,7 @@ def static_colors(preset, palette, keys):
                 color = base
         elif preset.name == 'split':
             if bar:
-                color = blend(token(palette, 1), token(palette, 4), (col - 3) / 14)
+                color = token(palette, preset.colors[min(1, (col - 3) * 2 // 15)])
             else:
                 color = token(palette, 1 if key['x'] < 240 else 4)
         result[index] = color
@@ -178,7 +173,6 @@ def reports(preset, palette, root):
 
 def mouse_settings(preset, palette):
     color = bytes(3) if preset.name == 'off' else token(palette, preset.colors[0])
-    color = blend(bytes(3), color, preset.brightness / 5)
     # One exposed mouse LED: pair spatial keyboard effects with a native pulse.
     # This controller exposes neither speed nor brightness controls through OpenRGB.
     return {'mode': preset.mouse_mode, 'color': None if preset.mouse_mode == 'Rainbow' else color.hex()}

@@ -8,6 +8,7 @@
 - [Integrations](integrations/index.md)
   - [Shared background](integrations/theme.md)
   - [Wallust RGB integration](integrations/rgb.md)
+    - [Custom animation research](integrations/rgb_research.md)
 - [Engineering](engineering/index.md)
   - [Configuration separation audit](engineering/configuration_audit.md)
   - [Runtime and hardware constraints](engineering/runtime_constraints.md)

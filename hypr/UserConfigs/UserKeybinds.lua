@@ -44,9 +44,11 @@ bind("SUPER + CTRL + Return", hl.dsp.exec_cmd(UserScripts .. "/command_deck.sh")
 bind("SUPER + I", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
 bind("SUPER + CTRL + T", hl.dsp.exec_cmd(UserScripts .. "/system_hud.sh"))
 bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("kitty --class system-monitor -e btop"))
-bind("SUPER + G", hl.dsp.exec_cmd(UserScripts .. "/pixel-widget.sh"))
 if settings.enabled("rgb") then
-    bind("SUPER + CTRL + G", hl.dsp.exec_cmd("voluta rgb menu"))
+    bind("SUPER + G", hl.dsp.exec_cmd("voluta rgb menu"))
+    bind("SUPER + CTRL + G", hl.dsp.exec_cmd(UserScripts .. "/pixel-widget.sh"))
+else
+    bind("SUPER + G", hl.dsp.exec_cmd(UserScripts .. "/pixel-widget.sh"))
 end
 if settings.enabled("obs") then
     bind("SUPER + KP_Add", hl.dsp.exec_cmd("obs-cmd recording toggle"))
