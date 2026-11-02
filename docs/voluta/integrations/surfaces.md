@@ -4,9 +4,9 @@ Status: implemented. The visual direction emphasizes geometry: stepped surrounds
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 Rofi uses the `big-angel-box` silhouette plate painted with the Wallust
 background (near-black), with no halo. The launcher window is fullscreen.
-A thin background veil covers the output so Hyprland can blur it, with a
-brighter foreground lift in the center that fades out before the edges. The
-angel plate fills a centered 1152×1024 slot. The
+A thin background veil covers the output so Hyprland can blur it. The light
+wash is a smaller soft rectangle centered in the angel plate, so the lift
+stays subtle and follows the selector without filling the whole frame. The
 launcher layer popin-animates on map and unmap.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.

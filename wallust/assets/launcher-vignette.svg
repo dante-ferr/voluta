@@ -1,13 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
   <defs>
-    <radialGradient id="voluta-vignette" cx="50%" cy="50%" r="62%">
-      <stop offset="0%" stop-color="{{foreground}}" stop-opacity="0.32"/>
-      <stop offset="38%" stop-color="{{foreground}}" stop-opacity="0.12"/>
-      <stop offset="100%" stop-color="{{foreground}}" stop-opacity="0"/>
-    </radialGradient>
+    <!-- Soft lift centered on the angel plate: large core with a wide
+         feather so the light spreads across most of the frame. -->
+    <filter id="voluta-vignette" x="-45%" y="-45%" width="190%" height="190%"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="96"/>
+    </filter>
   </defs>
-  <!-- Thin veil keeps the layer translucent for blur. The lift is bright
-       in the middle and gone before the edges. -->
-  <rect width="2560" height="1440" fill="{{background}}" fill-opacity="0.08"/>
-  <rect width="2560" height="1440" fill="url(#voluta-vignette)"/>
+  <rect width="2560" height="1440" fill="{{background}}" fill-opacity="0.06"/>
+  <rect x="768" y="328" width="1024" height="784"
+        fill="{{foreground}}" fill-opacity="0.26"
+        filter="url(#voluta-vignette)"/>
 </svg>
