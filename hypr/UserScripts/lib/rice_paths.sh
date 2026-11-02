@@ -3,7 +3,7 @@
 #
 # ~/.config/hypr is a symlink into the rice after rice-switch. Following it
 # finds fastfetch/waybar next to hypr even when the clone is not at
-# ~/imperivm-dotfiles and even when those other configs were never linked.
+# ~/voluta and even when those other configs were never linked.
 
 imperium_rice_root() {
     local here hypr

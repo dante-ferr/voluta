@@ -2,9 +2,9 @@
 
 Status: implemented. The visual direction emphasizes geometry: stepped double
 surrounds, chamfered cards, recessed input panels, fine rules, and asymmetrical
-ornament. The existing small corner scrolls appear as restrained accents, rather
-than repeating around every control. Labels stay plain; tab-group names do not
-receive symbols.
+ornament. Rofi uses the medium corner scrolls in the crown and foot; Gallery uses
+the large corner scrolls on the artwork frame. Labels stay plain; tab-group names
+do not receive symbols.
 
 ## Desktop surfaces
 

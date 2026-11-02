@@ -14,8 +14,11 @@ from theme import preferred_background, read_palette, write_changed
 
 
 ASSETS = ('panel-frame.svg', 'tile-frame.svg', 'tile-selected.svg',
-          'small-corner-tl.svg', 'small-corner-br.svg')
+          'small-corner-tl.svg', 'small-corner-br.svg',
+          'medium-corner-tl.svg', 'medium-corner-br.svg',
+          'big-corner-tl.svg', 'big-corner-br.svg')
 GALLERY_FILES = ('manifest.json', 'index.html', 'style.css', 'app.js', 'logic.mjs', 'artwork.mjs', 'motion.mjs')
+GALLERY_ORNAMENTS = ('big-corner-tl.svg', 'big-corner-br.svg')
 
 
 def hex_color(color):
@@ -117,7 +120,7 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
     generated.mkdir(parents=True, exist_ok=True)
     for name in GALLERY_FILES:
         write_changed(gallery / name, (root / 'brave/gallery' / name).read_text())
-    for name in ('small-corner-tl.svg', 'small-corner-br.svg'):
+    for name in GALLERY_ORNAMENTS:
         write_changed(generated / name, rendered[name])
     try:
         wallpaper, wallpaper_version = copy_wallpaper(current_wallpaper(config), generated)

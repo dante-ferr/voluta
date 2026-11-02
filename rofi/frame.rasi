@@ -18,17 +18,17 @@ voluta-crown {
     orientation: horizontal;
     children: [ "icon-voluta-scroll", "textbox-voluta-title", "voluta-balance" ];
     background-color: transparent;
-    height: 48px;
+    height: 72px;
     expand: false;
 }
 icon-voluta-scroll {
-    width: 48px;
-    size: 48px;
+    width: 72px;
+    size: 72px;
     background-color: transparent;
-    filename: "~/.config/wallust/assets/generated/small-corner-tl.svg";
+    filename: "~/.config/wallust/assets/generated/medium-corner-tl.svg";
     expand: false;
 }
-voluta-balance { width: 48px; expand: false; background-color: transparent; }
+voluta-balance { width: 72px; expand: false; background-color: transparent; }
 textbox-voluta-title {
     str: "VOLUTA";
     font: "JetBrains Mono 10";
@@ -70,7 +70,7 @@ textbox { text-color: @muted; background-color: transparent; }
 voluta-foot {
     orientation: horizontal;
     children: [ "textbox-voluta-hint", "icon-voluta-scroll-end" ];
-    height: 36px;
+    height: 56px;
     expand: false;
     background-color: transparent;
 }
@@ -83,9 +83,9 @@ textbox-voluta-hint {
     expand: true;
 }
 icon-voluta-scroll-end {
-    width: 36px;
-    size: 36px;
+    width: 56px;
+    size: 56px;
     expand: false;
     background-color: transparent;
-    filename: "~/.config/wallust/assets/generated/small-corner-br.svg";
+    filename: "~/.config/wallust/assets/generated/medium-corner-br.svg";
 }
