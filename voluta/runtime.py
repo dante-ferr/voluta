@@ -38,6 +38,7 @@ def watch():
             return
         previous = None
         last_try = 0
+        last_keepalive = 0
         while (Path(runtime) / 'hypr' / instance / '.socket2.sock').exists():
             try:
                 settings, _ = resolve(config_home(), hostname())
@@ -54,6 +55,10 @@ def watch():
                         if script.exists():
                             subprocess.run([sys.executable, str(script)], timeout=30, check=False)
                     previous, last_try = signature, time.monotonic()
+                if time.monotonic() - last_keepalive >= 1.6:
+                    last_keepalive = time.monotonic()
+                    from rgb import keepalive
+                    keepalive(config_home(), hostname())
             except (OSError, ValueError, subprocess.SubprocessError) as error:
                 print(f'Voluta palette: {error}', file=sys.stderr, flush=True)
             time.sleep(1)

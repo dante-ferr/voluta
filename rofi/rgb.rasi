@@ -1,0 +1,26 @@
+/* RGB gallery: inherit every paint from the active Wallust Rofi theme. */
+@import "config.rasi"
+
+window {
+    width: 85%;
+}
+
+mainbox {
+    children: [ "inputbar", "message", "listview" ];
+}
+
+listview {
+    lines: 10;
+    scrollbar: true;
+}
+
+message {
+    background-color: transparent;
+    text-color: @muted;
+    padding: 0px 0px 8px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @muted;
+}

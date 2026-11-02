@@ -164,6 +164,9 @@ def main(argv=None):
     commands.add_parser("doctor", help="check configuration, dependencies and device access")
     commands.add_parser("apply", help="activate enabled integrations and refresh managed config")
     rgb = commands.add_parser("rgb", help="apply Wallust lighting to selected devices")
+    rgb.add_argument("action", nargs="?", choices=("apply", "list", "menu", "select"), default="apply")
+    rgb.add_argument("preset", nargs="?", help="preset ID for select; see rgb list")
+    rgb.add_argument("--target", choices=("all", "keyboard", "mouse"))
     rgb.add_argument("--dry-run", action="store_true")
     rgb.add_argument("--force", action="store_true")
     check = commands.add_parser("enabled", help="exit 0 if a feature is enabled, 1 if disabled")
@@ -184,6 +187,9 @@ def main(argv=None):
     args = parser.parse_args(argv)
     directory = args.config_dir.expanduser().absolute()
     host = hostname(args.host)
+    if args.command == "rgb":
+        from rgb_menu import dispatch
+        return dispatch(args, directory, host)
     if args.command in ("install", "update", "uninstall", "doctor", "apply", "rgb", "system-setup", "rice-switch"):
         from deploy import dispatch
         return dispatch(args, directory, host)
@@ -268,7 +274,7 @@ def main(argv=None):
             except Exception as error:
                 print(f"voluta: selection saved; activation needs attention: {error}", file=sys.stderr)
                 return 2
-        if args.command == "feature" and args.name in ("obs", "rice_switch") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        if args.command == "feature" and args.name in ("obs", "rice_switch", "rgb") and os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
             import subprocess
             subprocess.run(["hyprctl", "reload"], check=False, timeout=10, stdout=subprocess.DEVNULL)
         if args.command == "feature":

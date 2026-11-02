@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 import re
-import secrets
 import shutil
 import subprocess
 import time
@@ -126,6 +125,21 @@ def mars_reports(color):
 
 
 def mars_apply(color, custom_reports=None):
+    from rgb_presets import transaction
+    reports = custom_reports if custom_reports is not None else transaction(mars_reports(color), ROOT)
+    device = mars_open()
+    try:
+        for index, report in enumerate(reports):
+            if index in (0, 2, 3, 19):
+                mars_transact(device, report)
+            else:
+                mars_send(device, report)
+                time.sleep(.01)
+    finally:
+        device.close()
+
+
+def mars_open():
     try:
         import hid
     except ImportError as error:
@@ -135,40 +149,50 @@ def mars_apply(color, custom_reports=None):
         raise ValueError('HyperX Mars interface 0 / usage page 1 not available')
     device = hid.device()
     device.open_path(devices[0]['path'])
-    try:
-        def send(payload):
-            result = device.send_feature_report(b'\x00' + bytes(payload))
-            if result < 0:
-                raise ValueError('HyperX Mars feature write failed')
-        def transact(command, payload=None):
-            frame = bytearray(64) if payload is None else bytearray(payload)
-            frame[0:2] = bytes((4, command))
-            for _ in range(3):
-                send(frame)
-                time.sleep(.04)
-                response = bytes(device.get_feature_report(0, 65))
-                if bytes((4, command, 0, 1)) in response:
-                    return
-            raise ValueError(f'HyperX Mars did not acknowledge command {command:02x}')
-        if custom_reports is not None:
-            for index, report in enumerate(custom_reports):
-                if index in (0, 2, 3, 19):
-                    transact(report[1], report)
-                else:
-                    send(report)
-                    time.sleep(.01)
-        else:
-            transact(0xab)
-            send(secrets.token_bytes(64))
-            transact(2)
-            reports = mars_reports(color)
-            transact(0x0a, reports[0])
-            for report in reports[1:]:
-                send(report)
-                time.sleep(.01)
-            transact(2)
-    finally:
-        device.close()
+    return device
+
+
+def mars_send(device, payload):
+    result = device.send_feature_report(b'\x00' + bytes(payload))
+    if result != 65:
+        raise ValueError('HyperX Mars feature write failed or was incomplete')
+
+
+def mars_transact(device, frame):
+    command = frame[1]
+    for _ in range(3):
+        mars_send(device, frame)
+        time.sleep(.04)
+        response = bytes(device.get_feature_report(0, 65))
+        if bytes((4, command, 0, 1)) in response:
+            return
+    raise ValueError(f'HyperX Mars did not acknowledge command {command:02x}')
+
+
+def keepalive(directory, host):
+    """Read-only E0 query advances native multicolor breathing; never writes a profile."""
+    from rgb_presets import get
+    settings, _ = resolve(directory, host)
+    if not settings['features']['rgb']:
+        return
+    selected = [d for d in settings['rgb'].get('devices', [])
+                if d.get('backend') == 'hyperx-mars' and d.get('usb_id', '').lower() == '0951:16c6'
+                and d.get('experimental') is True and d.get('preset')
+                and get(d['preset']).engine == 1 and get(d['preset']).loop]
+    if not selected or not present('0951:16c6'):
+        return
+    state = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'voluta'
+    state.mkdir(parents=True, exist_ok=True)
+    with (state / 'rgb.lock').open('w') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return
+        device = mars_open()
+        try:
+            mars_transact(device, bytes((4, 0xe0)) + bytes(62))
+        finally:
+            device.close()
 
 
 def apply(directory, host, dry_run=False, force=False):
@@ -197,15 +221,25 @@ def apply(directory, host, dry_run=False, force=False):
             layout = device.get('layout', 'static')
             if layout not in ('static', 'voluta') or (layout == 'voluta' and backend != 'hyperx-mars'):
                 raise ValueError('RGB layout must be static, or voluta for HyperX Mars')
-            reports = mars_custom_reports(palette_colors()) if layout == 'voluta' else None
+            preset = None
+            mouse = None
+            if device.get('preset'):
+                from rgb_presets import get, reports as preset_reports, mouse_settings
+                preset = get(device['preset'])
+                palette = palette_colors()
+                reports = preset_reports(preset, palette, ROOT) if backend == 'hyperx-mars' else None
+                mouse = mouse_settings(preset, palette) if backend == 'openrgb' else None
+            else:
+                reports = mars_custom_reports(palette_colors()) if layout == 'voluta' else None
             # Hash the actual transaction: every per-key color participates in invalidation.
-            fingerprint = hashlib.sha256(json.dumps([device, attached, color,
+            fingerprint = hashlib.sha256(json.dumps([device, attached, color if reports is None and mouse is None else None, mouse,
                 [p.hex() for p in reports] if reports else None], sort_keys=True).encode()).hexdigest()
             if cache.get(identity) == fingerprint and not force:
                 results.append({'device': identity, 'status': 'unchanged'})
                 continue
             if dry_run:
-                results.append({'device': identity, 'status': 'would-apply', 'color': color, 'backend': backend})
+                results.append({'device': identity, 'status': 'would-apply', 'color': mouse['color'] if mouse else color,
+                                'backend': backend, 'preset': preset.name if preset else layout})
                 continue
             try:
                 if backend == 'openrgb':
@@ -214,7 +248,11 @@ def apply(directory, host, dry_run=False, force=False):
                         raise ValueError('OpenRGB requires an exact device name')
                     if not shutil.which('openrgb'):
                         raise ValueError('OpenRGB is not installed')
-                    subprocess.run(['openrgb', '--device', name, '--mode', 'Static', '--color', color], check=True, timeout=20, stdout=subprocess.DEVNULL)
+                    command = ['openrgb', '--device', name, '--mode', mouse['mode'] if mouse else 'Static']
+                    selected_color = mouse['color'] if mouse else color
+                    if selected_color is not None:
+                        command += ['--color', selected_color]
+                    subprocess.run(command, check=True, timeout=20, stdout=subprocess.DEVNULL)
                 else:
                     mars_apply(color, reports)
                 cache[identity] = fingerprint
