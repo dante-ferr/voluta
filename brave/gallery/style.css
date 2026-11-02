@@ -44,6 +44,9 @@ h2 { margin: 0; font-family: "Noto Serif Display", "Noto Serif", Georgia, serif;
 .ornament-tl { left: -5px; top: -5px; }
 .ornament-br { right: -5px; bottom: 26px; }
 figcaption { position: absolute; bottom: 22px; left: 30px; right: 30px; display: flex; justify-content: space-between; color: var(--muted); gap: 20px; font-size: 8px; letter-spacing: .12em; }
+figcaption { align-items: center; }
+#artwork-caption { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#edit-artwork { flex-shrink: 0; padding: 2px 0; font-size: 10px; letter-spacing: .04em; }
 .bottom-rule { grid-column: 1 / -1; height: 1px; margin-top: 10px; background: linear-gradient(to right,var(--accent) 0 12%,var(--line) 12% 100%); }
 dialog { background: var(--bg); color: var(--fg); width: min(500px, calc(100vw - 32px)); border: 1px solid var(--muted); padding: 30px; box-shadow: 0 0 0 6px var(--bg), 0 0 0 7px var(--line); }
 dialog::backdrop { background: color-mix(in srgb, var(--bg) 84%, transparent); }
@@ -54,6 +57,18 @@ dialog::backdrop { background: color-mix(in srgb, var(--bg) 84%, transparent); }
 .add-fields input { background: var(--raised); border: 1px solid var(--line); border-radius: 0; padding: 10px; width: 100%; }
 .add-button { background: var(--raised); color: var(--fg); border: 1px solid var(--accent); padding: 10px 16px; }
 #shortcut-error { color: var(--fg); font-size: 12px; min-height: 16px; }
+.artwork-options { margin: 22px 0; padding: 0; border: 0; }
+.artwork-options legend { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+.artwork-options label { display: flex; align-items: flex-start; gap: 12px; padding: 15px 12px; border: 1px solid var(--line); margin-bottom: 9px; cursor: pointer; font-size: 13px; }
+.artwork-options label:has(input:checked) { border-color: var(--accent); background: var(--raised); }
+.artwork-options input { accent-color: var(--accent); margin: 2px 0 0; }
+.artwork-options small { display: block; color: var(--muted); font-size: 11px; margin-top: 6px; }
+.image-file-label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 9px; }
+#artwork-file { width: 100%; font-size: 11px; }
+#artwork-file::file-selector-button { padding: 10px; margin-right: 10px; background: var(--raised); color: var(--fg); border: 1px solid var(--line); cursor: pointer; }
+.image-note { font-size: 11px; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+#artwork-status { font-size: 12px; min-height: 16px; }
+dialog { max-height: calc(100vh - 40px); overflow-y: auto; }
 .sr-only { position: absolute; top: 0; left: 0; margin: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (min-width: 1600px) { .gallery { padding: 40px 68px 26px; gap: 40px 90px; } }
 @media (max-width: 900px) { .gallery { padding: 20px; gap: 24px; grid-template-columns: minmax(250px,.9fr) minmax(280px,1.1fr); } .study { gap: 28px; } .artwork { padding: 18px 18px 54px; } }

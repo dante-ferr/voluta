@@ -5,5 +5,5 @@
   "description": "An architectural New Tab gallery using your local wallpaper and Voluta palette.",
   "permissions": ["storage", "search"],
   "chrome_url_overrides": {"newtab": "index.html"},
-  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data:;"}
+  "content_security_policy": {"extension_pages": "script-src 'self'; object-src 'none'; connect-src 'self'; img-src 'self' data: blob:;"}
 }

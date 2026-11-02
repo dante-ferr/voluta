@@ -1,9 +1,14 @@
 import { DEFAULT_LINKS, address, shortcut, safeLinks, framePath } from './logic.mjs';
+import { readArtwork, writeArtwork, validateImage } from './artwork.mjs';
 
 const $ = id => document.getElementById(id);
 let links = DEFAULT_LINKS;
 let paletteVersion = '';
-let wallpaperVersion = '';
+let wallpaperSource = '';
+let artworkPreference = { mode: 'wallpaper' };
+let artworkReady = false;
+let customImageURL = '';
+const artworkChannel = new BroadcastChannel('voluta-gallery-artwork');
 const extension = globalThis.chrome?.storage?.local;
 
 async function loadLinks() {
@@ -64,6 +69,80 @@ function clock() {
   $('date').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
 }
 
+function renderArtwork() {
+  if (!artworkReady) return;
+  const custom = artworkPreference.mode === 'custom' && customImageURL;
+  const source = custom ? customImageURL : wallpaperSource;
+  const image = $('wallpaper');
+  image.hidden = !source;
+  if (source && image.getAttribute('src') !== source) image.src = source;
+  image.alt = custom ? 'Your selected artwork' : 'Your desktop wallpaper';
+  $('artwork-caption').textContent = custom ? 'YOUR SELECTED IMAGE' : 'THE CURRENT WALLPAPER';
+}
+
+async function loadArtwork() {
+  try {
+    const preference = await readArtwork();
+    const nextURL = preference.image ? URL.createObjectURL(preference.image) : '';
+    if (customImageURL) URL.revokeObjectURL(customImageURL);
+    customImageURL = nextURL;
+    artworkPreference = preference;
+  } catch {
+    $('page-status').textContent = 'Artwork preferences could not be restored. Showing the current wallpaper.';
+  }
+  artworkReady = true;
+  renderArtwork();
+}
+
+function imageFields() {
+  $('custom-image-fields').hidden = !$('source-custom').checked;
+}
+
+$('edit-artwork').addEventListener('click', () => {
+  $('source-custom').checked = artworkPreference.mode === 'custom';
+  $('source-wallpaper').checked = !$('source-custom').checked;
+  $('artwork-file').value = '';
+  $('artwork-file-name').textContent = artworkPreference.name ? 'Saved image: ' + artworkPreference.name : 'No image selected yet.';
+  $('artwork-status').textContent = '';
+  imageFields();
+  $('artwork-dialog').showModal();
+});
+$('close-artwork').addEventListener('click', () => $('artwork-dialog').close());
+$('source-custom').addEventListener('change', imageFields);
+$('source-wallpaper').addEventListener('change', imageFields);
+$('artwork-file').addEventListener('change', () => { $('artwork-status').textContent = ''; });
+$('artwork-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = $('save-artwork');
+  button.disabled = true;
+  try {
+    const custom = $('source-custom').checked;
+    const file = custom ? $('artwork-file').files[0] : null;
+    if (file) {
+      validateImage(file);
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+      } catch { throw new Error('This image could not be opened. Choose another file.'); }
+      finally { URL.revokeObjectURL(url); }
+    }
+    await writeArtwork({
+      mode: custom ? 'custom' : 'wallpaper',
+      image: file || artworkPreference.image,
+      name: file ? file.name : artworkPreference.name
+    });
+    await loadArtwork();
+    artworkChannel.postMessage('changed');
+    $('artwork-dialog').close();
+    $('page-status').textContent = 'Artwork saved.';
+  } catch (error) {
+    $('artwork-status').textContent = error.name === 'QuotaExceededError' ? 'This browser has no room for the image. Choose a smaller file.' : error.message;
+  } finally { button.disabled = false; }
+});
+artworkChannel.addEventListener('message', () => loadArtwork());
+
 async function refreshPalette() {
   if (document.hidden) return;
   try {
@@ -78,16 +157,9 @@ async function refreshPalette() {
     for (const [key, value] of Object.entries(packet.colors)) {
       if (['bg', 'fg', 'accent', 'muted', 'line', 'raised'].includes(key)) document.documentElement.style.setProperty('--' + key, value);
     }
-    if (packet.wallpaper && /^wallpaper\.(jpg|jpeg|png|webp|avif|gif)$/.test(packet.wallpaper)) {
-      $('wallpaper').hidden = false;
-      if (packet.wallpaperVersion !== wallpaperVersion) {
-        const image = $('wallpaper');
-        image.src = 'generated/' + packet.wallpaper + '?v=' + encodeURIComponent(packet.wallpaperVersion);
-        wallpaperVersion = packet.wallpaperVersion;
-      }
-    } else {
-      $('wallpaper').hidden = true;
-    }
+    wallpaperSource = packet.wallpaper && /^wallpaper\.(jpg|jpeg|png|webp|avif|gif)$/.test(packet.wallpaper)
+      ? 'generated/' + packet.wallpaper + '?v=' + encodeURIComponent(packet.wallpaperVersion) : '';
+    renderArtwork();
     for (const ornament of document.querySelectorAll('.ornament')) {
       const path = ornament.getAttribute('src').split('?')[0];
       ornament.src = path + '?v=' + encodeURIComponent(packet.version);
@@ -141,5 +213,6 @@ if (extension && chrome.storage.onChanged) chrome.storage.onChanged.addListener(
 visibility();
 clock();
 loadLinks();
+loadArtwork();
 setInterval(clock, 30000);
 setInterval(refreshPalette, 4000);

@@ -52,6 +52,7 @@ class SurfaceTests(unittest.TestCase):
     def test_gallery_refresh_preserves_user_data_and_uses_only_local_artwork(self):
         self.publish()
         generated = self.gallery / 'generated'
+        self.assertTrue((self.gallery / 'artwork.mjs').is_file())
         packet_path = generated / 'palette.json'
         packet = json.loads(packet_path.read_text())
         self.assertEqual(packet['colors']['bg'], '#172029')

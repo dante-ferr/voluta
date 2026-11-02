@@ -64,6 +64,15 @@ code updates, use **Reload** in the extensions page and reopen New Tab. Palette
 and wallpaper changes refresh automatically in open, visible Gallery tabs within
 four seconds, and immediately when a tab becomes visible.
 
+Choose **Artwork** under the image to select **Current wallpaper** or **Specific
+image**, then **Use artwork**. A specific image is copied into this browser
+profile's IndexedDB, so moving/deleting the original file or updating the
+dotfiles does not remove it. PNG, JPEG, WebP, AVIF and GIF files up to 64 MiB are
+supported. No file-access permission or upload is needed. Switching to the
+wallpaper keeps the last image available for reuse. Open Gallery tabs share the
+selection; each browser profile has its own choice. The palette continues to
+follow Wallust even when the artwork is fixed.
+
 Gallery requests only `storage` and `search`. It stores shortcut names and URLs
 in browser-local extension storage, uses the configured search engine, and makes
 no external requests before a user searches or follows a shortcut. Its local
@@ -77,12 +86,19 @@ Disable/remove the extension in Brave as well if you no longer want its New Tab
 page. Re-enabling the feature republishes the assets; shortcut storage survives
 ordinary dotfiles updates. Uninstalling the extension itself can erase that
 browser-managed storage.
+The same applies to the saved image and source selection: they are browser-local
+preferences, not companion files or generated extension assets. Clearing the
+extension's site data or removing its profile can erase them.
 
 ## Verification
 
 `tests/test_surfaces.py` checks core publication with browser disabled, wallpaper
 refresh, background policy, missing-artwork tolerance, and preference preservation.
 `tests/gallery.test.mjs` checks address validation and bounded shortcut storage.
+It also checks custom-image formats and size limits. The local artwork workflow
+was exercised with a fixture PNG through the real file-input/save handlers:
+missing-image validation, decoding, reload persistence, fixed artwork during
+wallpaper refresh, and switching back to the retained image all passed.
 Run them alongside the existing theme and installer acceptance suites.
 
 The local browser preview verifies layout, shortcut add/remove persistence, and

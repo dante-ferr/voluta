@@ -28,7 +28,7 @@
       <svg class="architectural-frame" aria-hidden="true"><path class="outer-edge" pathLength="1000"></path><path class="inner-edge" pathLength="1000"></path><path class="travelling-edge" pathLength="1000"></path></svg>
       <img class="ornament ornament-tl" src="generated/small-corner-tl.svg" alt="">
       <img class="ornament ornament-br" src="generated/small-corner-br.svg" alt="">
-      <figcaption><span>THE CURRENT WALLPAPER</span><span>Voluta / Gallery</span></figcaption>
+      <figcaption><span id="artwork-caption">THE CURRENT WALLPAPER</span><button id="edit-artwork" class="quiet-button" type="button">Artwork</button></figcaption>
     </figure>
     <div class="bottom-rule" aria-hidden="true"></div>
   </main>
@@ -39,6 +39,24 @@
       <div class="add-fields"><label>Name<input id="shortcut-name" maxlength="40" required></label><label>Address<input id="shortcut-url" type="text" placeholder="https://example.com" required></label></div>
       <p id="shortcut-error" role="status"></p>
       <button type="submit" class="add-button">Add shortcut</button>
+    </form>
+  </dialog>
+  <dialog id="artwork-dialog" aria-labelledby="artwork-title">
+    <form id="artwork-form">
+      <div class="section-heading"><h2 id="artwork-title">Artwork</h2><button id="close-artwork" type="button" class="quiet-button">Close</button></div>
+      <fieldset class="artwork-options">
+        <legend>Image source</legend>
+        <label><input type="radio" name="artwork-source" id="source-wallpaper" value="wallpaper" checked><span>Current wallpaper<small>Follow your desktop as it changes.</small></span></label>
+        <label><input type="radio" name="artwork-source" id="source-custom" value="custom"><span>Specific image<small>Keep a separate image for New Tab.</small></span></label>
+      </fieldset>
+      <div id="custom-image-fields" hidden>
+        <label class="image-file-label" for="artwork-file">Image file</label>
+        <input id="artwork-file" type="file" accept="image/png,image/jpeg,image/webp,image/avif,image/gif">
+        <p id="artwork-file-name" class="image-note"></p>
+        <p class="image-note">Saved only in this browser. Your desktop wallpaper stays unchanged.</p>
+      </div>
+      <p id="artwork-status" role="status"></p>
+      <button id="save-artwork" type="submit" class="add-button">Use artwork</button>
     </form>
   </dialog>
   <p id="page-status" class="sr-only" role="status"></p>

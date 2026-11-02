@@ -26,3 +26,13 @@ test('frames adapt to the panel bounds with a separate inset surround', () => {
   assert.match(framePath(500, 400, 8), /^M34 8H466/);
   assert.match(framePath(300, 700), /V673/);
 });
+
+test('custom artwork accepts supported local images with a bounded size', async () => {
+  const { validateImage, IMAGE_LIMIT } = await import('../brave/gallery/artwork.mjs');
+  for (const type of ['image/png', 'image/jpeg', 'image/webp', 'image/avif', 'image/gif']) {
+    assert.doesNotThrow(() => validateImage({type, size: 128}));
+  }
+  for (const file of [null, {type:'text/html',size:100}, {type:'image/svg+xml',size:100}, {type:'image/png',size:0}, {type:'image/png',size:IMAGE_LIMIT+1}]) {
+    assert.throws(() => validateImage(file));
+  }
+});

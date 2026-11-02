@@ -15,7 +15,7 @@ from theme import preferred_background, read_palette, write_changed
 
 ASSETS = ('panel-frame.svg', 'tile-frame.svg', 'tile-selected.svg',
           'small-corner-tl.svg', 'small-corner-br.svg')
-GALLERY_FILES = ('manifest.json', 'index.html', 'style.css', 'app.js', 'logic.mjs')
+GALLERY_FILES = ('manifest.json', 'index.html', 'style.css', 'app.js', 'logic.mjs', 'artwork.mjs')
 
 
 def hex_color(color):
