@@ -543,6 +543,8 @@ def run_daemon(restore=False):
                 "--who=Hyprland session manager", "--why=Save window workspaces",
                 sys.executable, str(Path(__file__).resolve()), "watch-shutdown",
             ], start_new_session=True)
+        # Feature disable must unwind the watcher/inhibitor cleanup below.
+        previous_term = signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
         try:
             with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
                 sock.connect(sock_path)
@@ -569,6 +571,7 @@ def run_daemon(restore=False):
                         save_session()
                         last_save, changed_at = now, None
         finally:
+            signal.signal(signal.SIGTERM, previous_term)
             if watcher is not None:
                 if watcher.poll() is None:
                     os.killpg(watcher.pid, signal.SIGTERM)

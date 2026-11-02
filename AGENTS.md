@@ -12,11 +12,11 @@ The checkout still contains the personal setup for `frank` and `frank-notebook`.
   persistent settings under `${XDG_CONFIG_HOME:-$HOME/.config}/voluta/`. Core
   updates must preserve explicit user overrides.
 - Read [decisions and scope](docs/voluta/architecture/decisions.md) before migration
-  work. This task remains documentation/planning only: migration, renaming,
-  remote-repo creation and RGB installation are deferred pending authorization.
-  The exact core/optional feature boundary remains under review.
+  work. Implementation is now authorized; VM testing is deferred while QEMU
+  installs. Track implemented behavior and remaining work in the docs. Remote
+  repository creation/publication still requires a concrete destination.
 - Inspect `git status` and preserve unrelated changes. Do not invoke
-  `auto_host_link.sh` (it overwrites tracked settings) or run the rice switcher
+  legacy host-copy behavior (the script is now retired) or run the rice switcher
   as a documentation check. See the [audit](docs/voluta/engineering/configuration_audit.md).
 
 ## Runtime guardrails

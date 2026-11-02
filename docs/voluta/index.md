@@ -1,8 +1,9 @@
 # Voluta
 
 Voluta is the selected name for this cyber baroque Hyprland desktop. The checkout
-still uses Imperium/Imperivm identifiers; the rename and settings migration have
-not been implemented.
+still uses Imperium/Imperivm identifiers. The first settings/companion foundation
+is implemented; full host extraction, installer migration and branding changes
+remain in progress.
 
 This documentation follows ai-delver's structure: a project documentation root,
 `index.md` overview pages, a `SUMMARY.md` navigation tree, and topic directories.
@@ -15,6 +16,7 @@ specifications belong here rather than in the root agent instructions.
 
 | Task | Read |
 | --- | --- |
+| Use the settings CLI and companion | [Settings ownership and updates](architecture/settings.md) |
 | Understand approved direction and remaining decisions | [Decisions and scope](architecture/decisions.md) |
 | Design loaders, companion settings, or update behavior | [Settings ownership and updates](architecture/settings.md) |
 | Classify or introduce an optional module | [Core and optional features](architecture/features.md) |

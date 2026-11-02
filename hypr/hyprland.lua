@@ -3,7 +3,7 @@
 
 
 
-local hypr_dir = (os.getenv("HOME") or "/home/dante") .. "/.config/hypr"
+local hypr_dir = (os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")) .. "/hypr"
 package.path = hypr_dir .. "/?.lua;" .. hypr_dir .. "/?/init.lua;" .. package.path
 
 local function load_module(mod_name)
@@ -66,4 +66,13 @@ if hostname ~= "" then
     -- the notebook kept the desktop shadow path.
     load_host_file(hypr_dir .. "/hosts/" .. hostname .. ".lua")
     load_host_file(hypr_dir .. "/hosts/" .. hostname .. "-power.lua")
+end
+
+-- Personal JSON overrides are last, after the existing host/power profiles.
+-- Clear on every reload so settings edits never reuse the previous generation.
+package.loaded["configs.Voluta"] = nil
+local settings_ok, settings = pcall(require, "configs.Voluta")
+if settings_ok and settings.initialized and next(settings.hyprland) then
+    local applied, err = pcall(hl.config, settings.hyprland)
+    if not applied then print("[Voluta] Invalid Hyprland override: " .. tostring(err)) end
 end

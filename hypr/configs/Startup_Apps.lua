@@ -1,9 +1,10 @@
 -- Default Startup Apps Configuration for Hyprland Lua
 ---@module 'hl'
 
-local home = os.getenv("HOME") or "/home/dante"
-local UserScripts = home .. "/.config/hypr/UserScripts"
-local Scripts = home .. "/.config/hypr/scripts"
+local home = os.getenv("HOME") or ""
+local config = os.getenv("XDG_CONFIG_HOME") or (home .. "/.config")
+local UserScripts = config .. "/hypr/UserScripts"
+local Scripts = config .. "/hypr/scripts"
 
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
@@ -35,6 +36,7 @@ hl.on("hyprland.start", function()
     -- Clipboard manager
     hl.exec_cmd("sh -c 'pgrep -x cliphist >/dev/null || (wl-paste --type text --watch cliphist store & wl-paste --type image --watch cliphist store &)'")
 
-    -- Restore first, then autosave under one per-compositor lock.
-    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}\"; python3 " .. Scripts .. "/session_manager.py start >>\"${XDG_STATE_HOME:-$HOME/.local/state}/hyprland-session.log\" 2>&1'")
+    -- Supervisor preserves legacy behavior until explicit Voluta initialization.
+    -- It notices enable/disable selections during this session.
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}\"; python3 " .. Scripts .. "/../../voluta/session.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/hyprland-session.log\" 2>&1'")
 end)

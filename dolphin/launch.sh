@@ -7,6 +7,13 @@ here=$(readlink -f "$0")
 here=${here%/*}
 lib="${HOME}/.local/lib/imperium/libdolphin-live.so"
 
+# Disabled customization launches the unmodified system application. Invalid
+# settings also leave a usable file manager instead of injecting an uncertain hook.
+if ! python3 "$here/../voluta/cli.py" enabled dolphin --legacy; then
+    [[ ${1:-} == --prepare ]] && exit 0
+    exec /usr/bin/dolphin "$@"
+fi
+
 python3 "$here/apply-config.py"
 if ! bash "$here/build.sh"; then
     notify-send "Dolphin customization failed" "See ~/.local/lib/imperium/dolphin-live-build.log" 2>/dev/null || true

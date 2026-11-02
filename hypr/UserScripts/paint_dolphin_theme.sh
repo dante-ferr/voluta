@@ -12,6 +12,8 @@ _rice_paths="$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
 source "$_rice_paths"
 
 root=$(imperium_rice_root) || exit 0
+# Respect the optional integration on every refresh, including existing windows.
+python3 "$root/voluta/cli.py" enabled dolphin --legacy || exit 0
 colors="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/wallust/colors-shell.sh"
 
 exec python3 - "$root" "$colors" "$HOME" <<'PY'

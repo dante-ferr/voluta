@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "features": {
+    "dolphin": true,
+    "session_restore": false
+  },
+  "hyprland": {}
+}

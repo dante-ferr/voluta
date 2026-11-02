@@ -4,14 +4,14 @@ The owner intends to publish this cyber baroque desktop configuration. It is
 currently a personal setup shared between a desktop and a notebook. The selected
 public name is **Voluta**. A public core plus private companion repository and
 separation of public defaults from personal configuration have been accepted;
-implementation and the exact core/optional feature boundary remain pending.
+implementation is authorized, with the remaining module boundary described in
+[Core and optional features](features.md).
 
-The current authorized scope is repository auditing, agent documentation, and
-collecting the owner's decisions. Do not implement the configuration migration,
-rename paths or identifiers, create a remote repository/fork, or build/install
-RGB integration as part of this planning task. Record answers below as they
-arrive; distinguish accepted decisions from proposals still awaiting a choice.
-This boundary applies to this planning task, not to unrelated authorized work.
+On 2026-11-02 the owner authorized implementation and requested committing this
+work while leaving all Brave-related changes uncommitted for another agent.
+VM testing is deferred while QEMU installation completes. Local isolated checks
+are available; do not claim VM or real-device coverage. Remote repository creation
+and publication need a concrete destination and are not part of the local foundation.
 
 Preserve pre-existing working-tree changes. Inspect `git status` before editing;
 do not stage, revert, or commit another task's changes incidentally.
@@ -28,9 +28,9 @@ do not stage, revert, or commit another task's changes incidentally.
 | Optional feature lifecycle | Features declined during installation can be enabled later without reinstalling; support independent disable/re-enable and preserve explicit selections across updates. | Accepted |
 | Dolphin default | Dolphin customization enabled by default, with the integration still disableable. | Accepted |
 | Session restoration default | Optional; disabled unless selected for a new public install. Preserve the owner’s existing choice during migration. | Accepted |
+| Implementation | Begin building; use isolated local checks until the VM is available. Keep the other agent’s Brave work uncommitted. | Accepted |
 | Project name | Voluta. Name availability has not been checked. | Accepted |
 
-Use `voluta` as the planned settings namespace. Naming approval does not authorize
-renaming existing `imperium`/`imperivm` paths or identifiers during this planning
-task. Companion architecture alone does not protect preferences: loaders,
+Use `voluta` as the settings namespace. Migrate existing `imperium`/`imperivm`
+paths and identifiers deliberately with compatibility for existing installations. Companion architecture alone does not protect preferences: loaders,
 generators, installers and migrations must all respect the accepted update policy.

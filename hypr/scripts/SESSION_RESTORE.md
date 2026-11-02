@@ -1,7 +1,13 @@
 # Remember the last Hyprland session
 
-`configs/Startup_Apps.lua` runs `session_manager.py start` once on graphical
-login. The manager restores the saved session before starting autosave. A lock
+`configs/Startup_Apps.lua` starts the Voluta session supervisor on graphical
+login. With session restoration enabled, it runs `session_manager.py start` to
+restore the saved session before starting autosave. New initialized Voluta
+settings default restoration off; existing uninitialized setups retain it.
+Use `bin/voluta init --preserve-session` to migrate that preference explicitly.
+After the first login with the supervisor, `bin/voluta feature enable
+session_restore` starts autosave during the current session without reopening
+windows; disabling it stops the worker and shutdown watcher. A lock
 prevents duplicate managers or a second restore in the same compositor instance.
 There are no permanent app-to-workspace assignments.
 

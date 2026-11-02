@@ -36,7 +36,8 @@ The future feature manager must:
 - Persist explicit enable/disable selections in personal settings, with host
   overrides where appropriate; updates must preserve an installation-time decline.
 - Offer the same feature discovery and selection after installation. CLI/UI
-  syntax remains undecided; no feature-management command exists yet.
+  syntax for the remaining modules is undecided. `bin/voluta feature` currently
+  manages Dolphin and session restoration; see [settings](settings.md).
 - On enable, check capabilities and dependencies, install only the selected
   module’s missing dependencies through the normal setup flow, and configure and
   start/reload its consumers. Separate requested state from activation success;
@@ -48,5 +49,5 @@ The future feature manager must:
   keybindings or startup actions.
 
 Validate skipped-at-install → enabled-later → disabled → re-enabled, plus core
-updates while a feature is explicitly disabled. These are future implementation
-requirements, not functionality already present.
+updates while a feature is explicitly disabled. The complete lifecycle remains an
+implementation target; the first two module controls are implemented with the limits documented in [settings](settings.md).

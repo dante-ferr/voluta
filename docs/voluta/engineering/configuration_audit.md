@@ -1,6 +1,10 @@
 # Configuration separation audit
 
-Audited during planning on 2026-11-02. Recheck source files before implementing.
+Historical audit from planning on 2026-11-02. Recheck source files before implementing.
+The first foundation has since retired the host-copy script and unified the
+alternate startup module. See [current implementation](../architecture/settings.md)
+for those changes and the new override/feature controls. Remaining rows describe
+the legacy source inventory, not a completed migration.
 
 These are verified source locations, not an exhaustive publication/privacy audit.
 Move personal values to the selected personal layer; retain reusable loaders and
