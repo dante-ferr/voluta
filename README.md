@@ -1,63 +1,58 @@
 # Voluta
 
 A cyber baroque Hyprland desktop with wallpaper-driven Wallust colors. Arch Linux
-is the supported platform. The checkout retains several Imperium identifiers for
-compatibility with existing themes and integrations.
+is the supported platform. Python and an AUR helper (`paru` or `yay`) are
+required to bootstrap.
 
 ## Install
 
-Run as your regular desktop user on Arch Linux. Python is required to bootstrap.
-Have an AUR helper (`paru` or `yay`) available for dependencies not in the official
-repositories, including the appropriate Wallust/Waypaper packages.
-
 ```sh
-./bin/voluta init
-./bin/voluta install --dry-run
-./bin/voluta install
+make init
+make dry-run
+make install
 ```
 
-The installer backs up existing files and links before deploying configuration to
-`~/.local/share/voluta/current`. Your preferences live separately under
-`~/.config/voluta/`. Start a Hyprland session through your existing session manager;
-Voluta does not change your login shell or enable a display-manager service.
+Start Hyprland through your existing session manager. Preferences live under
+`~/.config/voluta/`. Attach a companion before updating personal host settings:
+`voluta companion attach /path/to/companion`.
 
-Dolphin customization is on by default. Session restoration and browser, RGB,
-OBS, developer-shell, SDDM and alternate-rice integrations are optional. Existing
-users should attach their companion before updating personal host configurations.
-
-## Configure and update
+## Brave, Prismwing, and Gallery
 
 ```sh
-voluta feature list
-voluta feature enable session_restore
-voluta feature disable session_restore
-voluta feature enable rgb --scope host
-voluta config set input.kb_layout '"us,br"'
-voluta update
-voluta doctor
+make browser
 ```
 
-Features skipped during installation can be enabled later. Enabling installs
-missing dependencies; disabling preserves preferences and shared packages.
-`voluta update` deploys the current source checkout; pull source changes first.
-Use the checkout's `bin/voluta update` after pulling when updating the deployed CLI.
-`--skip-deps` deploys configuration only and skips privileged system integration,
-for provisioning/testing environments where dependencies are managed separately.
-`voluta uninstall` restores replaced config links and keeps personal settings and
-backups. Never edit generated palettes as a source of preferences.
+That enables the optional browser feature, installs its dependencies when
+needed, publishes the GTK theme inputs, Prismwing palette, and Gallery assets,
+and registers Prismwing's native host when
+`~/Code/projects/prismwing` (or `PRISMWING_PROJECT_DIR`) is present.
 
-## Companion repository
+Finish once per Brave profile:
 
-Your private repository contains `settings.json`, `hosts/<hostname>.json`,
-optional shared/host Lua hooks and personal shell/display/idle inputs. Attach an
-existing checkout with `voluta companion attach /path/to/companion`. Attachment
-refuses to overwrite an existing settings directory. No remote is created by the
-installer. An anonymous skeleton is available in `examples/companion/`.
+1. Open `brave://settings/appearance`. Choose **GTK**. Disable **Ultra dark
+   theme** / **Darker theme**. Keep ordinary Dark or Device.
+2. Open `brave://extensions`, enable **Developer mode**, then **Load unpacked**:
+   - Prismwing favicons: `~/Code/projects/prismwing/extension`
+   - Voluta Gallery New Tab: `~/.local/share/voluta/gallery`
+3. Confirm Gallery as the New Tab page if Brave asks. Reload website tabs once
+   after loading Prismwing.
+
+Brave does not allow an installer to load unpacked extensions or flip those
+appearance toggles for you. Details:
+[Brave with Prismwing and Gallery](docs/voluta/integrations/brave.md).
+
+## Update
+
+```sh
+make update
+make doctor
+```
 
 ## Documentation
 
-Start at [the documentation overview](docs/voluta/index.md) or
-[the complete summary](docs/voluta/SUMMARY.md). See
-[settings and installation](docs/voluta/architecture/settings.md),
-[RGB compatibility](docs/voluta/integrations/rgb.md), and
-[validation coverage](docs/voluta/engineering/installation_testing.md).
+```sh
+make docs-serve
+```
+
+Overview: [docs/voluta/index.md](docs/voluta/index.md).
+Settings, features, companion, and validation live under `docs/voluta/`.

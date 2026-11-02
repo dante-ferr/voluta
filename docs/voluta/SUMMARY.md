@@ -7,6 +7,7 @@
   - [Core and optional features](architecture/features.md)
 - [Integrations](integrations/index.md)
   - [Shared background](integrations/theme.md)
+  - [Brave with Prismwing and Gallery](integrations/brave.md)
   - [Architectural surfaces and Gallery](integrations/surfaces.md)
   - [Wallust RGB integration](integrations/rgb.md)
     - [Custom animation research](integrations/rgb_research.md)

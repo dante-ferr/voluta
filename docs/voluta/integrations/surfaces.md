@@ -1,15 +1,27 @@
 # Architectural surfaces and Gallery
 
-Status: implemented. The visual direction emphasizes geometry: stepped double
-surrounds, chamfered cards, recessed input panels, fine rules, and asymmetrical
-ornament. Rofi uses the medium corner scrolls in the crown and foot; Gallery uses
-the large corner scrolls on the artwork frame. Labels stay plain; tab-group names
-do not receive symbols.
+Status: implemented. The visual direction emphasizes geometry: stepped surrounds,
+chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
+Rofi uses the `big-angel-box` silhouette plate painted with the Wallust
+background (near-black), with no halo. The launcher window is fullscreen.
+Its vignette is a light radial lift over a thin background veil, so Hyprland
+blurs the whole output and the center is lighter than the edges. The angel
+plate is a centered 1152×1024 mainbox with no padding of its own. The
+launcher layer popin-animates on map and unmap.
+Gallery still uses the large corner scrolls on the artwork frame. Labels stay
+plain; tab-group names do not receive symbols.
 
 ## Desktop surfaces
 
-`rofi/frame.rasi` supplies the shared surround, crown, input relief, tile outlines,
-and footer. The main launcher, dashboard, picker, and RGB selector import it;
+`rofi/frame.rasi` supplies the shared angel surround, input relief, and tile
+outlines. The shared plate is 1152×1024, with padding that matches the SVG
+hollow so ornaments sit outside the content. The publisher scales
+`big-angel-box.svg` to that canvas, and publishes `launcher-vignette.svg` for
+the fullscreen plate. `rofi/launch-dashboard.sh` centers the angel on the
+focused monitor. Dashboard keeps that image on an unpadded `mainbox` and
+insets the menu with child margins, because padding on the image widget
+wraps the right side of the SVG onto the left.
+The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so
 update the generated canvas sizes along with any window or tile geometry change.
@@ -31,7 +43,9 @@ Voluta Gallery is an unpacked Manifest V3 extension, shipped under `brave/galler
 It provides a large framed wallpaper, clock, search panel, and up to twelve named
 shortcuts. It does not change the native tab strip or tab-group geometry: those
 controls are drawn by Brave. Choose neutral native group colors separately.
-Prismwing remains responsible for website favicons.
+Prismwing remains responsible for website favicons. For enablement, GTK
+appearance, Prismwing, and the **Load unpacked** steps, follow
+[Brave with Prismwing and Gallery](brave.md).
 
 Gallery's background mixes the shared browser background 6% toward the palette
 foreground, giving the page a lighter surface while the native sidebar stays
@@ -44,25 +58,13 @@ tabs. All of these effects, including hover movement, are disabled when the
 browser reports `prefers-reduced-motion: reduce`; static framing remains intact.
 
 With the browser feature enabled, palette publication prepares the extension at
-`${XDG_DATA_HOME:-$HOME/.local/share}/voluta/gallery`. To prepare it immediately:
-
-```bash
-voluta feature enable browser
-bash ~/.config/hypr/UserScripts/combined_wallust.sh
-```
-
-In `brave://extensions`, enable Developer mode, choose **Load unpacked**, and
-select that `gallery` directory. Brave may ask you to confirm the New Tab change.
-Only one extension can own New Tab; choose Gallery or your previous New Tab
-provider. Disable Gallery to return control to Brave/the other provider.
-
-This loading step is deliberately manual. The publisher does not edit browser
-profile databases, silently install extensions, or change existing groups.
-Keep the published directory at the same path across updates: unpacked extension
-identity and browser-stored shortcuts depend on that location. After extension
-code updates, use **Reload** in the extensions page and reopen New Tab. Palette
-and wallpaper changes refresh automatically in open, visible Gallery tabs within
-four seconds, and immediately when a tab becomes visible.
+`${XDG_DATA_HOME:-$HOME/.local/share}/voluta/gallery`. Keep that published path
+stable across updates: unpacked extension identity and browser-stored shortcuts
+depend on it. After extension code updates, use **Reload** in the extensions
+page and reopen New Tab. Palette and wallpaper changes refresh automatically in
+open, visible Gallery tabs within four seconds, and immediately when a tab
+becomes visible. The publisher does not edit browser profile databases, silently
+install extensions, or change existing groups.
 
 Choose **Artwork** under the image to select **Current wallpaper** or **Specific
 image**, then **Use artwork**. A specific image is copied into this browser

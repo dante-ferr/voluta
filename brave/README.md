@@ -1,5 +1,9 @@
 # Brave colors
 
+User setup for the optional browser feature, Prismwing, and Gallery lives in
+[Brave with Prismwing and Gallery](../docs/voluta/integrations/brave.md). This
+note covers theme publication behavior next to the code.
+
 In `brave://settings/appearance`, choose **GTK** for the browser theme once per
 profile on each host. Installed browser themes take precedence over GTK.
 Vertical tabs can stay enabled. In the built-in **Theme and colors** panel,
@@ -30,10 +34,10 @@ are merged, with originals backed up beside `settings.ini` using the suffix
 `.pre-imperium-brave`. Existing xsettingsd configuration is also backed up.
 Original theme names are recorded in `~/.local/state/imperium/brave-theme.json`.
 
-To reapply the wallpaper palette:
+To reapply the wallpaper palette from the Voluta checkout:
 
-```bash
-bash ~/.config/hypr/UserScripts/combined_wallust.sh
+```sh
+make theme
 ```
 
 The shared dependency list includes `gsettings-desktop-schemas` and
@@ -55,33 +59,19 @@ This repository only supplies its palette:
 - Prismwing can also use another JSON palette provider or its manual palette
   settings without any dotfiles dependency. See its own README for setup.
 
-Load `~/Code/projects/prismwing/extension` through **Load unpacked** in
-`brave://extensions` with **Developer mode** enabled. If the earlier
-**Imperium Wallust Favicons** extension is installed, remove it and load
-Prismwing from its new project directory, then reload existing website tabs
-once. Select the `extension` subfolder, which contains `manifest.json`; selecting
-the project root produces a missing-manifest error. Their icons retain original artwork and map to palette colors while
-inactive; selected tabs show their original icons.
-
-Starting scripts earlier and reusing cached artwork reduce loading flashes.
-Brave can still show a site-provided favicon before the extension gets control
-of a new page. Restricted pages, unloaded tabs and native bookmark favicon
-caches remain subject to browser limitations.
-
-Prismwing 1.3.2 reconnects existing website tabs after extension reloads without
-navigating them; frozen/discarded tabs catch up when they resume. Version 1.3.1 avoids waiting for a visible repaint when decoding icons in
-background tabs. Its favicon frame sequence is best effort: Brave extensions
-cannot apply Floorp's `userChrome.css` filters or transitions to native tab icons
-or loading spinners, so identical smooth animation requires browser changes or
-a separately rendered tab sidebar.
+Load the unpacked extension and finish the remaining Brave steps through the
+[user setup guide](../docs/voluta/integrations/brave.md). Selecting the project
+root instead of `extension/` produces a missing-manifest error.
 
 ## Architectural New Tab: Voluta Gallery
 
 The optional Gallery extension adds a framed wallpaper, clock, chamfered search
 panel and editable shortcuts. It reuses the shared palette and corner ornaments.
-Load `~/.local/share/voluta/gallery` through **Load unpacked** after enabling the
-browser integration and publishing the palette. Existing tab groups stay native;
-choose neutral group colors in Brave.
+Load the published copy under `~/.local/share/voluta/gallery` through **Load
+unpacked** after enabling the browser feature and publishing the palette.
+Existing tab groups stay native; choose neutral group colors in Brave.
 
-See [Architectural surfaces and Gallery](../docs/voluta/integrations/surfaces.md)
-for setup, updates, storage ownership and verification limits.
+See [Brave with Prismwing and Gallery](../docs/voluta/integrations/brave.md) for
+the manual load steps, and
+[Architectural surfaces and Gallery](../docs/voluta/integrations/surfaces.md)
+for geometry, storage ownership and verification limits.

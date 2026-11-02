@@ -28,10 +28,26 @@ input settings must also be checked in the live compositor after migration.
 
 ## Commands
 
+From the checkout, prefer Make targets for common flows:
+
 ```sh
-./bin/voluta init
-./bin/voluta install --dry-run
-./bin/voluta install
+make init
+make dry-run
+make install
+make update
+make doctor
+make apply
+make browser
+make theme
+make docs-serve
+```
+
+`make browser` enables the browser feature and refreshes themes. `make theme`
+runs `tools/refresh-theme.sh`, which prefers the deployed Wallust refresh script.
+
+CLI forms for everything else:
+
+```sh
 voluta show
 voluta feature list
 voluta feature enable session_restore
@@ -42,8 +58,6 @@ voluta config set input.kb_layout '"us,br"'
 voluta config set input.kb_variant '",abnt2"'
 voluta config set input.repeat_rate 35 --scope host
 voluta config reset input.repeat_rate --scope host
-voluta update
-voluta doctor
 voluta uninstall
 ```
 

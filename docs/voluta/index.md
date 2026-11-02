@@ -24,6 +24,7 @@ specifications belong here rather than in the root agent instructions.
 | Change login, GPU, locking, or suspend behavior | [Runtime and hardware constraints](engineering/runtime_constraints.md) |
 | Plan installation validation in a VM | [Installation testing](engineering/installation_testing.md) |
 | Implement device lighting after authorization | [Wallust RGB integration](integrations/rgb.md) |
+| Set up Brave, Prismwing favicons, or Gallery New Tab | [Brave with Prismwing and Gallery](integrations/brave.md) |
 | Change panel geometry, ornaments, or the New Tab gallery | [Architectural surfaces and Gallery](integrations/surfaces.md) |
 
 Use the [complete summary](SUMMARY.md) for navigation.
@@ -39,5 +40,5 @@ Use the [complete summary](SUMMARY.md) for navigation.
 
 ## Preview
 
-With mdBook installed, run `mdbook build docs` or `mdbook serve docs`. Build output
-is ignored under `docs/book/`. Markdown navigation also works without mdBook.
+With mdBook installed, run `make docs-serve` from the checkout. Build output is
+ignored under `docs/book/`. Markdown navigation also works without mdBook.

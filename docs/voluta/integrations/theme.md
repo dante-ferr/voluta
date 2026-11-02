@@ -22,7 +22,7 @@ voluta theme set background.darken 0.45
 voluta theme reset background.darken
 voluta theme set background.source '"color0"' --scope host
 voluta get appearance.background
-bash ~/.config/hypr/UserScripts/combined_wallust.sh
+make theme
 ```
 
 Wallpaper changes apply the preference automatically through the same refresh

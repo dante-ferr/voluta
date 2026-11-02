@@ -12,7 +12,7 @@ personal values; reusable integration implementations belong in the public core.
 | Classification | Features |
 | --- | --- |
 | Core desktop | Hyprland session, window/workspace controls and base keybindings; Waybar, launcher, notifications/OSD; wallpaper and Wallust palette pipeline; shared artwork, typography and application styling; lock/idle controls, screenshots, clipboard, audio/media/brightness controls; a default terminal and file-manager experience. |
-| Optional integrations | SDDM theme installation; browser-specific theming/extensions (Brave/Floorp); developer shell tooling (conda, Android SDK, Linuxbrew, etc.); OBS controls; RGB device support; session save/restore; switching to a second rice; advanced Dolphin injection/build tooling. |
+| Optional integrations | SDDM theme installation; browser-specific theming/extensions (Brave/Floorp — see [Brave with Prismwing and Gallery](../integrations/brave.md)); developer shell tooling (conda, Android SDK, Linuxbrew, etc.); OBS controls; RGB device support; session save/restore; switching to a second rice; advanced Dolphin injection/build tooling. |
 | Personal/host values | Preferred apps, keyboard layouts, bindings, paths, idle timings, module enablement, monitor profiles, device IDs, Bluetooth targets, and machine-specific GPU/power workarounds. These are settings rather than separately shipped features. |
 
 Accepted default preset: enable Dolphin, including the advanced customization
