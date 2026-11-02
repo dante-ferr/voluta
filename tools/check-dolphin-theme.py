@@ -310,7 +310,7 @@ def verify_existing_install(base: Path, source: Path) -> None:
 def verify_qt_appearance(home: Path, base: Path) -> None:
     # Exercise Qt's actual font parser and dock layout, rather than assuming
     # identical INI strings imply identical font weights or panel placement.
-    flags = subprocess.check_output(["pkg-config", "--cflags", "--libs", "Qt6Widgets"], text=True).split()
+    flags = subprocess.check_output(["pkg-config", "--cflags", "--libs", "Qt6Widgets", "Qt6Xml"], text=True).split()
     binary = base / "appearance-check"
     libexec = subprocess.check_output(["pkg-config", "--variable=libexecdir", "Qt6Core"], text=True).strip()
     subprocess.run([str(Path(libexec) / "moc"), str(ROOT / "tools/check-dolphin-appearance.cpp"),
@@ -319,10 +319,13 @@ def verify_qt_appearance(home: Path, base: Path) -> None:
         "g++", "-fPIC", "-std=c++17", "-pthread",
         "-I" + str(base),
         "-I/usr/include/KF6/KIconThemes", "-I/usr/include/KF6/KParts",
+        "-I/usr/include/KF6/KIOFileWidgets", "-I/usr/include/KF6/KIO", "-I/usr/include/KF6/KBookmarks", "-I/usr/include/KF6/Solid",
         str(ROOT / "tools/check-dolphin-appearance.cpp"), "-o", str(binary),
-        *flags, "-lKF6IconThemes",
+        *flags, "-lKF6IconThemes", "-lKF6KIOFileWidgets",
     ], check=True)
-    env = dict(os.environ, HOME=str(home), FONTCONFIG_FILE=str(ROOT / "dolphin/fonts.conf"))
+    env = dict(os.environ, HOME=str(home), FONTCONFIG_FILE=str(ROOT / "dolphin/fonts.conf"),
+               XDG_CONFIG_HOME=str(home / ".config"), XDG_DATA_HOME=str(home / ".local/share"),
+               XDG_CACHE_HOME=str(home / ".cache"), DBUS_SESSION_BUS_ADDRESS=f"unix:path={home / 'no-session-bus'}")
     subprocess.run([str(binary), str(home), "-platform", "offscreen"], env=env, check=True)
 
 

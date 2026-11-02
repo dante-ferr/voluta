@@ -74,7 +74,19 @@ headings. Decorations never receive clicks or keyboard focus. Existing
 windows need one full quit and relaunch to load a changed hook; later palette
 changes refresh the artwork in place.
 
+Wallpaper updates also reload the file view's separate Kvantum style, so its
+selection and hover artwork follow the new palette in open windows. Updating
+the palette alone leaves Kvantum's cached SVG colors unchanged. The native Places
+delegate uses the application style, which is refreshed alongside the file
+scene's separate style so sidebar selections also follow wallpaper changes. This hook change
+needs one full quit and relaunch; subsequent wallpaper changes refresh in place.
+
 Run `python3 tools/check-dolphin-theme.py` from the checkout to check existing
 install migration, generated themes, Qt font parsing, and panel positioning in
 an isolated home with Qt's offscreen platform. The checks require the build
 dependencies listed in `deps/arch.txt` and do not open a Dolphin window.
+They render selections across two consecutive atomic palette updates in the
+same file view and a native KDE Places sidebar. An interactive wallpaper change
+remains the final visual check.
+The native Places check passed outside the restricted agent sandbox on
+2026-11-02; the sandboxed run stalled during native delegate painting.

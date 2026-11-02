@@ -458,6 +458,20 @@ public:
         view->viewport()->installEventFilter(this);
     }
 
+    void refreshTheme(const QString &schemePath)
+    {
+        if (m_schemePath == schemePath) {
+            return;
+        }
+        // Kvantum retains the rendered SVG inside each style instance. The
+        // scene owns a separate instance from QApplication, so palette/QSS
+        // updates alone leave file selections painted with the old artwork.
+        if (QStyle *fresh = QStyleFactory::create(QStringLiteral("kvantum"))) {
+            setBaseStyle(fresh);
+        }
+        m_schemePath = schemePath;
+    }
+
     bool eventFilter(QObject *watched, QEvent *event) override
     {
         if (m_view && watched == m_view->viewport()) {
@@ -524,6 +538,8 @@ public:
     }
 
 private:
+    QString m_schemePath;
+
     void updateHover(const QPoint &pointer)
     {
         m_pointer = pointer;
@@ -714,6 +730,8 @@ private:
             m_applying = false;
             return;
         }
+        const bool schemeChanged = schemePath != m_schemePath;
+        m_schemePath = schemePath;
 
         // The artwork can change even when the icon accent stays identical.
         // Reload heading paints on every palette application, independently
@@ -723,6 +741,16 @@ private:
         // A new path misses KColorScheme's thread-local cache. DolphinView
         // then reads the wallpaper's colors, including the background alpha.
         qApp->setProperty("KDE_COLOR_SCHEME_PATH", schemePath);
+
+        if (schemeChanged) {
+            // KFilePlacesView's native delegate paints selections through
+            // QApplication::style(), without passing its widget. Its Kvantum
+            // SVG cache is independent of the file scene's FolderBranchStyle
+            // and cannot be refreshed by the sidebar palette or QSS alone.
+            if (QStyle *fresh = QStyleFactory::create(QStringLiteral("kvantum"))) {
+                qApp->setStyle(fresh);
+            }
+        }
 
         const QFont font = imperiumFont();
         if (qApp->font() != font) {
@@ -818,8 +846,18 @@ private:
                     view->scene()->setStyle(new FolderBranchStyle(view));
                     view->scene()->setProperty("imperiumFolderBranches", true);
                 }
+                if (graphics && graphics->inherits("DolphinItemListView")) {
+                    auto *branches = static_cast<FolderBranchStyle *>(view->scene()->style());
+                    branches->refreshTheme(schemePath);
+                }
                 if (graphics && !sameColor(graphics->palette(), palette)) {
                     graphics->setPalette(palette);
+                } else if (graphics && graphics->inherits("DolphinItemListView") && schemeChanged) {
+                    // Inherited palettes may already match. Dolphin still
+                    // needs this event to refresh its cached row style options
+                    // and hover pixmaps from the new KColorScheme path.
+                    QEvent changed(QEvent::PaletteChange);
+                    QCoreApplication::sendEvent(graphics, &changed);
                 }
             }
         }
@@ -908,6 +946,7 @@ private:
 
     QFileSystemWatcher m_watcher;
     QString m_conf;
+    QString m_schemePath;
     QString m_qssPath;
     QString m_icons;
     QByteArray m_qss;

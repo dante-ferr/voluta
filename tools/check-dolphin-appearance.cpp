@@ -4,6 +4,9 @@
 #include <QSettings>
 #include <QTextEdit>
 #include <QTextDocument>
+#include <QSaveFile>
+#include <KFilePlacesView>
+#include <KFilePlacesModel>
 #include <cstdio>
 #include <cstdlib>
 
@@ -16,11 +19,115 @@ public:
     using QTextEdit::QTextEdit;
 };
 
+class DolphinItemListView : public QGraphicsWidget
+{
+    Q_OBJECT
+};
+
 static void check(bool ok, const char *message)
 {
     if (!ok) {
         std::fprintf(stderr, "FAIL: %s\n", message);
         std::exit(1);
+    }
+}
+
+static void verifyLiveSelection(const QString &home)
+{
+    QCoreApplication::setApplicationName(QStringLiteral("dolphin"));
+    QGraphicsScene scene;
+    QGraphicsView view(&scene);
+    KFilePlacesModel placesModel;
+    KFilePlacesView places;
+    places.setModel(&placesModel);
+    places.resize(260, 500);
+    places.show();
+    auto *files = new DolphinItemListView;
+    scene.addItem(files);
+    view.show();
+    LiveTheme hook(qApp);
+    const auto read = [](const QString &path) {
+        QFile file(path);
+        check(file.open(QIODevice::ReadOnly), "cannot read live selection fixture");
+        return file.readAll();
+    };
+    const auto write = [](const QString &path, const QByteArray &body) {
+        QSaveFile file(path);
+        check(file.open(QIODevice::WriteOnly) && file.write(body) == body.size() && file.commit(),
+              "cannot replace live selection fixture");
+    };
+    const QString confPath = home + QStringLiteral("/.config/qt6ct/dolphin-live.conf");
+    const QByteArray conf = read(confPath);
+    const QString originalPath = qApp->property("KDE_COLOR_SCHEME_PATH").toString();
+    const QByteArray scheme = read(originalPath);
+    const QColor originalSelection = readScheme(originalPath).selectBg;
+    const QString svgPath = home + QStringLiteral("/.config/wallust/assets/generated/kvantum-dolphin.svg");
+    const QByteArray svg = read(svgPath);
+    const auto render = [&] {
+        QImage image(120, 32, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        QStyleOptionViewItem option;
+        option.rect = image.rect();
+        option.palette = files->palette();
+        option.state = QStyle::State_Enabled | QStyle::State_Selected | QStyle::State_Active;
+        option.showDecorationSelected = true;
+        scene.style()->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, &painter, view.viewport());
+        return image;
+    };
+    const auto renderPlace = [&] {
+        QImage image(240, 96, QImage::Format_ARGB32_Premultiplied);
+        image.fill(Qt::transparent);
+        QPainter painter(&image);
+        QStyleOptionViewItem option;
+        option.initFrom(&places);
+        option.rect = image.rect();
+        option.state = QStyle::State_Enabled | QStyle::State_Selected | QStyle::State_Active;
+        const QModelIndex index = placesModel.index(0, 0);
+        check(index.isValid(), "Places fixture has no native model row");
+        places.itemDelegateForIndex(index)->paint(&painter, option, index);
+        return image;
+    };
+    QImage previous = render();
+    QImage previousPlace = renderPlace();
+    int generation = 0;
+    for (const QColor &selection : {QColor(210, 70, 95), QColor(60, 180, 140)}) {
+        QByteArray nextSvg = svg;
+        nextSvg.replace(originalSelection.name().toUtf8(), selection.name().toUtf8());
+        write(svgPath, nextSvg);
+        // Kvantum versions may select the general theme by executable name
+        // rather than applicationName in this offscreen test binary.
+        write(home + QStringLiteral("/.config/wallust/assets/generated/kvantum-imperium.svg"), nextSvg);
+        // Demonstrate why changing the on-disk theme alone is insufficient.
+        check(render() == previous, "fixture did not reproduce Kvantum's cached selection artwork");
+        check(renderPlace() == previousPlace, "fixture did not reproduce cached Places artwork");
+        const QString nextPath = originalPath + QString::number(++generation);
+        QByteArray nextScheme = scheme;
+        const auto rgb = [](const QColor &color) {
+            return QByteArray::number(color.red()) + ',' + QByteArray::number(color.green()) + ',' + QByteArray::number(color.blue());
+        };
+        nextScheme.replace(rgb(originalSelection), rgb(selection));
+        write(nextPath, nextScheme);
+        QByteArray nextConf = conf;
+        nextConf.replace(originalPath.toUtf8(), nextPath.toUtf8());
+        write(confPath, nextConf);
+        QElapsedTimer wait;
+        wait.start();
+        while (qApp->property("KDE_COLOR_SCHEME_PATH").toString() != nextPath && wait.elapsed() < 3000) {
+            QCoreApplication::processEvents();
+        }
+        check(qApp->property("KDE_COLOR_SCHEME_PATH").toString() == nextPath,
+              "live watcher missed a consecutive atomic palette update");
+        const QImage current = render();
+        check(current != previous, "open file view retained the previous selection artwork");
+        check(files->palette().color(QPalette::Highlight) == selection,
+              "open file view retained the previous selection palette");
+        const QImage currentPlace = renderPlace();
+        check(currentPlace != previousPlace, "open Places sidebar retained the previous selection artwork");
+        check(places.palette().color(QPalette::Highlight) == selection,
+              "open Places sidebar retained the previous selection palette");
+        previousPlace = currentPlace;
+        previous = current;
     }
 }
 
@@ -123,7 +230,8 @@ int main(int argc, char **argv)
     window.resize(1100, 850);
     app.processEvents();
     check(frame->geometry() == window.rect(), "corner frame did not follow window resizing");
-    std::puts("PASS: Qt font parsing, initial F2 editor visibility, and panel layout");
+    verifyLiveSelection(home);
+    std::puts("PASS: Qt fonts, F2 editor, panel layout, and consecutive live selection repaints");
 }
 
 #include "check-dolphin-appearance.moc"
