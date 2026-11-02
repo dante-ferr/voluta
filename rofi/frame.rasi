@@ -1,42 +1,22 @@
-/* Shared stepped surround, incised tiles and two asymmetrical corner ornaments. */
+/* Shared angel surround and incised tiles.
+ * Window size matches the published big-angel-box canvas (1.6× the 720×640 art).
+ * Padding equals the clear content hole margins so ornaments stay outside mainbox.
+ * A light @background plate gives Hyprland alpha to blur the hollow. The black
+ * angel SVG paints on this window. */
 window {
-    width: 720px;
-    height: 640px;
-    padding: 12px;
+    width: 1152px;
+    height: 1024px;
+    padding: 304px 230px 218px 362px;
     border: 0px;
     border-radius: 0px;
-    background-color: transparent;
-    background-image: url("~/.config/wallust/assets/generated/panel-frame.svg", both);
+    background-color: @background;
+    background-image: url("~/.config/wallust/assets/generated/big-angel-box.svg", both);
 }
 mainbox {
-    padding: 14px 20px 8px;
-    spacing: 14px;
+    padding: 12px 14px 10px;
+    spacing: 12px;
     background-color: transparent;
-    children: [ "voluta-crown", "inputbar", "message", "listview", "voluta-foot" ];
-}
-voluta-crown {
-    orientation: horizontal;
-    children: [ "icon-voluta-scroll", "textbox-voluta-title", "voluta-balance" ];
-    background-color: transparent;
-    height: 72px;
-    expand: false;
-}
-icon-voluta-scroll {
-    width: 72px;
-    size: 72px;
-    background-color: transparent;
-    filename: "~/.config/wallust/assets/generated/medium-corner-tl.svg";
-    expand: false;
-}
-voluta-balance { width: 72px; expand: false; background-color: transparent; }
-textbox-voluta-title {
-    str: "VOLUTA";
-    font: "JetBrains Mono 10";
-    horizontal-align: 0.5;
-    vertical-align: 0.5;
-    text-color: @muted;
-    background-color: transparent;
-    expand: true;
+    children: [ "inputbar", "message", "listview" ];
 }
 inputbar {
     padding: 14px 16px;
@@ -52,12 +32,13 @@ element {
     border: 0px;
     border-radius: 0px;
     background-color: transparent;
-    background-image: url("~/.config/wallust/assets/generated/tile-frame-list.svg", width);
+    /* `both` stretches the chamfered tile; `width` tiles a second strip under each row. */
+    background-image: url("~/.config/wallust/assets/generated/tile-frame-list.svg", both);
     text-color: @fg;
 }
 element selected.normal, element selected.active, element selected.urgent {
     background-color: transparent;
-    background-image: url("~/.config/wallust/assets/generated/tile-selected-list.svg", width);
+    background-image: url("~/.config/wallust/assets/generated/tile-selected-list.svg", both);
     text-color: @fg;
     border: 0px;
 }
@@ -67,25 +48,3 @@ element selected.normal element-text, element selected.active element-text {
 element-icon { size: 24px; }
 message { padding: 2px 0px; border: 0px; background-color: transparent; }
 textbox { text-color: @muted; background-color: transparent; }
-voluta-foot {
-    orientation: horizontal;
-    children: [ "textbox-voluta-hint", "icon-voluta-scroll-end" ];
-    height: 56px;
-    expand: false;
-    background-color: transparent;
-}
-textbox-voluta-hint {
-    str: "ESC   Close";
-    font: "JetBrains Mono 9";
-    vertical-align: 0.8;
-    text-color: @muted;
-    background-color: transparent;
-    expand: true;
-}
-icon-voluta-scroll-end {
-    width: 56px;
-    size: 56px;
-    expand: false;
-    background-color: transparent;
-    filename: "~/.config/wallust/assets/generated/medium-corner-br.svg";
-}

@@ -23,7 +23,8 @@ selected-urgent-background: {{color12 | lighten(0.35)}};
 selected-urgent-foreground: {{foreground | lighten(0.30)}};
 
 background-color: {{background}};
-background: rgba({{background | rgb}},0.7);
+/* Light enough to keep the angel readable, opaque enough for Hyprland layer blur. */
+background: rgba({{background | rgb}},0.35);
 foreground: {{foreground | lighten(0.30)}};
 border-color: {{color12 | lighten(0.35)}};
 accent: {{color12 | lighten(0.35)}};

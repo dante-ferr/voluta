@@ -4,9 +4,9 @@ Status: implemented. The visual direction emphasizes geometry: stepped surrounds
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 Rofi uses the `big-angel-box` silhouette plate painted with the Wallust
 background (near-black), with no halo. The launcher window is fullscreen.
-Its vignette is a light radial lift over a thin background veil, so Hyprland
-blurs the whole output and the center is lighter than the edges. The angel
-plate is a centered 1152×1024 mainbox with no padding of its own. The
+A thin background veil covers the output so Hyprland can blur it, with a
+brighter foreground lift in the center that fades out before the edges. The
+angel plate fills a centered 1152×1024 slot. The
 launcher layer popin-animates on map and unmap.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
@@ -16,11 +16,13 @@ plain; tab-group names do not receive symbols.
 `rofi/frame.rasi` supplies the shared angel surround, input relief, and tile
 outlines. The shared plate is 1152×1024, with padding that matches the SVG
 hollow so ornaments sit outside the content. The publisher scales
-`big-angel-box.svg` to that canvas, and publishes `launcher-vignette.svg` for
-the fullscreen plate. `rofi/launch-dashboard.sh` centers the angel on the
-focused monitor. Dashboard keeps that image on an unpadded `mainbox` and
-insets the menu with child margins, because padding on the image widget
-wraps the right side of the SVG onto the left.
+`big-angel-box.svg` to that canvas, and publishes `launcher-vignette.svg` at
+16:9 for the fullscreen veil. Rofi fits a background image inside its widget
+and repeats the remainder, so the angel plate must stay exactly 1152×1024.
+The fullscreen window centers that plate with padding, using half the
+monitor minus half the plate. Super+D, Super+Shift+Enter, and
+Super+Ctrl+Enter all run `rofi/launch-dashboard.sh`. Dashboard rows use a
+single border instead of a tile image.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so

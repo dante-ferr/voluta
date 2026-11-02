@@ -38,11 +38,13 @@ hl.config({
         blur = {
             enabled = true,
             special = true, -- Blur background behind special workspace
-            size = 1,
-            passes = 2,
+            -- A light frost behind the launcher. Larger kernels washed the
+            -- wallpaper out; size 1 was invisible.
+            size = 3,
+            passes = 1,
             new_optimizations = true,
-            -- Windows are opaque by rule, so this only ever reaches surfaces that
-            -- ask for alpha themselves — kitty being the one that does.
+            -- Windows are opaque by rule, so this only reaches translucent
+            -- surfaces: kitty terminals and the Rofi launcher layer.
             xray = false,
             ignore_opacity = false,
             -- Chromium and Brave popups hand Hyprland regions with a zero or
@@ -51,11 +53,11 @@ hl.config({
             popups = false,
             -- Darkened and desaturated: a bright wallpaper behind a translucent
             -- terminal otherwise washes out the foreground text.
-            brightness = 0.75,
-            contrast = 1.05,
-            vibrancy = 0.15,
-            vibrancy_darkness = 0.4,
-            noise = 0.012,
+            brightness = 1.0,
+            contrast = 1.0,
+            vibrancy = 0,
+            vibrancy_darkness = 0,
+            noise = 0,
         },
         shadow = {
             enabled = true,

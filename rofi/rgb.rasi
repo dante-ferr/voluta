@@ -8,7 +8,7 @@ window {
 }
 
 mainbox {
-    children: [ "voluta-crown", "inputbar", "message", "listview", "voluta-foot" ];
+    children: [ "inputbar", "message", "listview" ];
 }
 
 listview {
@@ -26,7 +26,7 @@ textbox {
     background-color: transparent;
     text-color: @muted;
 }
-element { background-image: url("~/.config/wallust/assets/generated/tile-frame-wide.svg", width); }
+element { background-image: url("~/.config/wallust/assets/generated/tile-frame-wide.svg", both); }
 element selected.normal, element selected.active, element selected.urgent {
-    background-image: url("~/.config/wallust/assets/generated/tile-selected-wide.svg", width);
+    background-image: url("~/.config/wallust/assets/generated/tile-selected-wide.svg", both);
 }

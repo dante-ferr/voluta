@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
+  <defs>
+    <radialGradient id="voluta-vignette" cx="50%" cy="50%" r="62%">
+      <stop offset="0%" stop-color="{{foreground}}" stop-opacity="0.32"/>
+      <stop offset="38%" stop-color="{{foreground}}" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="{{foreground}}" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- Thin veil keeps the layer translucent for blur. The lift is bright
+       in the middle and gone before the edges. -->
+  <rect width="2560" height="1440" fill="{{background}}" fill-opacity="0.08"/>
+  <rect width="2560" height="1440" fill="url(#voluta-vignette)"/>
+</svg>

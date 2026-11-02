@@ -13,7 +13,8 @@ from cli import ROOT, hostname, resolve
 from theme import preferred_background, read_palette, write_changed
 
 
-ASSETS = ('panel-frame.svg', 'tile-frame.svg', 'tile-selected.svg',
+ASSETS = ('panel-frame.svg', 'big-angel-box.svg', 'launcher-vignette.svg',
+          'tile-frame.svg', 'tile-selected.svg',
           'small-corner-tl.svg', 'small-corner-br.svg',
           'medium-corner-tl.svg', 'medium-corner-br.svg',
           'big-corner-tl.svg', 'big-corner-br.svg')
@@ -106,6 +107,8 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
     for name in ASSETS:
         rendered[name] = render((root / 'wallust/assets' / name).read_text(), palette)
         write_changed(assets / name, rendered[name])
+    # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
+    write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
     write_changed(assets / 'panel-frame-wide.svg', rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
     for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
         for name in ('tile-frame', 'tile-selected'):

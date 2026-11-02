@@ -43,6 +43,7 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3, bezier = "fast
 hl.animation({ leaf = "layers", enabled = true, speed = 4, bezier = "fluidDecel", style = "fade" })
 hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "snappySpring", style = "fade" })
 hl.animation({ leaf = "layersOut", enabled = true, speed = 5, bezier = "inertialLift", style = "fade" })
+hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 4, bezier = "softEaseInOut" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 5, bezier = "softEaseInOut" })
 
 -- Popup and panel share the same entrance, exit, and inertial easing.
@@ -52,4 +53,16 @@ hl.layer_rule({
     name = "notification-drop",
     match = { namespace = "^swaync-(control-center|notification-window)$" },
     animation = "slide top",
+})
+
+-- Blur wallpaper and windows behind the fullscreen Rofi launcher.
+-- popin scales the layer in and out. ignore_alpha must stay at 0 so the
+-- vignette's thin edge still counts as a blur surface.
+hl.layer_rule({
+    name = "rofi-launcher",
+    match = { namespace = "^rofi$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    animation = "popin 88%",
 })
