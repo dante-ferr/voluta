@@ -29,5 +29,11 @@
   "rgb": {
     "devices": [],
     "accent": "wc_1"
+  },
+  "appearance": {
+    "background": {
+      "source": "background",
+      "darken": 0.35
+    }
   }
 }

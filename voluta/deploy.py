@@ -242,6 +242,9 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         if not version.startswith('wallust 4.'):
             raise ValueError('Voluta requires Wallust v4; install wallust-git before proceeding')
         subprocess.run(['wallust', '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
+    if palette.exists():
+        from theme import publish
+        publish(config=config, directory=directory, host=host)
     activate_system_modules(settings, manifest, skip_deps)
     atomic_write(state / 'install.json', manifest)
     print('Voluta configuration deployed. Existing files are backed up under ' + str(state / 'backups'))

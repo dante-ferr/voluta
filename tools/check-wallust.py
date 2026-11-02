@@ -9,7 +9,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / "hypr/UserScripts/combined_wallust.sh").read_text()
-FUNCTIONS = SOURCE[SOURCE.index("expand_path() {"):SOURCE.index("# GTK resolves CSS")]
+FUNCTIONS = SOURCE[SOURCE.index("expand_path() {"):SOURCE.index("# Rebuild SVG")]
 REFRESH = SOURCE[SOURCE.index("do_refresh() {"):SOURCE.index("# Let rapid per-monitor")]
 
 

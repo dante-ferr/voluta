@@ -23,7 +23,7 @@ selected-urgent-background: {{color12 | lighten(0.35)}};
 selected-urgent-foreground: {{foreground | lighten(0.30)}};
 
 background-color: {{background}};
-background: rgba(0,0,0,0.7);
+background: rgba({{background | rgb}},0.7);
 foreground: {{foreground | lighten(0.30)}};
 border-color: {{color12 | lighten(0.35)}};
 accent: {{color12 | lighten(0.35)}};

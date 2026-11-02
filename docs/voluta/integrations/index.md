@@ -6,6 +6,7 @@ prevent the core desktop from starting when unavailable.
 
 | Document | Purpose |
 | --- | --- |
+| [Shared background](theme.md) | One persistent palette policy for application backgrounds and generated theme exports. |
 | [Wallust RGB integration](rgb.md) | Candidate keyboard/mouse tools, desktop scoping, and deferred implementation requirements. |
 
 Existing component notes remain alongside their code:

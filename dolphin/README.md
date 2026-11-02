@@ -1,5 +1,10 @@
 # Dolphin appearance
 
+Dolphin's base background comes from Voluta's shared `appearance.background`
+preference, also used by Brave and the other palette consumers. The default
+preserves its existing 35% darkening. See
+[Shared background](../docs/voluta/integrations/theme.md) for overrides and exports.
+
 The repo owns the visual keys in `../dolphinrc`, the global view defaults in
 `view-properties`, the toolbar/shortcuts in `dolphinui.rc`, and the customization
 in `live.cpp`. Both hosts use the same files. The existing desktop-only Qt RHI

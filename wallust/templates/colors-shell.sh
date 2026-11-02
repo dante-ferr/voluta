@@ -1,6 +1,8 @@
 # /* wallust template - colors-shell */
 # Bare RRGGBB hex, meant to be sourced by shell scripts.
 
+# Preserve the extraction input so repeated publication never darkens twice.
+wc_source_bg='{{background | strip}}'
 wc_bg='{{background | strip}}'
 wc_fg='{{foreground | strip}}'
 wc_cursor='{{cursor | strip}}'

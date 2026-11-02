@@ -49,6 +49,17 @@ def validate_value(value):
             validate_value(item)
 
 
+def validate_appearance(appearance):
+    background = appearance.get("background", {})
+    if not isinstance(background, dict) or set(background) - {"source", "darken"}:
+        raise ValueError("appearance.background accepts source and darken")
+    if "source" in background and background["source"] not in ("background", *(f"color{i}" for i in range(16))):
+        raise ValueError("background source must be background or color0..color15")
+    amount = background.get("darken", 0.35)
+    if type(amount) not in (int, float) or not math.isfinite(amount) or not 0 <= amount <= 1:
+        raise ValueError("background darken must be a number between 0 and 1")
+
+
 def read(path):
     if not path.exists():
         return {}
@@ -56,10 +67,10 @@ def read(path):
         data = json.load(handle)
     if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
         raise ValueError(f"{path}: expected settings version 1")
-    unknown = set(data) - {"version", "features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "monitors", "workspaces", "waybar_output", "dolphin_rhi", "rgb"}
+    unknown = set(data) - {"version", "features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "monitors", "workspaces", "waybar_output", "dolphin_rhi", "rgb", "appearance"}
     if unknown:
         raise ValueError(f"{path}: unknown sections: {', '.join(sorted(unknown))}")
-    for section in ("features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "rgb"):
+    for section in ("features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "rgb", "appearance"):
         if not isinstance(data.get(section, {}), dict):
             raise ValueError(f"{path}: {section} must be an object")
     for key, value in data.get("features", {}).items():
@@ -80,6 +91,7 @@ def read(path):
         raise ValueError(f"{path}: dolphin_rhi must be boolean")
     if data.get("waybar_output") is not None and not isinstance(data["waybar_output"], str):
         raise ValueError(f"{path}: waybar_output must be a connector name or null")
+    validate_appearance(data.get("appearance", {}))
     validate_value(data)
     return data
 
@@ -181,6 +193,11 @@ def main(argv=None):
     config.add_argument("key", help="dotted key, e.g. input.kb_layout")
     config.add_argument("value", nargs="?", help="JSON value; quote strings as JSON")
     config.add_argument("--scope", choices=("shared", "host"), default="shared")
+    theme = commands.add_parser("theme", help="set/reset shared appearance preferences")
+    theme.add_argument("action", choices=("set", "reset"))
+    theme.add_argument("key", help="background.source or background.darken")
+    theme.add_argument("value", nargs="?", help="JSON value")
+    theme.add_argument("--scope", choices=("shared", "host"), default="shared")
     companion = commands.add_parser("companion", help="attach a local companion settings directory")
     companion.add_argument("action", choices=("attach",))
     companion.add_argument("path", type=Path)
@@ -212,7 +229,7 @@ def main(argv=None):
         directory.symlink_to(source, target_is_directory=True)
         print(f"Companion attached: {directory} -> {source}")
         return 0
-    if args.command in ("init", "config") or (args.command == "feature" and args.action != "list"):
+    if args.command in ("init", "config", "theme") or (args.command == "feature" and args.action != "list"):
         # Serialize writers without placing runtime lock files in a companion repo.
         import hashlib
         lock_dir = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "voluta"
@@ -252,7 +269,9 @@ def main(argv=None):
                 keys = args.key.split(".")
                 if len(keys) < 2 or not all(re.fullmatch(r"[A-Za-z0-9_:-]+", key) for key in keys):
                     raise ValueError("use a dotted Hyprland section.key")
-                node = data.setdefault("hyprland", {})
+                if args.command == "theme" and args.key not in ("background.source", "background.darken"):
+                    raise ValueError("use background.source or background.darken")
+                node = data.setdefault("appearance" if args.command == "theme" else "hyprland", {})
                 for key in keys[:-1]:
                     node = node.setdefault(key, {})
                     if not isinstance(node, dict):
@@ -265,6 +284,8 @@ def main(argv=None):
                     if value is None:
                         raise ValueError("use reset instead of null")
                     node[keys[-1]] = value
+            if args.command == "theme":
+                validate_appearance(data["appearance"])
             atomic_write(path, data)
         effective, _ = resolve(directory, host)
         if args.command == "feature":
@@ -280,6 +301,8 @@ def main(argv=None):
         if args.command == "feature":
             print(f"{args.name}: effective={str(effective['features'][args.name]).lower()} ({args.scope} override updated)")
             print("Session changes are picked up by the login supervisor; Dolphin changes apply on next launch.")
+        elif args.command == "theme":
+            print("Theme preference saved; refresh the wallpaper palette to apply it")
         else:
             print("Override saved; reload Hyprland to apply it")
         return 0

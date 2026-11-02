@@ -1,0 +1,54 @@
+/* Chromium samples GTK widgets to color its native toolbar and vertical tabs.
+ * Scope these overrides to its synthetic .chromium widgets. */
+/* Voluta publishes the shared background after Wallust renders this input. */
+@define-color imperium_source_bg {{background}};
+@define-color imperium_bg {{background}};
+@define-color imperium_fg {{foreground | lighten(0.30)}};
+@define-color imperium_accent {{color4 | lighten(0.30)}};
+@define-color imperium_surface mix(@imperium_bg, @imperium_fg, 0.04);
+@define-color imperium_hover mix(@imperium_bg, @imperium_accent, 0.18);
+@define-color imperium_muted mix(@imperium_bg, @imperium_fg, 0.70);
+@define-color imperium_border mix(@imperium_bg, @imperium_fg, 0.25);
+
+.chromium { color: @imperium_fg; }
+window.background.chromium, .background.chromium,
+headerbar.header-bar.titlebar.chromium, menubar.chromium,
+menu.chromium, popover.background.chromium {
+    background-image: none;
+    background-color: @imperium_bg;
+    color: @imperium_fg;
+}
+headerbar.chromium:backdrop, menubar.chromium:backdrop {
+    background-color: @imperium_bg;
+    color: @imperium_muted;
+}
+entry.chromium, textview.view.chromium, textview.view.chromium text.chromium,
+button.chromium, notebook.chromium tab.chromium:checked {
+    background-image: none;
+    background-color: @imperium_surface;
+    color: @imperium_fg;
+    border-color: @imperium_border;
+}
+button.chromium:hover, menuitem.chromium:hover {
+    background-image: none;
+    background-color: @imperium_hover;
+}
+label.chromium:disabled, button.chromium:disabled label.chromium {
+    color: @imperium_muted;
+}
+entry.chromium:focus, entry.chromium:focus-within {
+    border-color: @imperium_accent;
+}
+treeview.view.chromium:selected, treeview.view.chromium.cell:selected:focus,
+textview.chromium text.chromium selection.chromium,
+entry.chromium selection.chromium {
+    background-color: @imperium_hover;
+    color: @imperium_fg;
+}
+label.chromium.link:link, spinner.chromium {
+    color: @imperium_accent;
+}
+separator.chromium, frame.chromium border.chromium {
+    background-color: @imperium_border;
+    border-color: @imperium_border;
+}

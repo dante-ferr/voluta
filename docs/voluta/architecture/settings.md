@@ -72,6 +72,7 @@ existing Dolphin/session behavior, but a fresh `init` defaults restoration off.
 | `waybar_output` | Connector name or null for the normal all-output configuration. |
 | `dolphin_rhi` | Host-specific Qt rendering workaround. |
 | `rgb` | Palette accent token and explicitly selected USB/backend device records. |
+| `appearance` | Shared palette background source and darkening; see [Shared background](../integrations/theme.md). |
 
 Personal shell code lives in `shell/interactive.zsh` and is sourced only for an
 interactive shell with developer_shell enabled. The login path only sources the

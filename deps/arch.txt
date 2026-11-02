@@ -26,6 +26,8 @@ waypaper-git|waypaper
 wallust-git|wallust
 awww|swww
 imagemagick
+gsettings-desktop-schemas
+xsettingsd
 
 # Fetch banner & sigil art (terminal image, command deck panels)
 fastfetch

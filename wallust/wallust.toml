@@ -53,6 +53,13 @@ quickshell.target = '~/.config/quickshell/qml_color.json'
 shell.template = 'colors-shell.sh'
 shell.target = '~/.config/hypr/wallust/colors-shell.sh'
 
+gtk.template = 'colors-gtk.css'
+gtk.target = '~/.config/hypr/wallust/colors-gtk.css'
+
+# Prismwing is a separate project; its only input is a generic JSON palette.
+prismwing.template = 'colors-prismwing.json'
+prismwing.target = '~/.config/prismwing/palette.json'
+
 swaync.template = 'colors-swaync.css'
 swaync.target = '~/.config/swaync/wallust/colors-swaync.css'
 

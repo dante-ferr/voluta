@@ -6,6 +6,7 @@
   - [Settings ownership and updates](architecture/settings.md)
   - [Core and optional features](architecture/features.md)
 - [Integrations](integrations/index.md)
+  - [Shared background](integrations/theme.md)
   - [Wallust RGB integration](integrations/rgb.md)
 - [Engineering](engineering/index.md)
   - [Configuration separation audit](engineering/configuration_audit.md)

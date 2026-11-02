@@ -32,6 +32,8 @@ import xml.etree.ElementTree as ET
 
 root, colors_path, home = sys.argv[1:4]
 dolphin_enabled = len(sys.argv) <= 4 or sys.argv[4] == "true"
+sys.path.insert(0, os.path.join(root, "voluta"))
+from theme import preferred_background
 
 def parse_hex(value):
     value = value.strip().lstrip("#")
@@ -119,11 +121,11 @@ palette = load_palette()
 if not palette:
     sys.exit(0)
 
-bg = palette["bg"]
+bg = preferred_background(palette)
 fg = palette["fg"]
-# Match Kitty's wallust background (darken(0.35)), with less glass showing
-# through Dolphin. Other Qt apps keep their existing Imperium surfaces.
-dolphin_bg = darken(bg, 0.35)
+# Every application derives its base from the same Voluta background policy.
+# Dolphin keeps its own opacity; the underlying RGB is shared.
+dolphin_bg = bg
 accent_src = palette.get("1") or fg
 secondary_src = palette.get("2") or accent_src
 negative_src = palette.get("3") or accent_src
