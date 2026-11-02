@@ -35,7 +35,6 @@ hl.on("hyprland.start", function()
     -- Clipboard manager
     hl.exec_cmd("sh -c 'pgrep -x cliphist >/dev/null || (wl-paste --type text --watch cliphist store & wl-paste --type image --watch cliphist store &)'")
 
-    -- Session Manager: Restore previous windows and start auto-save daemon
-    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py restore &")
-    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py daemon &")
+    -- Restore first, then autosave under one per-compositor lock.
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}\"; python3 " .. Scripts .. "/session_manager.py start >>\"${XDG_STATE_HOME:-$HOME/.local/state}/hyprland-session.log\" 2>&1'")
 end)

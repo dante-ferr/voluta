@@ -15,7 +15,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("playerctld daemon")
     hl.exec_cmd(Scripts .. "/StartHypridle.sh")
 
-    -- Session Manager: Restore previous windows and start auto-save daemon
-    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py restore &")
-    hl.exec_cmd("python3 " .. Scripts .. "/session_manager.py daemon &")
+    -- Restore first, then autosave under one per-compositor lock.
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}\"; python3 " .. Scripts .. "/session_manager.py start >>\"${XDG_STATE_HOME:-$HOME/.local/state}/hyprland-session.log\" 2>&1'")
 end)

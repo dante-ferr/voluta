@@ -6,7 +6,7 @@
 }
 {
     "label" : "logout",
-    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py save; hyprctl dispatch 'hl.dsp.exit()' || uwsm stop || loginctl terminate-session self",
+    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py prepare-shutdown; hyprctl dispatch 'hl.dsp.exit()' || uwsm stop || loginctl terminate-session self",
     "text" : "Log Out",
     "keybind" : "e"
 }
@@ -24,13 +24,13 @@
 }
 {
     "label" : "reboot",
-    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py save; systemctl reboot",
+    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py prepare-shutdown; systemctl reboot",
     "text" : "Reboot",
     "keybind" : "r"
 }
 {
     "label" : "shutdown",
-    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py save; systemctl poweroff",
+    "action" : "python3 $HOME/.config/hypr/scripts/session_manager.py prepare-shutdown; systemctl poweroff",
     "text" : "Power Off",
     "keybind" : "s"
 }
