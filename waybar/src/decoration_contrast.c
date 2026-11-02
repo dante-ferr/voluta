@@ -164,7 +164,7 @@ static void sample_bar(GtkWidget *window) {
     Region area = image_region(bar, wallpaper, gdk_pixbuf_get_width(image), gdk_pixbuf_get_height(image));
     GtkStyleContext *style = gtk_widget_get_style_context(window);
     GdkRGBA color[3] = {{0}};
-    gtk_style_context_lookup_color(style, "color0", &color[0]);
+    gtk_style_context_lookup_color(style, "box-background", &color[0]);
     gtk_style_context_lookup_color(style, "decoration-light", &color[1]);
     gtk_style_context_lookup_color(style, "decoration-bright", &color[2]);
     double ink[3], score[4];

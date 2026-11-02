@@ -278,19 +278,29 @@ def main():
     accent = "#" + "".join(f"{round(int(accent[i:i+2], 16) * .75 + 255 * .25):02x}"
                              for i in (1, 3, 5))
     accent, bright = muted(accent), muted(colors[bright_name])
-    rules = [f"@define-color decoration-light {accent};\n",
+    # Share the plate ink with dark artwork; retain the palette hue at half
+    # color0's brightness instead of using unrelated fixed box backgrounds.
+    dark = "#" + "".join(f"{round(int(colors['color0'][i:i+2], 16) * .5):02x}"
+                          for i in (1, 3, 5))
+    rules = [f"@define-color box-background {dark};\n",
+             f"@define-color decoration-light {accent};\n",
              f"@define-color decoration-bright {bright};\n"]
     for selector, filename in DECORATIONS:
         source = ROOT.parent / "wallust/assets" / filename
         stem = Path(filename).stem
-        for variant, paint in (("dark", colors["color0"]), ("light", accent), ("bright", bright)):
+        # These icons sit on opaque plates, so wallpaper contrast does not
+        # describe their backdrop. Keep them in the bright palette ink.
+        boxed_icon = filename in ("volute-left.svg", "note.svg", "note-paused.svg")
+        variants = (("bright", bright),) if boxed_icon else (
+            ("dark", dark), ("light", accent), ("bright", bright))
+        for variant, paint in variants:
             target = output / f"{stem}-{variant}.png"
             glowing(source, target, color if variant == "dark" else None,
                     settings["decorations"], paint)
-            # A class on the bar selects every decoration together.
+            # A class selects wallpaper-facing decorations together.
             selectors = selector.split(",\n")
             decorated = ",\n".join(f"window#waybar.decoration-{variant} {s}" for s in selectors)
-            if variant == "dark":
+            if variant == "dark" or boxed_icon:
                 decorated = selector + ",\n" + decorated
             rules.append(f'{decorated} {{\n    background-image: url("{target.as_uri()}");\n}}\n')
     boxes = settings["boxes"]

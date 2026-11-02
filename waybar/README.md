@@ -1,12 +1,13 @@
 # Adaptive decorations
 
-Every SVG on a bar uses one shared color decision from the complete wallpaper
-strip behind that bar. Gaps between icons and wallpaper underneath opaque
-plates also contribute. There are no independent SVG or pixel color changes.
+Decorations facing the wallpaper use one shared color decision from the complete
+wallpaper strip behind that bar. Gaps between icons and wallpaper underneath opaque
+plates also contribute. The window title and music icons sit inside opaque boxes
+and always use the bright Wallust ink to contrast with their dark backgrounds.
 
 `scripts/render-decorations.py` creates three Wallust-colored variants in
-`../wallust/assets/generated/waybar/`: dark (`color0`), light (the selected
-workspace accent), and a brighter palette fallback (`foreground` or `color15`).
+`../wallust/assets/generated/waybar/`: dark (half-brightness `color0`, shared with the box backgrounds), light (the
+selected workspace accent), and a brighter palette fallback (`foreground` or `color15`).
 Both light colors are muted with 20% Wallust dark ink (`color0`).
 Light variants have no glow. Dark variants use the faint decoration glow in
 `glow.json`; plate shadows retain the separate `boxes` settings.
@@ -45,7 +46,7 @@ h = bar.height * image.height / wallpaper.height
 
 Every native pixel in that rectangle contributes, with fractional edge coverage
 weighted by area. Static geometry is not resampled. A single CSS class on the
-bar selects the same variant for every decoration. Each monitor's bar uses its
+bar selects the same variant for every wallpaper-facing decoration. Each monitor's bar uses its
 own wallpaper strip.
 
 Dark ink remains the default. `contrast.dark_luminance` (currently 0.02, roughly
