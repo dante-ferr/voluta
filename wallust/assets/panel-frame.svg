@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="640" viewBox="0 0 1000 700" preserveAspectRatio="none">
+  <path d="M28 1H972V10H990V28H999V672H990V690H972V699H28V690H10V672H1V28H10V10H28Z" fill="{{background}}" stroke="{{foreground | darken(0.56)}}" vector-effect="non-scaling-stroke"/>
+  <path d="M35 9H965V18H982V35H991V665H982V682H965V691H35V682H18V665H9V35H18V18H35Z" fill="none" stroke="{{foreground | darken(0.80)}}" vector-effect="non-scaling-stroke"/>
+  <path d="M54 17H310M690 683H946" fill="none" stroke="{{color1}}" vector-effect="non-scaling-stroke"/>
+</svg>

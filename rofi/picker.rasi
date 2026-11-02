@@ -145,3 +145,9 @@ element-text {
     horizontal-align: 0.0;
     font: "JetBrainsMono Nerd Font 12";
 }
+
+@import "frame.rasi"
+element { background-image: url("~/.config/wallust/assets/generated/tile-frame.svg", width); }
+element selected.normal, element selected.active, element selected.urgent {
+    background-image: url("~/.config/wallust/assets/generated/tile-selected.svg", width);
+}

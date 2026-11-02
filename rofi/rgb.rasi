@@ -2,11 +2,13 @@
 @import "config.rasi"
 
 window {
-    width: 85%;
+    width: 1150px;
+    height: 760px;
+    background-image: url("~/.config/wallust/assets/generated/panel-frame-wide.svg", both);
 }
 
 mainbox {
-    children: [ "inputbar", "message", "listview" ];
+    children: [ "voluta-crown", "inputbar", "message", "listview", "voluta-foot" ];
 }
 
 listview {
@@ -23,4 +25,8 @@ message {
 textbox {
     background-color: transparent;
     text-color: @muted;
+}
+element { background-image: url("~/.config/wallust/assets/generated/tile-frame-wide.svg", width); }
+element selected.normal, element selected.active, element selected.urgent {
+    background-image: url("~/.config/wallust/assets/generated/tile-selected-wide.svg", width);
 }

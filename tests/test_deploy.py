@@ -17,6 +17,7 @@ class DeploymentTests(unittest.TestCase):
         self.env = {**os.environ, 'HOME': str(self.home),
                     'XDG_CONFIG_HOME': str(self.home / '.config'),
                     'XDG_DATA_HOME': str(self.home / '.local/share'),
+                    'XDG_CACHE_HOME': str(self.home / '.cache'),
                     'XDG_STATE_HOME': str(self.home / '.local/state')}
 
     def run_cli(self, *args, code=0):
@@ -81,6 +82,23 @@ class DeploymentTests(unittest.TestCase):
         self.assertNotIn('openrgb', output['packages'])
         self.assertNotIn('obs-cmd', output['packages'])
         self.assertFalse((self.home / '.local/share/voluta').exists())
+
+    def test_browser_enabled_later_publishes_gallery_without_replacing_user_data(self):
+        self.run_cli('init')
+        self.run_cli('install', '--skip-deps')
+        palette = self.home / '.config/hypr/wallust/colors-shell.sh'
+        palette.parent.mkdir(parents=True, exist_ok=True)
+        palette.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_1='AA5577'\n")
+        self.run_cli('feature', 'enable', 'browser')
+        gallery = self.home / '.local/share/voluta/gallery'
+        self.assertTrue((gallery / 'manifest.json').exists())
+        self.assertTrue((gallery / 'generated/palette.json').exists())
+        marker = gallery / 'user-marker'
+        marker.write_text('preserve')
+        self.run_cli('feature', 'disable', 'browser')
+        self.run_cli('update', '--skip-deps')
+        self.run_cli('feature', 'enable', 'browser')
+        self.assertEqual(marker.read_text(), 'preserve')
 
 
 if __name__ == '__main__':

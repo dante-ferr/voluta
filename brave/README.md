@@ -74,3 +74,14 @@ background tabs. Its favicon frame sequence is best effort: Brave extensions
 cannot apply Floorp's `userChrome.css` filters or transitions to native tab icons
 or loading spinners, so identical smooth animation requires browser changes or
 a separately rendered tab sidebar.
+
+## Architectural New Tab: Voluta Gallery
+
+The optional Gallery extension adds a framed wallpaper, clock, chamfered search
+panel and editable shortcuts. It reuses the shared palette and corner ornaments.
+Load `~/.local/share/voluta/gallery` through **Load unpacked** after enabling the
+browser integration and publishing the palette. Existing tab groups stay native;
+choose neutral group colors in Brave.
+
+See [Architectural surfaces and Gallery](../docs/voluta/integrations/surfaces.md)
+for setup, updates, storage ownership and verification limits.

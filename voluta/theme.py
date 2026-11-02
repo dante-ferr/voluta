@@ -87,6 +87,8 @@ def publish(config=None, cache=None, directory=None, host=None):
     write_changed(generated / "theme.json", json.dumps({"version": 1, "background": color, "background_rgb": background, "source_background": "#" + "".join(f"{c:02x}" for c in source)}, indent=2) + "\n")
     write_changed(generated / "theme.css", f"@define-color voluta_background {color};\n")
     write_changed(generated / "theme.sh", f"voluta_bg='{color[1:]}'\nvoluta_bg_rgb='{rgb}'\n")
+    from surfaces import publish as publish_surfaces
+    publish_surfaces(config=config, directory=directory or config / "voluta", host=host)
     return changed
 
 

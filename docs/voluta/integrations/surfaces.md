@@ -1,0 +1,90 @@
+# Architectural surfaces and Gallery
+
+Status: implemented. The visual direction emphasizes geometry: stepped double
+surrounds, chamfered cards, recessed input panels, fine rules, and asymmetrical
+ornament. The existing small corner scrolls appear as restrained accents, rather
+than repeating around every control. Labels stay plain; tab-group names do not
+receive symbols.
+
+## Desktop surfaces
+
+`rofi/frame.rasi` supplies the shared surround, crown, input relief, tile outlines,
+and footer. The main launcher, dashboard, picker, and RGB selector import it;
+two-column and wide selectors use frames sized to their own rows. Rofi preserves
+SVG aspect ratios when scaling background images and can tile the result, so
+update the generated canvas sizes along with any window or tile geometry change.
+Test an actual menu, not only `-dump-theme`.
+
+The power menu uses the same stepped surrounds and inset focus relief. Its action
+layout, keybindings and power commands are unchanged. Validate styling with a
+separate layout whose actions are all `true`; never invoke power actions as a
+visual test.
+
+SVG sources live in `wallust/assets/`. `voluta/surfaces.py` renders them into
+`~/.config/wallust/assets/generated/` after the shared background publisher runs.
+Colors derive exclusively from Wallust tokens and the persistent background
+policy. Generated files are ignored and must not be committed.
+
+## Optional Brave New Tab
+
+Voluta Gallery is an unpacked Manifest V3 extension, shipped under `brave/gallery/`.
+It provides a large framed wallpaper, clock, search panel, and up to twelve named
+shortcuts. It does not change the native tab strip or tab-group geometry: those
+controls are drawn by Brave. Choose neutral native group colors separately.
+Prismwing remains responsible for website favicons.
+
+With the browser feature enabled, palette publication prepares the extension at
+`${XDG_DATA_HOME:-$HOME/.local/share}/voluta/gallery`. To prepare it immediately:
+
+```bash
+voluta feature enable browser
+bash ~/.config/hypr/UserScripts/combined_wallust.sh
+```
+
+In `brave://extensions`, enable Developer mode, choose **Load unpacked**, and
+select that `gallery` directory. Brave may ask you to confirm the New Tab change.
+Only one extension can own New Tab; choose Gallery or your previous New Tab
+provider. Disable Gallery to return control to Brave/the other provider.
+
+This loading step is deliberately manual. The publisher does not edit browser
+profile databases, silently install extensions, or change existing groups.
+Keep the published directory at the same path across updates: unpacked extension
+identity and browser-stored shortcuts depend on that location. After extension
+code updates, use **Reload** in the extensions page and reopen New Tab. Palette
+and wallpaper changes refresh automatically in open, visible Gallery tabs within
+four seconds, and immediately when a tab becomes visible.
+
+Gallery requests only `storage` and `search`. It stores shortcut names and URLs
+in browser-local extension storage, uses the configured search engine, and makes
+no external requests before a user searches or follows a shortcut. Its local
+wallpaper copy is restricted to supported image files up to 64 MiB; unavailable
+artwork leaves a palette-colored mat. The generated descriptor contains an opaque
+version and relative image name, not the wallpaper's filesystem path. The private
+wallpaper copy belongs in the user's data directory, never the repository.
+
+Disabling the browser feature stops Gallery publication and preserves its data.
+Disable/remove the extension in Brave as well if you no longer want its New Tab
+page. Re-enabling the feature republishes the assets; shortcut storage survives
+ordinary dotfiles updates. Uninstalling the extension itself can erase that
+browser-managed storage.
+
+## Verification
+
+`tests/test_surfaces.py` checks core publication with browser disabled, wallpaper
+refresh, background policy, missing-artwork tolerance, and preference preservation.
+`tests/gallery.test.mjs` checks address validation and bounded shortcut storage.
+Run them alongside the existing theme and installer acceptance suites.
+
+The local browser preview verifies layout, shortcut add/remove persistence, and
+narrow-screen overflow. Live Rofi and wlogout previews verify their actual
+renderers. Manual extension loading and the browser's default-search API still
+need verification in the selected Brave profile; a local HTTP preview exercises
+the fallback UI, not Chromium's extension installation.
+
+Recorded validation on 2026-11-02: 46 Voluta tests and 12 session tests passed
+locally and in the offline QEMU/TCG Arch guest using configuration-only installs.
+The Gallery logic checks passed in Node. All four Rofi themes parsed and opened
+successfully; actual screenshots caught and resolved image tiling across icon
+and text rows. Wlogout loaded its stylesheet without warnings using a no-op
+layout. The HTTP Gallery preview passed shortcut persistence, console-error and
+horizontal-overflow checks. No Brave extension was installed automatically.

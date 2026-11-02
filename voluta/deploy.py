@@ -261,6 +261,9 @@ def _reconcile_if_installed(directory, host):
     module_links(settings, data / 'current', manifest, state)
     render_environment(settings, config, manifest, state)
     activate_system_modules(settings, manifest, manifest.get('skip_deps', False))
+    if (config / 'hypr/wallust/colors-shell.sh').exists():
+        from surfaces import publish
+        publish(config=config, directory=directory, host=host)
     atomic_write(state / 'install.json', manifest)
 
 

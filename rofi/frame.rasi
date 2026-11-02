@@ -1,0 +1,91 @@
+/* Shared stepped surround, incised tiles and two asymmetrical corner ornaments. */
+window {
+    width: 720px;
+    height: 640px;
+    padding: 12px;
+    border: 0px;
+    border-radius: 0px;
+    background-color: transparent;
+    background-image: url("~/.config/wallust/assets/generated/panel-frame.svg", both);
+}
+mainbox {
+    padding: 14px 20px 8px;
+    spacing: 14px;
+    background-color: transparent;
+    children: [ "voluta-crown", "inputbar", "message", "listview", "voluta-foot" ];
+}
+voluta-crown {
+    orientation: horizontal;
+    children: [ "icon-voluta-scroll", "textbox-voluta-title", "voluta-balance" ];
+    background-color: transparent;
+    height: 48px;
+    expand: false;
+}
+icon-voluta-scroll {
+    width: 48px;
+    size: 48px;
+    background-color: transparent;
+    filename: "~/.config/wallust/assets/generated/small-corner-tl.svg";
+    expand: false;
+}
+voluta-balance { width: 48px; expand: false; background-color: transparent; }
+textbox-voluta-title {
+    str: "VOLUTA";
+    font: "JetBrains Mono 10";
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    text-color: @muted;
+    background-color: transparent;
+    expand: true;
+}
+inputbar {
+    padding: 14px 16px;
+    border: 1px 1px 2px;
+    border-color: @accent;
+    background-color: @bg;
+    background-image: none;
+}
+entry { placeholder-color: @muted; }
+listview { spacing: 7px; background-color: transparent; }
+element {
+    padding: 10px 15px;
+    border: 0px;
+    border-radius: 0px;
+    background-color: transparent;
+    background-image: url("~/.config/wallust/assets/generated/tile-frame-list.svg", width);
+    text-color: @fg;
+}
+element selected.normal, element selected.active, element selected.urgent {
+    background-color: transparent;
+    background-image: url("~/.config/wallust/assets/generated/tile-selected-list.svg", width);
+    text-color: @fg;
+    border: 0px;
+}
+element selected.normal element-text, element selected.active element-text {
+    text-color: @fg;
+}
+element-icon { size: 24px; }
+message { padding: 2px 0px; border: 0px; background-color: transparent; }
+textbox { text-color: @muted; background-color: transparent; }
+voluta-foot {
+    orientation: horizontal;
+    children: [ "textbox-voluta-hint", "icon-voluta-scroll-end" ];
+    height: 36px;
+    expand: false;
+    background-color: transparent;
+}
+textbox-voluta-hint {
+    str: "ESC   Close";
+    font: "JetBrains Mono 9";
+    vertical-align: 0.8;
+    text-color: @muted;
+    background-color: transparent;
+    expand: true;
+}
+icon-voluta-scroll-end {
+    width: 36px;
+    size: 36px;
+    expand: false;
+    background-color: transparent;
+    filename: "~/.config/wallust/assets/generated/small-corner-br.svg";
+}

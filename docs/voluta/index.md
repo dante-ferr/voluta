@@ -24,6 +24,7 @@ specifications belong here rather than in the root agent instructions.
 | Change login, GPU, locking, or suspend behavior | [Runtime and hardware constraints](engineering/runtime_constraints.md) |
 | Plan installation validation in a VM | [Installation testing](engineering/installation_testing.md) |
 | Implement device lighting after authorization | [Wallust RGB integration](integrations/rgb.md) |
+| Change panel geometry, ornaments, or the New Tab gallery | [Architectural surfaces and Gallery](integrations/surfaces.md) |
 
 Use the [complete summary](SUMMARY.md) for navigation.
 

@@ -3,9 +3,9 @@
 configuration {
     modi: "drun,run,filebrowser";
     show-icons: true;
-    display-drun: " 󰀘 Apps";
-    display-run: " ⚙ Run";
-    display-filebrowser: " 📁 Files";
+    display-drun: "Apps";
+    display-run: "Run";
+    display-filebrowser: "Files";
     drun-display-format: "{name}";
     font: "JetBrainsMono Nerd Font 11";
 }
@@ -153,4 +153,10 @@ element-text {
     vertical-align: 0.5;
     horizontal-align: 0.0;
     font: "JetBrainsMono Nerd Font 11";
+}
+
+@import "frame.rasi"
+element { background-image: url("~/.config/wallust/assets/generated/tile-frame.svg", width); }
+element selected.normal, element selected.active, element selected.urgent {
+    background-image: url("~/.config/wallust/assets/generated/tile-selected.svg", width);
 }

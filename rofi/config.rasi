@@ -3,9 +3,9 @@
 configuration {
     modi: "drun,run,filebrowser";
     show-icons: true;
-    display-drun: " ⚜ Apps";
-    display-run: " ⚙ Run";
-    display-filebrowser: " 📁 Files";
+    display-drun: "Apps";
+    display-run: "Run";
+    display-filebrowser: "Files";
     drun-display-format: "{name}";
     font: "JetBrains Mono 12";
 }
@@ -138,3 +138,5 @@ element-text {
     vertical-align: 0.5;
     horizontal-align: 0.0;
 }
+
+@import "frame.rasi"

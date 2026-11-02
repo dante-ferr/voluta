@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voluta</title>
+  <link rel="stylesheet" href="generated/palette.css">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <main class="gallery">
+    <header class="masthead"><span class="wordmark">VOLUTA</span><span class="edition">Gallery</span></header>
+    <section class="study" aria-label="New tab">
+      <div class="time-block"><p id="date" class="eyebrow"></p><h1><time id="clock"></time></h1></div>
+      <form id="search-form" class="search-panel cut-panel" role="search">
+        <label for="query">Where next?</label>
+        <div class="search-row"><input id="query" name="query" type="text" autocomplete="off" placeholder="Search or enter an address" required><button type="submit">Go</button></div>
+      </form>
+      <section class="places" aria-labelledby="places-title">
+        <div class="section-heading"><h2 id="places-title">Places</h2><button id="edit-shortcuts" class="quiet-button" type="button">Edit</button></div>
+        <nav id="shortcuts" aria-label="Shortcuts"></nav>
+      </section>
+      <footer class="study-footer"><span id="year"></span><span class="short-rule" aria-hidden="true"></span></footer>
+    </section>
+    <figure class="artwork">
+      <div class="artwork-mat"><img id="wallpaper" alt="Your desktop wallpaper" hidden></div>
+      <svg class="architectural-frame" aria-hidden="true"><path class="outer-edge"></path><path class="inner-edge"></path></svg>
+      <img class="ornament ornament-tl" src="generated/small-corner-tl.svg" alt="">
+      <img class="ornament ornament-br" src="generated/small-corner-br.svg" alt="">
+      <figcaption><span>THE CURRENT WALLPAPER</span><span>Voluta / Gallery</span></figcaption>
+    </figure>
+    <div class="bottom-rule" aria-hidden="true"></div>
+  </main>
+  <dialog id="shortcut-dialog">
+    <form id="shortcut-form">
+      <div class="section-heading"><h2>Your places</h2><button id="close-dialog" type="button" class="quiet-button">Close</button></div>
+      <ul id="editable-shortcuts"></ul>
+      <div class="add-fields"><label>Name<input id="shortcut-name" maxlength="40" required></label><label>Address<input id="shortcut-url" type="text" placeholder="https://example.com" required></label></div>
+      <p id="shortcut-error" role="status"></p>
+      <button type="submit" class="add-button">Add shortcut</button>
+    </form>
+  </dialog>
+  <p id="page-status" class="sr-only" role="status"></p>
+</body>
+</html>
