@@ -12,4 +12,13 @@ if pgrep -x hypridle >/dev/null; then
     exit 0
 fi
 
-hypridle -c "$conf" >/dev/null 2>&1 &
+# Retain lifecycle/errors across reboots without enabling input tracing.
+umask 077
+state="${XDG_STATE_HOME:-$HOME/.local/state}/voluta/lock"
+mkdir -p "$state" || exit 1
+log="$state/hypridle.log"
+if [[ -f "$log" && $(stat -c %s "$log") -gt 1048576 ]]; then
+    mv -f "$log" "$log.1"
+fi
+printf '\n[%s] starting hypridle config=%s\n' "$(date -Is)" "$conf" >>"$log"
+hypridle -c "$conf" >>"$log" 2>&1 &

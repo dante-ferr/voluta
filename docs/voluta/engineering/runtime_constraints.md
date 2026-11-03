@@ -44,3 +44,23 @@ must load the private values before relying on those defaults for the owner's
 session. Check both `input:kb_layout` and `input:kb_options`, plus the resolved
 browser preference, after a migration reload. A successful configerrors query
 alone does not prove that the intended preferences were applied.
+
+## Notebook wake recovery (2026-11-03)
+
+Read `/etc/hostname` when selecting host resume policy, consistently with
+`StartHypridle.sh`. Arch does not guarantee the optional `hostname` executable;
+its absence silently bypassed the companion recovery hook on this notebook.
+Keep compositor IPC bounded and retain errors. Resume may restore a missing
+locker only when the compositor reports that the session is already locked.
+Never clear a session lock or kill the locker as an automatic recovery action.
+
+The notebook hook now restores display/output presentation without a fixed
+pre-recovery delay. Lifecycle/error logs live under
+`~/.local/state/voluta/lock/`; do not enable raw keyboard/password tracing.
+Concurrent lock requests use the shared `LockScreen.sh` launcher.
+
+Validated with isolated routing/concurrency/timeout checks and live wake-hook
+execution: display wake and renderer recovery succeeded, configerrors was empty,
+and the idle daemon held its sleep delay inhibitor. A physical suspend/resume
+with password entry remains to be checked; live hook execution alone does not
+prove an intermittent freeze is eliminated.
