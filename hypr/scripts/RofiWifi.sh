@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # RofiWifi.sh - Interactive Wi-Fi manager for Hyprland/Waybar using Rofi & nmcli
 
-ROFI_THEME="$HOME/.config/rofi/config.rasi"
+ROFI_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rofi"
+
+wifi_menu() {
+    sh "$ROFI_DIR/run-selector.sh" -dmenu -theme "$ROFI_DIR/wifi.rasi" "$@"
+}
 
 # Get Wi-Fi radio status
 WIFI_STATE=$(nmcli radio wifi)
@@ -70,7 +74,7 @@ if [[ -n "$NETWORKS" ]]; then
 fi
 
 # Render Rofi menu
-CHOSEN=$(echo -e "$MENU_OPTIONS" | rofi -dmenu -i -p "󰤨 Wi-Fi" -theme "$ROFI_THEME")
+CHOSEN=$(echo -e "$MENU_OPTIONS" | wifi_menu -i -p "󰤨 Wi-Fi")
 
 [[ -z "$CHOSEN" ]] && exit 0
 
@@ -97,7 +101,7 @@ else
     [[ -z "$SSID_RAW" ]] && exit 1
     
     if [[ "$SSID_RAW" == "$ACTIVE_SSID" ]]; then
-        ACTION=$(echo -e "Disconnect\nCancel" | rofi -dmenu -i -p "Active: $SSID_RAW" -theme "$ROFI_THEME")
+        ACTION=$(echo -e "Disconnect\nCancel" | wifi_menu -i -p "Active: $SSID_RAW")
         if [[ "$ACTION" == "Disconnect" ]]; then
             nmcli con down id "$SSID_RAW"
             notify-send "Wi-Fi" "Disconnected from $SSID_RAW"
@@ -113,7 +117,7 @@ else
         notify-send "Wi-Fi" "Successfully connected to $SSID_RAW"
     else
         # Password prompt if secrets required
-        PASS=$(rofi -dmenu -password -p "Password for $SSID_RAW" -theme "$ROFI_THEME")
+        PASS=$(wifi_menu -password -p "Password for $SSID_RAW")
         if [[ -n "$PASS" ]]; then
             notify-send "Wi-Fi" "Connecting to $SSID_RAW..."
             CONN_PASS_OUTPUT=$(nmcli dev wifi connect "$SSID_RAW" password "$PASS" 2>&1)

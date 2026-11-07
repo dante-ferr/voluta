@@ -1,0 +1,62 @@
+/* Shared PNG frame for the app and Wi-Fi selectors. */
+/* Later rules win. Rofi fits a background image inside the widget and
+   repeats whatever is left over, so the angel must be exactly 1152×1024.
+   Window padding centers that plate. The hollow padding is on mainbox;
+   the image still paints the full plate, including that padding. */
+window {
+    fullscreen: true;
+    width: 100%;
+    height: 100%;
+    /* Center the 1152×1024 plate on the monitor Rofi actually uses.
+       A launcher script that guesses this from hyprctl can miss and pin
+       the plate to the top-left. */
+    padding: calc(50% - 512px) calc(50% - 576px) calc(50% - 512px) calc(50% - 576px);
+    background-color: transparent;
+    /* The thin veil gives Hyprland a surface to blur behind the menu. */
+    background-image: url("~/.config/wallust/assets/generated/launcher-vignette.svg", both);
+}
+mainbox {
+    width: 1152px;
+    height: 1024px;
+    /* Fill the padded slot. A fixed height is ignored on a box, and a
+       shorter plate scales the angel and shifts the menu in the hollow. */
+    expand: true;
+    margin: 0px;
+    padding: 369px 230px 255px 330px;
+    background-color: transparent;
+    background-image: url("~/.config/wallust/assets/generated/big-angel-box.png", both);
+}
+inputbar {
+    margin: 0px;
+    padding: 10px 16px;
+    border: 1px 1px 2px;
+    border-radius: 7px 0px;
+    border-color: @accent;
+    background-color: @card-bg;
+}
+listview { margin: 0px; spacing: 6px; lines: 7; }
+element-icon { size: 24px; }
+element {
+    padding: 8px 15px 8px 13px;
+    border: 1px 1px 1px 3px;
+    border-radius: 7px 0px;
+    border-color: @muted;
+    background-color: @bg;
+    background-image: none;
+    text-color: @fg;
+}
+element selected.normal, element selected.active, element selected.urgent {
+    /* Balance the thicker outline with padding so the contents stay put. */
+    padding: 7px 14px;
+    border: 2px;
+    border-radius: 7px 0px;
+    border-color: @accent;
+    background-color: @card-bg;
+    background-image: none;
+    text-color: @fg;
+}
+element selected.normal element-text,
+element selected.active element-text,
+element selected.urgent element-text {
+    text-color: @fg;
+}

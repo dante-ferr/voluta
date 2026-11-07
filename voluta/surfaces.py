@@ -1,6 +1,9 @@
-"""Publish shared architectural SVG frames and the optional local New Tab gallery."""
+"""Publish architectural frames and the optional local New Tab gallery."""
+import argparse
+from colorsys import hls_to_rgb, rgb_to_hls
 import configparser
 import hashlib
+from io import BytesIO
 import json
 import os
 from pathlib import Path
@@ -8,6 +11,8 @@ import re
 import shutil
 import subprocess
 import tempfile
+
+from PIL import Image, ImageChops, ImageOps
 
 from cli import ROOT, hostname, resolve
 from theme import preferred_background, read_palette, write_changed
@@ -20,6 +25,8 @@ ASSETS = ('panel-frame.svg', 'big-angel-box.svg', 'launcher-vignette.svg',
           'big-corner-tl.svg', 'big-corner-br.svg')
 GALLERY_FILES = ('manifest.json', 'index.html', 'style.css', 'app.js', 'logic.mjs', 'artwork.mjs', 'motion.mjs')
 GALLERY_ORNAMENTS = ('big-corner-tl.svg', 'big-corner-br.svg')
+SELECTOR_FRAME = Path('wallust/assets/big-angel-box.png')
+SELECTOR_SIZE = (1152, 1024)  # Matches the centered slot in rofi/selector-frame.rasi.
 
 
 def hex_color(color):
@@ -45,6 +52,113 @@ def canvas(svg, width, height):
         attributes = re.sub(r'\s(?:width|height)="[^"]*"', '', match[1])
         return f'<svg width="{width}" height="{height}"' + attributes + '>'
     return re.sub(r'<svg\b([^>]*)>', dimensions, svg, count=1)
+
+
+def write_bytes_changed(path, content):
+    if path.exists() and path.read_bytes() == content:
+        return False
+    destination = path.resolve() if path.is_symlink() else path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=destination.parent, delete=False) as handle:
+        temporary = Path(handle.name)
+        handle.write(content)
+    try:
+        temporary.replace(destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return True
+
+
+def selector_tints(palette, hue, saturation, luminance, alpha):
+    # Ignore transparent, neutral and very dark pixels when finding the source hues.
+    mask = ImageChops.multiply(alpha, saturation.point(lambda value: 255 if value >= 24 else 0))
+    mask = ImageChops.multiply(mask, luminance.point(lambda value: 255 if value > 24 else 0))
+    histogram = hue.histogram(mask)
+    center = max(range(256), key=histogram.__getitem__)
+    origin = (center - 128) % 256
+    histogram = histogram[origin:] + histogram[:origin]
+    total = sum(histogram)
+    positions = []
+    count = 0
+    for index, frequency in enumerate(histogram):
+        count += frequency
+        while len(positions) < 3 and count >= total * (.05, .50, .95)[len(positions)]:
+            positions.append(index if total else 128)
+    low, middle, high = positions
+    low, high = min(low, middle - 1), max(high, middle + 1)
+
+    # Order distinct Wallust hues along the same circular axis as the artwork.
+    tones = {}
+    for key in ('1', '2', '3', '4', '5', '6', '9', '10', '11', '12', '13', '14'):
+        if key not in palette:
+            continue
+        tint_hue, lightness, chroma = rgb_to_hls(*(channel / 255 for channel in palette[key]))
+        if chroma < .08:
+            continue
+        position = (tint_hue - origin / 256) % 1
+        tint = tuple(round(channel * 255) for channel in
+                     hls_to_rgb(tint_hue, max(lightness, .68), chroma))
+        tones.setdefault(int(position * 24), tint)
+    colors = [tones[key] for key in sorted(tones)] or [palette['fg']]
+    left, neutral, right = colors[0], colors[len(colors) // 2], colors[-1]
+    if len(colors) == 2:
+        neutral = tuple(round((a + b) / 2) for a, b in zip(left, right))
+
+    lookup = []
+    for value in range(256):
+        position = (value - origin) % 256
+        if position < middle:
+            start, end = left, neutral
+            amount = max(0, (position - low) / (middle - low))
+        else:
+            start, end = neutral, right
+            amount = min(1, (position - middle) / (high - middle))
+        lookup.append(tuple(round(a + (b - a) * amount) for a, b in zip(start, end)))
+    return lookup, neutral
+
+
+def render_selector_frame(source, palette):
+    with Image.open(source) as original:
+        image = original.convert('RGBA')
+        alpha = image.getchannel('A')
+        hue, saturation, _ = image.convert('HSV').split()
+        luminance = ImageOps.grayscale(image)
+        lookup, neutral = selector_tints(palette, hue, saturation, luminance, alpha)
+        tinted = Image.merge('RGB', tuple(hue.point(channel) for channel in zip(*lookup)))
+        # Weakly saturated pixels have unreliable hues. Fade them to the middle tint.
+        tinted = Image.composite(tinted, Image.new('RGB', image.size, neutral),
+                                 saturation.point(lambda value: min(255, value * 6)))
+        # Keep the full tonal range, with the brightest relief closer to the background.
+        relief = luminance.point(lambda value: min(224, max(0, round((value - 24) * 224 / 151))))
+        frame = Image.composite(tinted, Image.new('RGB', image.size, palette['bg']), relief)
+        frame.putalpha(alpha)
+        # Rofi tiles the unused area after fitting an image of a different ratio.
+        frame = ImageOps.pad(frame, SELECTOR_SIZE, Image.Resampling.LANCZOS,
+                             color=(0, 0, 0, 0))
+        with BytesIO() as output:
+            frame.save(output, format='PNG')
+            return output.getvalue()
+
+
+def refresh_selector_frame():
+    from cli import atomic_write
+    from deploy import deployment_lock, load_manifest, locations, write_managed
+
+    config, data, state = locations()
+    with deployment_lock():
+        manifest = load_manifest(state)
+        installed = ROOT / SELECTOR_FRAME
+        checkout = Path(manifest.get('source', str(ROOT))) / SELECTOR_FRAME
+        use_checkout = ROOT == (data / 'current').resolve() and checkout.is_file()
+        source = checkout if use_checkout else installed
+        content = source.read_bytes()
+        palette = read_palette(config / 'hypr/wallust/colors-shell.sh')
+        palette['bg'] = preferred_background(palette, config / 'voluta')
+        frame = render_selector_frame(BytesIO(content), palette)
+        if use_checkout and (not installed.is_file() or installed.read_bytes() != content):
+            write_managed(installed, content, manifest, state, 0o644)
+            atomic_write(state / 'install.json', manifest)
+        write_bytes_changed(config / SELECTOR_FRAME.parent / 'generated' / SELECTOR_FRAME.name, frame)
 
 
 def current_wallpaper(config):
@@ -109,6 +223,8 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
         write_changed(assets / name, rendered[name])
     # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
     write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
+    frame = render_selector_frame(root / SELECTOR_FRAME, palette)
+    write_bytes_changed(assets / SELECTOR_FRAME.name, frame)
     write_changed(assets / 'panel-frame-wide.svg', rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
     for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
         for name in ('tile-frame', 'tile-selected'):
@@ -144,4 +260,14 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
 
 
 if __name__ == '__main__':
-    publish()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--refresh-selector', action='store_true',
+                        help='sync and filter only the app selector frame')
+    args = parser.parse_args()
+    try:
+        if args.refresh_selector:
+            refresh_selector_frame()
+        else:
+            publish()
+    except (OSError, ValueError, KeyError) as error:
+        parser.exit(1, f'Voluta surfaces: {error}\n')

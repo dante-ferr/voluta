@@ -2,27 +2,44 @@
 
 Status: implemented. The visual direction emphasizes geometry: stepped surrounds,
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
-Rofi uses the `big-angel-box` silhouette plate painted with the Wallust
-background (near-black), with no halo. The launcher window is fullscreen.
-A thin background veil covers the output so Hyprland can blur it. The light
-wash is a smaller soft rectangle centered in the angel plate, so the lift
-stays subtle and follows the selector without filling the whole frame. The
-launcher layer popin-animates on map and unmap.
+The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
+palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
+Hyprland can softly blur the desktop behind the frame. The launcher layer
+popin-animates on map and unmap.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
 
 ## Desktop surfaces
 
 `rofi/frame.rasi` supplies the shared angel surround, input relief, and tile
-outlines. The shared plate is 1152×1024, with padding that matches the SVG
-hollow so ornaments sit outside the content. The publisher scales
-`big-angel-box.svg` to that canvas, and publishes `launcher-vignette.svg` at
-16:9 for the fullscreen veil. Rofi fits a background image inside its widget
-and repeats the remainder, so the angel plate must stay exactly 1152×1024.
+outlines. The shared plate is 1152×1024, with padding that matches the frame
+hollow so ornaments sit outside the content. The app selector and Wi-Fi menu
+import `rofi/selector-frame.rasi`, which loads the same generated
+`big-angel-box.png`. The publisher uses the original artwork's hue range to
+map different areas to several colors from the active Wallust palette. It
+blends between those colors and uses the original luminance to retain detail,
+with deep shadows matching the background of the Rofi boxes. It preserves the
+original PNG and its transparency.
+Rofi reads the filtered copy on the next launch without
+processing the image or refreshing a menu that is already open.
+After replacing `wallust/assets/big-angel-box.png` in the source checkout,
+press Super+Alt+R to deploy just that image and regenerate the filtered copy
+with the current palette. Wallpaper changes use the deployed source.
+The publisher also scales `big-angel-box.svg` for the shared theme. It centers
+the filtered PNG on a transparent 1152×1024 canvas while preserving its aspect
+ratio, so Rofi fills the slot without repeating the image.
 The fullscreen window centers that plate with padding, using half the
 monitor minus half the plate. Super+D, Super+Shift+Enter, and
-Super+Ctrl+Enter all run `rofi/launch-dashboard.sh`. Dashboard rows use a
-single border instead of a tile image.
+Super+Ctrl+Enter all run `rofi/launch-dashboard.sh`. Both menus use opposing
+rounded corners and a heavier left edge on ordinary rows, with more space
+between the boxes and the surrounding ornament. Both lists show up to seven
+rows at a time. The selected row has a 2px palette accent outline and a raised
+background color, with the same content position as ordinary rows.
+When Quickshell is installed and the monitor can fit the frame, the shared
+selector launcher draws an astrolabe inside the opening. Its engraved scales
+turn in opposite directions, with broad arcs colored by Wallust. The layer
+sits below Rofi, accepts no input, and closes
+with the menu. The menus also work without Quickshell.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so
@@ -34,7 +51,7 @@ layout, keybindings and power commands are unchanged. Validate styling with a
 separate layout whose actions are all `true`; never invoke power actions as a
 visual test.
 
-SVG sources live in `wallust/assets/`. `voluta/surfaces.py` renders them into
+Frame sources live in `wallust/assets/`. `voluta/surfaces.py` renders them into
 `~/.config/wallust/assets/generated/` after the shared background publisher runs.
 Colors derive exclusively from Wallust tokens and the persistent background
 policy. Generated files are ignored and must not be committed.

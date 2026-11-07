@@ -4,5 +4,5 @@ if pkill rofi; then
     exit 0
 fi
 
-theme="${XDG_CONFIG_HOME:-$HOME/.config}/rofi/dashboard.rasi"
-exec rofi -show drun -theme "$theme"
+directory="${XDG_CONFIG_HOME:-$HOME/.config}/rofi"
+exec sh "$directory/run-selector.sh" -show drun -theme "$directory/dashboard.rasi"

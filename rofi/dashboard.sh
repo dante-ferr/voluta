@@ -30,4 +30,5 @@ $battery_str
 󰒋 Nucleus    : $kernel_ver"
 
 # 4. Launch 2-column Rofi System Dashboard
-exec rofi -show drun -theme "$HOME/.config/rofi/dashboard.rasi" -mesg "$TELEMETRY_HUD"
+directory="${XDG_CONFIG_HOME:-$HOME/.config}/rofi"
+exec sh "$directory/run-selector.sh" -show drun -theme "$directory/dashboard.rasi" -mesg "$TELEMETRY_HUD"

@@ -4,10 +4,19 @@
 # 1. Reload Hyprland Window Manager
 hyprctl reload >/dev/null 2>&1 || true
 
-# A pull also changes generated Qt styling, saved view defaults and the hook.
-# Do this before setting Waybar's LD_PRELOAD below.
 refresh_script=$(readlink -f -- "${BASH_SOURCE[0]}")
 rice_root=$(cd -- "$(dirname -- "$refresh_script")/../.." && pwd)
+if [[ -f "$rice_root/voluta/surfaces.py" ]]; then
+    # Share the palette lock with the wallpaper hook so both use a complete palette.
+    lock_dir=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+    [[ -w $lock_dir ]] || lock_dir=/tmp
+    if ! flock -w 8 "$lock_dir/imperium-combined-wallust.lock" \
+        /usr/bin/python3 "$rice_root/voluta/surfaces.py" --refresh-selector; then
+        notify-send "App selector frame refresh failed" "Check the PNG and Wallust palette, then run Refresh again."
+    fi
+fi
+# A pull also changes generated Qt styling, saved view defaults and the hook.
+# Do this before setting Waybar's LD_PRELOAD below.
 if [[ -f "$rice_root/dolphin/apply.sh" ]]; then
     if ! bash "$rice_root/dolphin/apply.sh"; then
         notify-send "Dolphin refresh failed" "Run voluta update in a terminal for details."
