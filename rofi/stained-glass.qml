@@ -6,13 +6,17 @@ import "effects" as Glass
 
 PanelWindow {
     id: panel
-    readonly property string output: Quickshell.env("VOLUTA_SELECTOR_MONITOR")
-    readonly property var palette: Quickshell.env("VOLUTA_SELECTOR_COLORS").split(" ")
+    property string output: Quickshell.env("VOLUTA_SELECTOR_MONITOR")
+    property var palette: Quickshell.env("VOLUTA_SELECTOR_COLORS").split(" ")
     readonly property var targetScreen: Quickshell.screens.find(candidate => candidate.name === output) ?? null
-    readonly property string assets: Quickshell.env("VOLUTA_SELECTOR_ASSETS")
+    property string assets: Quickshell.env("VOLUTA_SELECTOR_ASSETS")
     readonly property url aperture: Qt.resolvedUrl(assets + "/selector-aperture.png")
     readonly property int plateWidth: 1152
     readonly property int plateHeight: 1024
+
+    property string artworkVersion: Quickshell.env("VOLUTA_SELECTOR_VERSION")
+    property bool active: false
+    property string request: ""
 
     screen: targetScreen
     visible: targetScreen !== null && targetScreen.width >= plateWidth && targetScreen.height >= plateHeight
@@ -25,8 +29,10 @@ PanelWindow {
 
     property bool entranceStarted: false
     function startWhenReady(): void {
-        if (entranceStarted || frameArtwork.status !== Image.Ready ||
-            vignette.status !== Image.Ready || !projection.ready)
+        // The blur veil must be ready; the animated projection can paint while
+        // the frame enters instead of holding up the whole entrance.
+        if (!active || startDelay.running || entranceStarted || frameArtwork.status !== Image.Ready ||
+            vignette.status !== Image.Ready)
             return;
         entranceStarted = true;
         // Establish the blur veil before moving the ornament into view.
@@ -55,6 +61,7 @@ PanelWindow {
             opacity: retable.opacity
             Image {
                 id: frameArtwork
+                cache: false
                 onStatusChanged: panel.startWhenReady()
                 anchors.centerIn: parent
                 width: panel.plateWidth
@@ -69,18 +76,52 @@ PanelWindow {
 
     IpcHandler {
         target: "selector"
-        function dismiss(): void {
-            if (departure.running)
+        function openSelector(output: string, colors: string, assets: string, request: string, version: string): void {
+            panel.active = false;
+            departure.stop();
+            entrance.stop();
+            const refresh = panel.artworkVersion !== version || panel.assets !== assets;
+            panel.output = output;
+            panel.palette = colors.split(" ");
+            panel.assets = assets;
+            panel.artworkVersion = version;
+            if (refresh) {
+                // Wallpaper/frame publication can replace files at the same URL.
+                frameArtwork.source = "";
+                frameArtwork.source = Qt.resolvedUrl(assets + "/big-angel-box.png");
+                vignette.source = "";
+                vignette.source = Qt.resolvedUrl(assets + "/launcher-vignette.svg");
+                projection.unloadImage(panel.aperture);
+                projection.loadImage(panel.aperture);
+            }
+            panel.request = request;
+            panel.entranceStarted = false;
+            retable.y = 130;
+            retable.opacity = 0;
+            vignette.opacity = 0;
+            // Let the native menu lead by a small, consistent stagger.
+            startDelay.restart();
+            panel.active = true;
+        }
+        function dismiss(request: string): void {
+            if (request !== panel.request || departure.running)
                 return;
+            startDelay.stop();
             entrance.stop();
             departure.start();
         }
     }
 
+    Timer {
+        id: startDelay
+        interval: 20
+        onTriggered: panel.startWhenReady()
+    }
+
     ParallelAnimation {
         id: entrance
-        NumberAnimation { target: retable; property: "y"; to: 0; duration: 150; easing.type: Easing.OutCubic }
-        NumberAnimation { target: retable; property: "opacity"; to: 1; duration: 100; easing.type: Easing.OutQuad }
+        NumberAnimation { target: retable; property: "y"; to: 0; duration: 135; easing.type: Easing.OutCubic }
+        NumberAnimation { target: retable; property: "opacity"; to: 1; duration: 85; easing.type: Easing.OutQuad }
     }
 
     SequentialAnimation {
@@ -113,11 +154,12 @@ PanelWindow {
                 }
             }
         }
-        ScriptAction { script: Qt.quit() }
+        ScriptAction { script: panel.active = false }
     }
 
     Image {
         id: vignette
+        cache: false
         anchors.fill: parent
         z: -2
         opacity: 0
@@ -125,8 +167,8 @@ PanelWindow {
         onStatusChanged: panel.startWhenReady()
         source: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
         // The vignette is soft already; rasterize it at quarter size for a faster entrance.
-        sourceSize.width: Math.ceil(width / 4)
-        sourceSize.height: Math.ceil(height / 4)
+        sourceSize.width: Math.ceil((panel.targetScreen?.width ?? 1) / 4)
+        sourceSize.height: Math.ceil((panel.targetScreen?.height ?? 1) / 4)
     }
 
     Item {
@@ -145,7 +187,7 @@ PanelWindow {
             opacity: 0.34
             aperture: panel.aperture
             palette: panel.palette
-            animationRunning: panel.visible
+            animationRunning: panel.active && panel.entranceStarted && panel.visible
             onReadyChanged: panel.startWhenReady()
         }
     }

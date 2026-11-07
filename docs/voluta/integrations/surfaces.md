@@ -6,9 +6,25 @@ The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
 palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
 Hyprland can softly blur the desktop behind the frame. Rofi starts accepting
 input without waiting for Quickshell. The glass veil is established before the
-frame rises in 150ms. Frame artwork and the first stained-glass projection
-are ready before the entrance starts;
-the delayed edge-reflection flash has been removed. On dismissal, the boxes leave
+frame rises in 135ms. The entrance waits for the artwork and blur veil, while
+the animated projection paints during the rise to keep the frame close behind
+the menu;
+the delayed edge-reflection flash has been removed. A resident renderer is
+prewarmed at compositor startup/reload and reused on subsequent openings. A
+session-scoped live-PID cache lets the warm launcher start Rofi before Qt
+checks, compositor IPC, palette reads, and artwork timestamp checks. Rofi chooses
+the focused monitor itself; decoration preparation follows after it is started.
+The Super+D toggle reads Rofi’s PID file and verifies its process name instead
+of scanning all processes with `pkill`.
+Theme media rules preserve the static artwork on outputs too small for the
+animated plate. Missing or dead cached renderers still receive the
+loader check and static fallback. It
+waits 20ms after the menu request before starting the rise. The transparent,
+input-free decoration surfaces remain mapped while idle; projection timers stop
+when closed. Each request carries an ID so a late dismissal cannot close a newer
+menu. Startup is serialized with `flock` and consolidates any surviving
+one-shot renderer instances into one. Open/dismiss IPC addresses that exact PID,
+so old instances cannot receive requests through ambiguous config selection. Generated-artwork timestamps trigger reloads after wallpaper changes. On dismissal, the boxes leave
 first and the frame follows 90ms later. The fullscreen blur veil stays in
 place and fades independently on closing. Its central glass uses
 the palette background at 50% opacity, with a soft feather, rather than a
@@ -182,6 +198,24 @@ preferences, not companion files or generated extension assets. Clearing the
 extension's site data or removing its profile can erase them.
 
 ## Verification
+
+On 2026-11-07, the resident selector renderer loaded without warnings and
+completed three open/dismiss cycles in one process. Measured warm request-to-rise
+latency was 133–167ms including IPC on the active notebook session; the 20ms
+stagger is an animation timer, not a guarantee of total launch latency. Renderer
+initialization measured about 200ms separately and is now paid during prewarming.
+The launcher tests cover preserved dmenu input/exit status, hidden prewarming,
+reuse without spawning another renderer, and matching dismissal request IDs.
+A duplicate-renderer follow-up consolidated seven live selector instances into
+one. Three overlapping prewarms retained one renderer, and a live dummy menu
+exposed exactly one `rofi` and one `voluta-selector-glass` surface. The startup
+regression also checks duplicate metadata and legacy renderer consolidation.
+A follow-up launcher check starts the native input owner before even a blocked
+compositor query. Toggle tests cover Rofi’s newline-free PID file and reject a
+PID reused by another process. The desktop-entry cache did not produce a
+repeatable startup improvement, so app discovery remains uncached.
+Hyprland reload reported no configuration errors. A fresh graphical login and
+physical multi-monitor switching have not been exercised for this change.
 
 On 2026-11-07, 32 notification, shared-theme, deployment, configuration, and
 selector checks passed. Frame checks cover palette changes, preserved alpha,

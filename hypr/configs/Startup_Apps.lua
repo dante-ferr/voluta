@@ -20,6 +20,13 @@ local function start_notification_glass()
 end
 start_notification_glass()
 
+-- Keep the selector's optional decoration renderer warm between openings.
+-- Quickshell's per-config/display singleton makes reloads safe.
+local function warm_selector()
+    hl.exec_cmd("sh " .. config .. "/rofi/run-selector.sh --prewarm")
+end
+warm_selector()
+
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
@@ -59,6 +66,7 @@ hl.on("hyprland.start", function()
     end
     start_palette_watcher()
     start_notification_glass()
+    warm_selector()
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.
     -- It notices enable/disable selections during this session.
