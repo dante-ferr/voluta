@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2560" height="1440" viewBox="0 0 2560 1440">
   <defs>
-    <!-- Soft lift centered on the angel plate: large core with a wide
-         feather so the light spreads across most of the frame. -->
+    <!-- Dark glass centered on the angel plate, with a soft feather.
+         Keep it more transparent than Kitty’s 0.75 background opacity. -->
     <filter id="voluta-vignette" x="-45%" y="-45%" width="190%" height="190%"
             color-interpolation-filters="sRGB">
       <feGaussianBlur in="SourceGraphic" stdDeviation="96"/>
@@ -9,6 +9,6 @@
   </defs>
   <rect width="2560" height="1440" fill="{{background}}" fill-opacity="0.06"/>
   <rect x="768" y="328" width="1024" height="784"
-        fill="{{foreground}}" fill-opacity="0.26"
+        fill="{{background}}" fill-opacity="0.50"
         filter="url(#voluta-vignette)"/>
 </svg>

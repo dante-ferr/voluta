@@ -54,8 +54,8 @@ class SurfaceTests(unittest.TestCase):
         self.assertIn('voluta-vignette', vignette)
         self.assertIn('width="1024"', vignette)
         self.assertIn('height="784"', vignette)
-        self.assertIn('fill-opacity="0.26"', vignette)
-        self.assertIn('fill="#e0d0c0"', vignette)
+        self.assertIn('fill-opacity="0.50"', vignette)
+        self.assertNotIn('fill="#e0d0c0"', vignette)
         self.assertIn('fill="#0a151f"', vignette)
         for name in self.frames.glob('*.svg'):
             ET.parse(name)

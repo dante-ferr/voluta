@@ -5,10 +5,14 @@ chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
 palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
 Hyprland can softly blur the desktop behind the frame. Rofi starts accepting
-input without waiting for Quickshell. The frame and glass rise in 190ms and two
-reflections trace the inner edge as it settles. On dismissal, the boxes leave
+input without waiting for Quickshell. The glass veil is established before the
+frame rises in 150ms. Frame artwork and the first stained-glass projection
+are ready before the entrance starts;
+the delayed edge-reflection flash has been removed. On dismissal, the boxes leave
 first and the frame follows 90ms later. The fullscreen blur veil stays in
-place and fades independently on opening and closing.
+place and fades independently on closing. Its central glass uses
+the palette background at 50% opacity, with a soft feather, rather than a
+foreground-colored glow. This is more transparent than Kitty’s 75% background.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
 
@@ -47,11 +51,13 @@ repairing or rebuilding Quickshell against the installed Qt libraries;
 Super+Alt+R cannot repair a binary/library mismatch.
 The Wallust colors drift diagonally behind Rofi. The publisher derives a mask
 from the PNG's enclosed transparent opening, so the effect reaches the inner
-edge of the ornament. The boxes remain above the effects on the Top layer. A separate
-`voluta-selector-frame` Overlay surface renders after Rofi (`order = -1`), so
-the ornament covers the button edges. Both decorative surfaces accept no input
-and share the same entrance and dismissal motion. Only the lower glass surface
-receives backdrop blur; the frame does not blur the buttons beneath it.
+edge of the ornament. The boxes remain above the effects on the Top layer.
+A non-grabbing, input-transparent Quickshell popup holds the frame above Rofi, including its closing snapshot.
+Hyprland draws closing Overlay snapshots after live Overlay surfaces, so a
+second Overlay layer with a lower `order` only fixes the open-menu stacking.
+Both decorative surfaces accept no input. The frame and stained-glass
+projection share the same entrance and dismissal motion. Only the lower glass
+surface receives backdrop blur; the frame does not blur the buttons beneath it.
 The static fallback retains Rofi’s background frame when Quickshell is unavailable.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
