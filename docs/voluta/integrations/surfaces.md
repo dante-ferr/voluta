@@ -16,8 +16,10 @@ checks, compositor IPC, palette reads, and artwork timestamp checks. Rofi choose
 the focused monitor itself; decoration preparation follows after it is started.
 The Super+D toggle reads Rofi’s PID file and verifies its process name instead
 of scanning all processes with `pkill`.
-Theme media rules preserve the static artwork on outputs too small for the
-animated plate. Missing or dead cached renderers still receive the
+The animated Rofi path unconditionally suppresses its own background artwork;
+conditional media rules must not restore a second frame during the entrance.
+On a warm switch to an output smaller than the animated plate, the menu remains
+usable without decorative artwork. Missing or dead cached renderers still receive the
 loader check and static fallback. It
 waits 20ms after the menu request before starting the rise. The transparent,
 input-free decoration surfaces remain mapped while idle; projection timers stop
@@ -206,6 +208,10 @@ stagger is an animation timer, not a guarantee of total launch latency. Renderer
 initialization measured about 200ms separately and is now paid during prewarming.
 The launcher tests cover preserved dmenu input/exit status, hidden prewarming,
 reuse without spawning another renderer, and matching dismissal request IDs.
+An entrance follow-up removed conditional Rofi background artwork after a
+rapid-reopen capture exposed overlapping frames despite a single renderer.
+The regression now verifies the animated path cannot restore background images
+through media rules. Process counts alone do not establish visual uniqueness.
 A duplicate-renderer follow-up consolidated seven live selector instances into
 one. Three overlapping prewarms retained one renderer, and a live dummy menu
 exposed exactly one `rofi` and one `voluta-selector-glass` surface. The startup

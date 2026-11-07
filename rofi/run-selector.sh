@@ -25,15 +25,7 @@ launch_selector() {
     # Start the input owner before querying the compositor or palette. Preserve
     # stdin for dmenu, and let Rofi choose the focused output on the warm path.
     exec 3<&0
-    rofi "$@" -theme-str 'window { background-image: none; } mainbox { background-image: none; }
-        @media (max-width: 1151) {
-            window { background-image: url("~/.config/wallust/assets/generated/launcher-vignette.svg", both); }
-            mainbox { background-image: url("~/.config/wallust/assets/generated/big-angel-box.png", both); }
-        }
-        @media (max-height: 1023) {
-            window { background-image: url("~/.config/wallust/assets/generated/launcher-vignette.svg", both); }
-            mainbox { background-image: url("~/.config/wallust/assets/generated/big-angel-box.png", both); }
-        }' <&3 3<&- &
+    rofi "$@" -theme-str 'window { background-image: none; } mainbox { background-image: none; }' <&3 3<&- &
     selector=$!
     exec 3<&-
     trap '(timeout 1s quickshell ipc --pid "$cached_pid" call selector dismiss "$request") </dev/null >/dev/null 2>&1 &' EXIT

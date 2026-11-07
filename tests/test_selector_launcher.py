@@ -72,6 +72,7 @@ class SelectorLauncherTests(unittest.TestCase):
                       '  printf "%s\\n" "$SELECTOR_TEST_RENDERER_PID"\n'
                       'else echo TEST-1; fi\n',
                 'rofi': 'printf "rofi-start\\n" >> "$SELECTOR_TEST_LOG"\n'
+                        'printf "%s\\n" "$@" > "$SELECTOR_TEST_ROFI_ARGS"\n'
                         'touch "$SELECTOR_TEST_STARTED"\ncat\nexit 23\n',
             }
             for name, body in scripts.items():
@@ -81,7 +82,8 @@ class SelectorLauncherTests(unittest.TestCase):
             environment = {**os.environ, 'PATH': f'{binaries}:/usr/bin:/bin',
                            'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_RUNTIME_DIR': str(root / 'runtime'),
                            'SELECTOR_TEST_LOG': str(log), 'SELECTOR_TEST_STARTED': str(root / 'started'),
-                           'SELECTOR_TEST_RENDERER_PID': str(os.getpid())}
+                           'SELECTOR_TEST_RENDERER_PID': str(os.getpid()),
+                           'SELECTOR_TEST_ROFI_ARGS': str(root / 'rofi-args')}
             command = ['/bin/sh', str(ROOT / 'rofi/run-selector.sh')]
             warm = subprocess.run(command + ['--prewarm'], env=environment,
                                   capture_output=True, text=True, timeout=5)
@@ -115,6 +117,9 @@ class SelectorLauncherTests(unittest.TestCase):
             # another Qt process before the keyboard-owning menu starts.
             self.assertEqual(calls.count('--version'), 1)
             self.assertEqual(calls.count('rofi-start'), 1)
+            arguments = (root / 'rofi-args').read_text()
+            self.assertNotIn('background-image: url', arguments)
+            self.assertNotIn('@media', arguments)
             self.assertTrue((root / 'started').exists())
 
     def test_prewarm_consolidates_legacy_renderer_instances(self):
