@@ -4,9 +4,11 @@ Status: implemented. The visual direction emphasizes geometry: stepped surrounds
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
 palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
-Hyprland can softly blur the desktop behind the frame. The frame, boxes and
-glass expand together from 94% to full size while two short reflections follow
-the inner edge from the lower corners to the top.
+Hyprland can softly blur the desktop behind the frame. Rofi starts accepting
+input without waiting for Quickshell. The frame and glass rise in 190ms and two
+reflections trace the inner edge as it settles. On dismissal, the boxes leave
+first and the frame follows 90ms later. The fullscreen blur veil stays in
+place and fades independently on opening and closing.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
 
@@ -41,7 +43,7 @@ selector launcher projects moving bands of stained glass inside the opening.
 The Wallust colors drift diagonally behind Rofi. The publisher derives a mask
 from the PNG's enclosed transparent opening, so the effect reaches the inner
 edge of the ornament. The boxes remain above the effect and the backdrop keeps
-its blur. The layer accepts no input and closes with the menu.
+its blur. The layer accepts no input and closes shortly after the menu.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so

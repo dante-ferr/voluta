@@ -55,20 +55,22 @@ hl.layer_rule({
     animation = "slide top",
 })
 
--- Bring the frame and its contents in together, including the vignette's blur.
-local selectorEntrance = "popin 94%"
+-- Rofi owns input and slides independently of the decorative layer.
 hl.layer_rule({
     name = "rofi-launcher",
     match = { namespace = "^rofi$" },
     blur = true,
     xray = false,
     ignore_alpha = 0,
-    animation = selectorEntrance,
+    animation = "slide bottom",
 })
 
--- Both surfaces are centered on the same output and share the same scale curve.
+-- Quickshell owns the frame's fast entrance and slower delayed departure.
 hl.layer_rule({
     name = "voluta-selector-glass",
     match = { namespace = "^voluta-selector-glass$" },
-    animation = selectorEntrance,
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    no_anim = true,
 })
