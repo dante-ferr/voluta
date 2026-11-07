@@ -4,8 +4,9 @@ Status: implemented. The visual direction emphasizes geometry: stepped surrounds
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
 palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
-Hyprland can softly blur the desktop behind the frame. The launcher layer
-popin-animates on map and unmap.
+Hyprland can softly blur the desktop behind the frame. The frame, boxes and
+glass expand together from 94% to full size while two short reflections follow
+the inner edge from the lower corners to the top.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
 
@@ -36,10 +37,11 @@ between the boxes and the surrounding ornament. Both lists show up to seven
 rows at a time. The selected row has a 2px palette accent outline and a raised
 background color, with the same content position as ordinary rows.
 When Quickshell is installed and the monitor can fit the frame, the shared
-selector launcher draws an astrolabe inside the opening. Its engraved scales
-turn in opposite directions, with broad arcs colored by Wallust. The layer
-sits below Rofi, accepts no input, and closes
-with the menu. The menus also work without Quickshell.
+selector launcher projects moving bands of stained glass inside the opening.
+The Wallust colors drift diagonally behind Rofi. The publisher derives a mask
+from the PNG's enclosed transparent opening, so the effect reaches the inner
+edge of the ornament. The boxes remain above the effect and the backdrop keeps
+its blur. The layer accepts no input and closes with the menu.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so

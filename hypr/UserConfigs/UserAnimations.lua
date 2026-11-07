@@ -55,14 +55,20 @@ hl.layer_rule({
     animation = "slide top",
 })
 
--- Blur wallpaper and windows behind the fullscreen Rofi launcher.
--- popin scales the layer in and out. ignore_alpha must stay at 0 so the
--- vignette's thin edge still counts as a blur surface.
+-- Bring the frame and its contents in together, including the vignette's blur.
+local selectorEntrance = "popin 94%"
 hl.layer_rule({
     name = "rofi-launcher",
     match = { namespace = "^rofi$" },
     blur = true,
     xray = false,
     ignore_alpha = 0,
-    animation = "popin 88%",
+    animation = selectorEntrance,
+})
+
+-- Both surfaces are centered on the same output and share the same scale curve.
+hl.layer_rule({
+    name = "voluta-selector-glass",
+    match = { namespace = "^voluta-selector-glass$" },
+    animation = selectorEntrance,
 })

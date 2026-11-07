@@ -1,4 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="640" fill="none" viewBox="-18.7127 -7.1168 757.6668 646.7024" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Crisp ~2px outline at the launcher's 1152px canvas size. -->
+    <filter id="palette-outline" x="-2%" y="-2%" width="104%" height="104%"
+            color-interpolation-filters="sRGB">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="1.25" result="expanded"/>
+      <feComposite in="expanded" in2="SourceAlpha" operator="out" result="edge"/>
+      <feFlood flood-color="{{color15}}" result="ink"/>
+      <feComposite in="ink" in2="edge" operator="in" result="outline"/>
+      <feMerge><feMergeNode in="outline"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#palette-outline)">
 <!-- SVG created with Arrow, by QuiverAI (https://quiver.ai) -->
   <path d="m635 487.3v-287.6" stroke="{{background}}" stroke-width="3.562"/>
   <path d="m427.3 172.3h-232.6" stroke="{{background}}" stroke-width="3.562"/>
@@ -180,4 +192,5 @@
   <path d="m186.7 99.28c-8.24-0.96-11.6 4.64-7.84 7.44 5.12 2.16 11.52-4.72 7.84-7.44zm-6.24 5.44 0.72-2.56 4-1.12-4.72 3.68z" fill="{{background}}"/>
   <path d="m190.6 85.2c-8.32-0.32-10.08 7.12-4.56 9.12 6.96 2.16 11.04-7.44 4.56-9.12zm-4.16 6.56 0.24-3.84h4.64l-4.88 3.84z" fill="{{background}}"/>
   <path d="m182.1 90.64c-4.88 0.64-5.52 6.48-1.92 7.44 4.56-0.08 6.48-7.84 1.92-7.44zm-1.44 4.72 0.8-3.04 2.88 0.32-3.68 2.72z" fill="{{background}}"/>
+  </g>
 </svg>

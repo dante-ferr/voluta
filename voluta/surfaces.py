@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import tempfile
 
-from PIL import Image, ImageChops, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageOps
 
 from cli import ROOT, hostname, resolve
 from theme import preferred_background, read_palette, write_changed
@@ -135,9 +135,30 @@ def render_selector_frame(source, palette):
         # Rofi tiles the unused area after fitting an image of a different ratio.
         frame = ImageOps.pad(frame, SELECTOR_SIZE, Image.Resampling.LANCZOS,
                              color=(0, 0, 0, 0))
+        return frame
+
+
+def publish_selector_frame(assets, source, palette):
+    frame = render_selector_frame(source, palette)
+    alpha = frame.getchannel('A')
+    opening = alpha.point(lambda value: 255 if value >= 128 else 0)
+    center = (frame.width // 2, frame.height // 2)
+    if opening.getpixel(center) == 0:
+        ImageDraw.floodfill(opening, center, 128)
+    opening = opening.point(lambda value: 255 if value == 128 else 0)
+    bounds = opening.getbbox()
+    if bounds and bounds[0] > 0 and bounds[1] > 0 and bounds[2] < frame.width and bounds[3] < frame.height:
+        # Use the opening's original alpha coverage at the edge of the ornament.
+        opening = ImageChops.multiply(opening, ImageOps.invert(alpha))
+    else:
+        # An open or missing cutout must never project outside the frame.
+        opening = Image.new('L', frame.size)
+    mask = Image.new('RGBA', frame.size)
+    mask.putalpha(opening)
+    for name, image in ((SELECTOR_FRAME.name, frame), ('selector-aperture.png', mask)):
         with BytesIO() as output:
-            frame.save(output, format='PNG')
-            return output.getvalue()
+            image.save(output, format='PNG')
+            write_bytes_changed(assets / name, output.getvalue())
 
 
 def refresh_selector_frame():
@@ -154,11 +175,10 @@ def refresh_selector_frame():
         content = source.read_bytes()
         palette = read_palette(config / 'hypr/wallust/colors-shell.sh')
         palette['bg'] = preferred_background(palette, config / 'voluta')
-        frame = render_selector_frame(BytesIO(content), palette)
+        publish_selector_frame(config / SELECTOR_FRAME.parent / 'generated', BytesIO(content), palette)
         if use_checkout and (not installed.is_file() or installed.read_bytes() != content):
             write_managed(installed, content, manifest, state, 0o644)
             atomic_write(state / 'install.json', manifest)
-        write_bytes_changed(config / SELECTOR_FRAME.parent / 'generated' / SELECTOR_FRAME.name, frame)
 
 
 def current_wallpaper(config):
@@ -223,8 +243,7 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
         write_changed(assets / name, rendered[name])
     # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
     write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
-    frame = render_selector_frame(root / SELECTOR_FRAME, palette)
-    write_bytes_changed(assets / SELECTOR_FRAME.name, frame)
+    publish_selector_frame(assets, root / SELECTOR_FRAME, palette)
     write_changed(assets / 'panel-frame-wide.svg', rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
     for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
         for name in ('tile-frame', 'tile-selected'):
