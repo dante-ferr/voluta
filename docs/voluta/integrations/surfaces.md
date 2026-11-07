@@ -79,9 +79,11 @@ policy. Generated files are ignored and must not be committed.
 
 SwayNC opens a wide, top-centered framed panel below Waybar. Its exclusive-zone
 handling stays enabled; the 8px top margin matches `UserSettings.lua`'s window
-grid gap. The flat upper edge has no projecting pediment. Two serious-faced adult angels
-support the restrained side mouldings: one has an articulated robotic arm, the other a visible robotic leg. Their folded wings
-and drapery remain outside the controls and archive.
+grid gap. The flat upper edge has no projecting pediment. Two serious-faced
+adult angels fly beside the frame, pressing their palms beneath its lower
+corners. One bears the weight with an articulated robotic arm; the other has
+a visible robotic leg. Spread wings and trailing drapery stay outside the
+controls and archive. Compact controls fit above the raised lower rail.
 `Super+N` toggles the panel; `Super+Shift+N` toggles the existing night-light
 filter. Waybar's notification button also toggles the panel.
 
