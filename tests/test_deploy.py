@@ -70,9 +70,10 @@ class DeploymentTests(unittest.TestCase):
         self.assertIn('ExecStart=\nExecStart=/bin/sh ', service.read_text())
         self.assertIn('/swaync/launch.sh', service.read_text())
         for consumer in ('rofi', 'swaync'):
-            effect = self.home / '.config' / consumer / 'effects/StainedGlass.qml'
-            self.assertTrue(effect.is_file(), f'{consumer} can resolve its shared QML import')
-            self.assertEqual(effect.resolve(), self.home / '.local/share/voluta/current/wallust/effects/StainedGlass.qml')
+            for module in ('MenuGlass.qml', 'StainedGlass.qml'):
+                effect = self.home / '.config' / consumer / 'effects' / module
+                self.assertTrue(effect.is_file(), f'{consumer} can resolve {module}')
+                self.assertEqual(effect.resolve(), self.home / '.local/share/voluta/current/wallust/effects' / module)
         self.assertFalse((self.home / '.local/bin/dolphin').exists())
         self.run_cli('update', '--skip-deps')
         self.assertEqual(settings_path.read_bytes(), before)

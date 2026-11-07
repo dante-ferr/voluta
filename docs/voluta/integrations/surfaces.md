@@ -130,23 +130,28 @@ the old `--refresh-selector` publisher option remains an alias for
 Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
 existing light compositor blur settings. The artwork itself stays sharp.
 
-Both menus also use the same `wallust/effects/StainedGlass.qml` projection:
-slowly drifting palette bands and broad facets at 25fps. Each consumer has a
-local `effects` link because Quickshell restricts imports to its entrypoint
-root; the installer creates managed links to the single shared source.
-`swaync/watch-glass.py` prewarms a resident input-transparent Quickshell
-renderer. Its process and decoded assets survive closing the menu; keyboard
-input remains owned by SwayNC. Opening/closing IPC runs off the subscription
-thread, and numbered requests prevent an older dismissal from hiding a new
-opening. Both surfaces occupy the same available-output geometry and use
-Hyprland's `slide top` animation. The painted aperture remains bounded to the
-frame while mapping/unmapping moves both surfaces together. There is no
-separate stationary projection after dismissal. The shared canvas pauses while hidden.
-A second input-transparent surface reuses the selector's generated
-`launcher-vignette.svg` over the entire output, including outside the artwork.
-It receives compositor backdrop blur and fades on dismissal, while the framed
-projection slides with the native panel. Its lower layer order keeps the
-controls and artwork sharp.
+Both menus use `wallust/effects/MenuGlass.qml` for the blur veil, masked glass,
+preloading, readiness, and entrance/dismissal lifecycle. The component uses
+`StainedGlass.qml` internally for drifting palette bands and facets at 25fps.
+Each consumer has a local `effects` link because Quickshell restricts imports
+to its entrypoint root; the installer links the same canonical source.
+The selector retains its frame popup and inner-rim ignition around that shared
+lifecycle. Native SwayNC keeps its compositor-owned slide and input handling.
+
+The notification backdrop stays mapped but fully transparent when closed,
+matching the selector's warm surface. The shared module preloads its veil at
+screen dimensions and prepaints the projection on the resident surface. It
+reveals the veil immediately when ready; it does not map a cold blur window
+on each open. The same projection canvas joins the native-sized sliding
+surface when the panel opens. On dismissal, the veil clears immediately and
+the bounded projection follows the native compositor exit. The canvas pauses
+while hidden. Neither menu maintains a separate copy of the blur or animation
+implementation.
+
+`swaync/watch-glass.py` is the native visibility/IPC adapter. It prewarms one
+resident renderer, and numbered requests prevent stale closes. The optional
+`status` IPC reports readiness and open/paint timestamps for real effect
+latency checks; native D-Bus acknowledgement alone is insufficient.
 A per-compositor lock prevents duplicate watchers after reloads.
 The helper detects changed palette, aperture, or panel configuration while
 visible, and refreshes the projection. It drops the effect on daemon disconnect
@@ -220,16 +225,28 @@ extension's site data or removing its profile can erase them.
 
 ## Verification
 
+Shared-lifecycle validation on 2026-11-07 used the actual QML readiness and
+paint timestamps, rather than native-toggle acknowledgements. After 10–12
+seconds idle, the notification veil was ready 134–148ms after the toggle;
+projection painting was observed within 231ms. The shared veil and projection
+were ready while idle, remained decoded across close/open cycles, and cleared
+after dismissal. These are observed QML dispatch/paint timings on this host,
+not guaranteed presentation latency. Twenty focused installer, surface, notification-watcher, and
+selector-launcher checks passed. The real selector opened and dismissed with
+its shared effects ready throughout. Both consumers instantiate
+`MenuGlass.qml`; neither contains its own backdrop/projection animation copy.
+
 The full-desktop notification veil was also verified live on 2026-11-07:
 `voluta-notification-backdrop` covered 1920×1080 beneath the sharp menu and
-projection; no notification effect layers remained mapped after dismissal.
+projection. The resident backdrop now stays mapped with transparent pixels
+after dismissal, while the sliding projection unmaps.
 The 21 focused checks passed again after this addition.
 
 Owner-art refit on 2026-11-07: 21 focused palette, geometry, renderer lifecycle,
 deployment, and toggle checks passed. The content rectangle has a tested 16px
 clearance from solid frame pixels; the archive scrollbar uses a 2px rail.
 Live checks found matching native/glass surfaces at (0,34), 1920×1046, and
-captured both moving upward on dismissal with no layer left mapped afterward.
+captured the menu and projection moving upward together on dismissal.
 The renderer PID survived the idle/open/close test. The default GTK renderer took 2419ms in an isolated first-open comparison;
 Cairo took 17ms. The final installed service/toggle measured 18ms on first
 opening, 19ms after 8 seconds idle, and 22ms on repeat. These are D-Bus

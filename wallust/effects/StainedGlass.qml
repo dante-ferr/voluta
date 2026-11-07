@@ -7,6 +7,7 @@ Canvas {
     required property var palette
     property bool animationRunning: visible
     property bool ready: false
+    property double lastPaintedAt: 0
     readonly property double started: Date.now()
     readonly property int repeatWidth: 660
     Component.onCompleted: loadImage(aperture)
@@ -72,6 +73,7 @@ Canvas {
         ctx.globalCompositeOperation = "destination-in";
         ctx.drawImage(aperture, 0, 0);
         ctx.restore();
+        lastPaintedAt = Date.now();
         if (!ready) {
             ready = true;
         }

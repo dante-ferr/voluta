@@ -76,7 +76,7 @@ hl.layer_rule({
     xray = false,
     ignore_alpha = 0,
     order = 1,
-    animation = "fade",
+    no_anim = true,
 })
 
 -- Rofi owns input and slides independently of the decorative layer.

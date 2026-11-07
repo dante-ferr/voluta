@@ -15,7 +15,7 @@ PanelWindow {
     readonly property int plateHeight: 1024
 
     property string artworkVersion: Quickshell.env("VOLUTA_SELECTOR_VERSION")
-    property bool active: false
+    readonly property bool active: glass.active
     property string request: ""
 
     screen: targetScreen
@@ -27,22 +27,8 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     WlrLayershell.namespace: "voluta-selector-glass"
 
-    property bool entranceStarted: false
-    function startWhenReady(): void {
-        // The blur veil must be ready; the animated projection can paint while
-        // the frame enters instead of holding up the whole entrance.
-        if (!active || startDelay.running || entranceStarted || frameArtwork.status !== Image.Ready ||
-            vignette.status !== Image.Ready)
-            return;
-        entranceStarted = true;
-        // Establish the blur veil before moving the ornament into view.
-        vignette.opacity = 1;
-        // Replay the cached inner-rim routes with the entrance, without a late flash.
-        ignition.started = Date.now();
-        ignition.finished = false;
-        ignition.requestPaint();
-        entrance.start();
-    }
+    readonly property bool entranceStarted: glass.entranceStarted
+    function startWhenReady(): void { glass.startWhenReady(); }
 
     // Hyprland draws closing layer snapshots after live Overlay surfaces.
     // A non-grabbing popup keeps the ornament above Rofi throughout its exit,
@@ -80,10 +66,8 @@ PanelWindow {
 
     IpcHandler {
         target: "selector"
+        function status(): string { return glass.status(); }
         function openSelector(output: string, colors: string, assets: string, request: string, version: string): void {
-            panel.active = false;
-            departure.stop();
-            entrance.stop();
             const refresh = panel.artworkVersion !== version || panel.assets !== assets;
             panel.output = output;
             panel.palette = colors.split(" ");
@@ -93,91 +77,44 @@ PanelWindow {
                 // Wallpaper/frame publication can replace files at the same URL.
                 frameArtwork.source = "";
                 frameArtwork.source = Qt.resolvedUrl(assets + "/big-angel-box.png");
-                vignette.source = "";
-                vignette.source = Qt.resolvedUrl(assets + "/launcher-vignette.svg");
-                projection.unloadImage(panel.aperture);
-                projection.loadImage(panel.aperture);
                 ignition.prepared = false;
                 ignition.unloadImage(panel.aperture);
                 ignition.loadImage(panel.aperture);
             }
             panel.request = request;
-            panel.entranceStarted = false;
-            retable.y = 130;
-            retable.opacity = 0;
-            vignette.opacity = 0;
-            // Let the native menu lead by a small, consistent stagger.
-            startDelay.restart();
-            panel.active = true;
+            glass.prepare(version);
+            glass.open();
         }
         function dismiss(request: string): void {
-            if (request !== panel.request || departure.running)
+            if (request !== panel.request)
                 return;
-            startDelay.stop();
+            glass.close();
+        }
+    }
+
+    Glass.MenuGlass {
+        id: glass
+        anchors.fill: parent
+        surfaceWindow: panel
+        targetScreen: panel.targetScreen
+        aperture: panel.aperture
+        vignetteSource: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
+        palette: panel.palette
+        projectionParent: retable
+        projectionWidth: panel.plateWidth
+        projectionHeight: panel.plateHeight
+        externalReady: frameArtwork.status === Image.Ready
+        initialVersion: panel.artworkVersion
+        onEntranceStarting: {
+            // Replay the cached inner-rim routes with the entrance.
+            ignition.started = Date.now();
+            ignition.finished = false;
+            ignition.requestPaint();
+        }
+        onClosing: {
             ignition.finished = true;
             ignition.requestPaint();
-            entrance.stop();
-            departure.start();
         }
-    }
-
-    Timer {
-        id: startDelay
-        interval: 20
-        onTriggered: panel.startWhenReady()
-    }
-
-    ParallelAnimation {
-        id: entrance
-        NumberAnimation { target: retable; property: "y"; to: 0; duration: 135; easing.type: Easing.OutCubic }
-        NumberAnimation { target: retable; property: "opacity"; to: 1; duration: 85; easing.type: Easing.OutQuad }
-    }
-
-    SequentialAnimation {
-        id: departure
-        ParallelAnimation {
-            NumberAnimation {
-                target: vignette
-                property: "opacity"
-                to: 0
-                duration: 390
-                easing.type: Easing.InOutQuad
-            }
-            SequentialAnimation {
-                PauseAnimation { duration: 90 }
-                ParallelAnimation {
-                    NumberAnimation {
-                        target: retable
-                        property: "y"
-                        to: panel.height
-                        duration: 350
-                        easing.type: Easing.InCubic
-                    }
-                    NumberAnimation {
-                        target: retable
-                        property: "opacity"
-                        to: 0
-                        duration: 350
-                        easing.type: Easing.InQuad
-                    }
-                }
-            }
-        }
-        ScriptAction { script: panel.active = false }
-    }
-
-    Image {
-        id: vignette
-        cache: false
-        anchors.fill: parent
-        z: -2
-        opacity: 0
-        asynchronous: false
-        onStatusChanged: panel.startWhenReady()
-        source: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
-        // The vignette is soft already; rasterize it at quarter size for a faster entrance.
-        sourceSize.width: Math.ceil((panel.targetScreen?.width ?? 1) / 4)
-        sourceSize.height: Math.ceil((panel.targetScreen?.height ?? 1) / 4)
     }
 
     Item {
@@ -284,18 +221,6 @@ PanelWindow {
                 running: panel.active && panel.entranceStarted && !ignition.finished
                 onTriggered: ignition.requestPaint()
             }
-        }
-
-        Glass.StainedGlass {
-            id: projection
-            anchors.centerIn: parent
-            width: panel.plateWidth
-            height: panel.plateHeight
-            opacity: 0.34
-            aperture: panel.aperture
-            palette: panel.palette
-            animationRunning: panel.active && panel.entranceStarted && panel.visible
-            onReadyChanged: panel.startWhenReady()
         }
     }
 }
