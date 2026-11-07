@@ -219,7 +219,7 @@
     background-position: center, center;
     background-size: 100% 100%, 100% 100%;
     color: @foreground;
-    padding: 40px 256px 184px;
+    padding: 57px 289px 283px 275px;
     border: none;
     box-shadow: none;
 }
@@ -245,8 +245,10 @@ scrollbar trough {
 scrollbar slider {
     background: @line;
     border: none;
-    min-width: 4px;
-    min-height: 4px;
+    min-width: 2px;
+    min-height: 20px;
+    margin: 0;
+    padding: 0;
 }
 
 scrollbar slider:hover {
@@ -509,4 +511,22 @@ scrollbar slider:hover {
 .widget-backlight scale {
     padding: 0;
     min-height: 16px;
+}
+
+/* A narrow archive rail, without the GTK theme's extra trough padding. */
+scrollbar.vertical,
+scrollbar.vertical trough {
+    min-width: 2px;
+    margin: 0;
+    padding: 0;
+}
+scrollbar.horizontal,
+scrollbar.horizontal trough {
+    min-height: 2px;
+    margin: 0;
+    padding: 0;
+}
+scrollbar.horizontal slider {
+    min-height: 2px;
+    min-width: 20px;
 }

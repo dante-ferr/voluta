@@ -41,7 +41,7 @@ hl.on("hyprland.start", function()
     end
 
     -- Notification Daemon (SwayNC) - Critical for OSD volume & media popups
-    hl.exec_cmd("sh -c 'pgrep -x swaync >/dev/null || swaync &'")
+    hl.exec_cmd("sh -c 'pgrep -x swaync >/dev/null || systemctl --user start swaync.service'")
 
     -- Early bar from last session's CSS so a hung wallust path cannot leave
     -- the desktop bare. combined_wallust restarts it once colors are ready.

@@ -66,6 +66,9 @@ class DeploymentTests(unittest.TestCase):
         self.run_cli('install', '--skip-deps')
         self.assertTrue(original.is_symlink())
         self.assertTrue((original / 'hyprland.lua').is_file())
+        service = self.home / '.config/systemd/user/swaync.service.d/10-voluta.conf'
+        self.assertIn('ExecStart=\nExecStart=/bin/sh ', service.read_text())
+        self.assertIn('/swaync/launch.sh', service.read_text())
         for consumer in ('rofi', 'swaync'):
             effect = self.home / '.config' / consumer / 'effects/StainedGlass.qml'
             self.assertTrue(effect.is_file(), f'{consumer} can resolve its shared QML import')

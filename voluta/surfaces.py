@@ -28,7 +28,7 @@ GALLERY_ORNAMENTS = ('big-corner-tl.svg', 'big-corner-br.svg')
 SELECTOR_FRAME = Path('wallust/assets/big-angel-box.png')
 SELECTOR_SIZE = (1152, 1024)  # Matches the centered slot in rofi/selector-frame.rasi.
 NOTIFICATION_FRAME = Path('wallust/assets/notification-angels-frame.png')
-NOTIFICATION_SIZE = (1056, 640)  # Matches swaync/config.json and its frame padding.
+NOTIFICATION_SIZE = (1056, 736)  # Matches swaync/config.json and its frame padding.
 
 
 def hex_color(color):
@@ -119,7 +119,7 @@ def frame_tints(palette, hue, saturation, luminance, alpha):
     return lookup, neutral
 
 
-def render_palette_frame(source, palette, size=SELECTOR_SIZE):
+def render_palette_frame(source, palette, size=SELECTOR_SIZE, centering=(.5, .5)):
     with Image.open(source) as original:
         image = original.convert('RGBA')
         alpha = image.getchannel('A')
@@ -136,7 +136,7 @@ def render_palette_frame(source, palette, size=SELECTOR_SIZE):
         frame.putalpha(alpha)
         # Use an exact consumer-sized canvas so GTK and Rofi never tile the artwork.
         frame = ImageOps.pad(frame, size, Image.Resampling.LANCZOS,
-                             color=(0, 0, 0, 0))
+                             color=(0, 0, 0, 0), centering=centering)
         return frame
 
 
@@ -170,7 +170,7 @@ def publish_selector_frame(assets, source, palette):
 
 
 def publish_notification_frame(assets, source, palette):
-    frame = render_palette_frame(source, palette, NOTIFICATION_SIZE)
+    frame = render_palette_frame(source, palette, NOTIFICATION_SIZE, centering=(.5, 0))
     # Paint glass only inside the sculpture, leaving the outer silhouette clear.
     opening = frame_aperture(frame)
     glass = Image.new('RGBA', frame.size, (*palette['bg'], 0))

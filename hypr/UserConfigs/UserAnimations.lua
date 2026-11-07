@@ -65,7 +65,18 @@ hl.layer_rule({
     blur = true,
     xray = false,
     ignore_alpha = 0,
-    no_anim = true,
+    animation = "slide top",
+})
+
+-- Keep the full-desktop veil below the sharp menu and its projection.
+hl.layer_rule({
+    name = "voluta-notification-backdrop",
+    match = { namespace = "^voluta-notification-backdrop$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    order = 1,
+    animation = "fade",
 })
 
 -- Rofi owns input and slides independently of the decorative layer.

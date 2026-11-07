@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import signal
 import subprocess
+import struct
 import tempfile
 import time
 import unittest
@@ -23,7 +24,8 @@ class NotificationGlassTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         for directory in ('wallust/assets/generated', 'hypr/wallust', 'swaync'):
             (self.root / directory).mkdir(parents=True)
-        (self.root / 'wallust/assets/generated/notification-aperture.png').touch()
+        (self.root / 'wallust/assets/generated/notification-aperture.png').write_bytes(
+            b'\x89PNG\r\n\x1a\n' + b'\x00\x00\x00\x0dIHDR' + struct.pack('>II', 1056, 736))
         (self.root / 'hypr/wallust/colors-shell.sh').write_text("wc_2='112233'\nwc_4='445566'\nwc_fg='aabbcc'\n")
         (self.root / 'swaync/config.json').write_text('{}')
         self.monitors = [{'name': 'test', 'focused': True, 'width': 1920,
@@ -39,6 +41,8 @@ class NotificationGlassTests(unittest.TestCase):
             self.monitors[0]['scale'] = 1
             self.monitors[0]['transform'] = 1
             self.assertTrue(glass.renderer_environment(self.root) is not None)
+            self.assertEqual(environment['VOLUTA_NOTIFICATION_WIDTH'], '1056')
+            self.assertEqual(environment['VOLUTA_NOTIFICATION_HEIGHT'], '736')
             (self.root / 'swaync/config.json').write_text('{"control-center-preferred-output":"absent","control-center-margin-top":14}')
             self.assertEqual(glass.renderer_environment(self.root)['VOLUTA_NOTIFICATION_TOP'], '46')
             self.monitors.append(dict(self.monitors[0], name='preferred', description='External display', focused=False))
@@ -46,7 +50,7 @@ class NotificationGlassTests(unittest.TestCase):
             self.assertEqual(glass.renderer_environment(self.root)['VOLUTA_NOTIFICATION_MONITOR'], 'preferred')
 
     def test_unexpected_monitor_json_falls_back_to_native_center(self):
-        for unexpected in ({'error': 'not a list'}, ['invalid entry'], [None], None):
+        for unexpected in ({'error': 'not a list'}, ['invalid entry'], [None], None, [dict(self.monitors[0], name=None)]):
             with self.subTest(monitors=unexpected), patch.object(glass, 'run', return_value=json.dumps(unexpected)):
                 self.assertTrue(glass.renderer_environment(self.root) is None)
 
@@ -78,8 +82,17 @@ if name == 'hyprctl':
 elif name == 'quickshell':
     if '--version' in sys.argv: sys.exit(0)
     if 'ipc' in sys.argv:
-        try: os.kill(int(sys.argv[sys.argv.index('--pid') + 1]), signal.SIGTERM)
-        except ProcessLookupError: pass
+        method = sys.argv[sys.argv.index('notification') + 1]
+        args = sys.argv[sys.argv.index('notification') + 2:]
+        if method == 'dismiss': time.sleep(.15)
+        if method in ('prepare', 'showPanel'): log('palette=' + args[1])
+        state_path = root / 'renderer-state'
+        previous = json.loads(state_path.read_text()) if state_path.exists() else {'token': -1, 'active': False}
+        if int(args[-1]) >= previous['token']:
+            previous['token'] = int(args[-1])
+            if method != 'prepare': previous['active'] = method == 'showPanel'
+            state_path.write_text(json.dumps(previous))
+        log('ipc=' + method)
         sys.exit(0)
     log('start')
     log('palette=' + os.environ['VOLUTA_NOTIFICATION_COLORS'])
@@ -122,33 +135,42 @@ else:
                 stream.write(json.dumps({'visible': value}) + '\n')
 
         await_count('subscribe', 1)
+        await_count('start', 1)  # Renderer is resident before the first open.
+        await_count('ipc=prepare', 1)
         duplicate = subprocess.run(['python3', str(ROOT / 'swaync/watch-glass.py')], env=environment, timeout=2)
         self.assertEqual(duplicate.returncode, 0)
         emit(True)
-        await_count('start', 1)
+        await_count('ipc=showPanel', 1)
         time.sleep(.65)
-        self.assertEqual(lines().count('monitors'), 1)
-        # An open control center picks up a wallpaper palette publication
-        # without querying monitor IPC on every timer tick.
+        self.assertEqual(lines().count('monitors'), 2)
+        # Publication updates the resident palette/mask instead of restarting Qt.
         (self.root / 'hypr/wallust/colors-shell.sh').write_text("wc_2='223344'\nwc_4='556677'\nwc_fg='bbccdd'\n")
-        await_count('start', 2)
+        await_count('ipc=showPanel', 2)
         self.assertIn('palette=#223344 #556677 #bbccdd', lines())
-        emit(True)
         emit(False)
-        await_count('stop', 2)
+        await_count('ipc=dismiss', 1)
         emit(True)
-        await_count('start', 3)
+        await_count('ipc=showPanel', 3)
+        # A deliberately slow dismiss cannot keep the event reader waiting or
+        # finish after a newer show and leave the resident renderer hidden.
+        emit(False)
+        time.sleep(.05)
+        emit(True)
+        await_count('ipc=showPanel', 4)
+        self.assertTrue(json.loads((self.root / 'renderer-state').read_text())['active'])
+        self.assertEqual(lines().count('start'), 1)
+        self.assertEqual(lines().count('stop'), 0)
         with state.open('a') as stream:
             stream.write('disconnect\n')
-        await_count('stop', 3)
-        # A fresh daemon subscription will replay the current visible state.
+        await_count('ipc=dismiss', 3)
+        self.assertFalse(json.loads((self.root / 'renderer-state').read_text())['active'])
         state.write_text(json.dumps({'visible': True}) + '\n')
         await_count('subscribe', 2)
-        await_count('start', 4)
+        await_count('ipc=showPanel', 5)
         watcher.terminate()
         watcher.wait(timeout=2)
-        await_count('stop', 4)
-        self.assertEqual(lines().count('start'), 4)
+        await_count('stop', 1)
+        self.assertEqual(lines().count('start'), 1)
 
 
 if __name__ == '__main__':

@@ -264,6 +264,12 @@ def _install(directory, host, skip_deps=False, dry_run=False):
             shutil.copytree(previous_generated, destination_generated, dirs_exist_ok=True)
         if name != 'waypaper':
             link(config / name, current / name, manifest, state)
+    # Scope the low-latency GTK renderer to SwayNC, including D-Bus activation.
+    launcher = json.dumps(str(current / 'swaync/launch.sh').replace('%', '%%'), ensure_ascii=False)
+    service = '[Service]\nExecStart=\nExecStart=/bin/sh ' + launcher + '\n'
+    write_managed(config / 'systemd/user/swaync.service.d/10-voluta.conf', service.encode(), manifest, state)
+    if not skip_deps:
+        subprocess.run(['systemctl', '--user', 'daemon-reload'], check=False)
     # Waypaper's GUI owns its preferences. Update only the integration hook.
     path = config / 'waypaper/config.ini'
     if (config / 'waypaper').is_symlink():

@@ -105,13 +105,17 @@ corners. One bears the weight with an articulated robotic arm; the other has
 a visible robotic leg. Spread wings and trailing drapery stay outside the
 controls and archive. Compact controls fit above the raised lower rail.
 `Super+N` toggles the panel; `Super+Shift+N` toggles the existing night-light
-filter. Waybar's notification button also toggles the panel.
+filter. Waybar's notification button also toggles the panel. Both invoke
+`swaync/toggle-panel.sh`, which calls the native D-Bus toggle directly when
+`gdbus` is available, avoiding extra client-side setup on the toggle path.
+The client remains the fallback when the D-Bus command-line tool is absent.
 
-The transparent source is `wallust/assets/notification-angels-frame.png`.
+The owner-supplied source is `wallust/assets/notification-angels-frame.png`.
+Its near-transparent top margin was cropped by 84px; no artwork was regenerated.
 Both it and `big-angel-box.png` use `frame_tints` and `render_palette_frame` in
 `voluta/surfaces.py`: the same hue mapping, relief, shadow color, and alpha
 preservation apply to both. Only their canvas dimensions and backing layers
-differ. The notification canvas is 1056×640; GTK adds the frame's padding to
+differ. The notification canvas is 1056×736; GTK adds the frame's padding to
 SwayNC's configured content width, so those dimensions must be changed together.
 The publisher derives `notification-glass.png` from the enclosed transparent
 opening and the resolved background at 50% opacity, matching the selector
@@ -130,16 +134,29 @@ Both menus also use the same `wallust/effects/StainedGlass.qml` projection:
 slowly drifting palette bands and broad facets at 25fps. Each consumer has a
 local `effects` link because Quickshell restricts imports to its entrypoint
 root; the installer creates managed links to the single shared source.
-`swaync/watch-glass.py` watches native visibility and starts the bounded,
-input-transparent Quickshell surface only while the control center is open.
-The projection fades in over 150ms and out over 350ms. It sits on Top below
-SwayNC's Overlay frame and controls, leaving keyboard and pointer input with
-SwayNC. A per-compositor lock prevents duplicate watchers after reloads.
+`swaync/watch-glass.py` prewarms a resident input-transparent Quickshell
+renderer. Its process and decoded assets survive closing the menu; keyboard
+input remains owned by SwayNC. Opening/closing IPC runs off the subscription
+thread, and numbered requests prevent an older dismissal from hiding a new
+opening. Both surfaces occupy the same available-output geometry and use
+Hyprland's `slide top` animation. The painted aperture remains bounded to the
+frame while mapping/unmapping moves both surfaces together. There is no
+separate stationary projection after dismissal. The shared canvas pauses while hidden.
+A second input-transparent surface reuses the selector's generated
+`launcher-vignette.svg` over the entire output, including outside the artwork.
+It receives compositor backdrop blur and fades on dismissal, while the framed
+projection slides with the native panel. Its lower layer order keeps the
+controls and artwork sharp.
+A per-compositor lock prevents duplicate watchers after reloads.
 The helper detects changed palette, aperture, or panel configuration while
 visible, and refreshes the projection. It drops the effect on daemon disconnect
 and reconnects with bounded backoff. A missing or broken renderer leaves the
-permanent dark GTK glass usable. Global blur strength and host GPU policy
-remain unchanged.
+permanent dark GTK glass usable. The managed SwayNC user-service drop-in starts
+`swaync/launch.sh`: it defaults only this application's `GSK_RENDERER` to
+`cairo`, while preserving an explicitly configured renderer. This avoids the
+measured cold GTK graphics initialization delay. D-Bus activation and session
+startup both use that service. Compositor blur and Quickshell rendering remain
+unchanged, as do host GPU selection and global environment policy.
 
 After a geometry/widget change, test a fresh SwayNC process: reloading the
 running daemon can retain old widget allocations. Palette-only changes use the
@@ -202,6 +219,21 @@ preferences, not companion files or generated extension assets. Clearing the
 extension's site data or removing its profile can erase them.
 
 ## Verification
+
+The full-desktop notification veil was also verified live on 2026-11-07:
+`voluta-notification-backdrop` covered 1920×1080 beneath the sharp menu and
+projection; no notification effect layers remained mapped after dismissal.
+The 21 focused checks passed again after this addition.
+
+Owner-art refit on 2026-11-07: 21 focused palette, geometry, renderer lifecycle,
+deployment, and toggle checks passed. The content rectangle has a tested 16px
+clearance from solid frame pixels; the archive scrollbar uses a 2px rail.
+Live checks found matching native/glass surfaces at (0,34), 1920×1046, and
+captured both moving upward on dismissal with no layer left mapped afterward.
+The renderer PID survived the idle/open/close test. The default GTK renderer took 2419ms in an isolated first-open comparison;
+Cairo took 17ms. The final installed service/toggle measured 18ms on first
+opening, 19ms after 8 seconds idle, and 22ms on repeat. These are D-Bus
+acknowledgement timings on this session, not a general first-frame benchmark. Hyprland reported no configuration errors.
 
 On 2026-11-07, the resident selector renderer loaded without warnings and
 completed three open/dismiss cycles in one process. Measured warm request-to-rise

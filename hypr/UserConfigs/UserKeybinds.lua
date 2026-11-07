@@ -113,7 +113,7 @@ bind("SUPER + V", hl.dsp.exec_cmd("pkill rofi || cliphist list | rofi -dmenu | c
 bind("SUPER + ALT + K", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))
 
 -- 4. Notifications and Night Light
-bind("SUPER + N", hl.dsp.exec_cmd("swaync-client -t"))
+bind("SUPER + N", hl.dsp.exec_cmd("sh " .. home .. "/.config/swaync/toggle-panel.sh"))
 bind("SUPER + SHIFT + N", hl.dsp.exec_cmd("sh -c 'if pgrep -x hyprsunset >/dev/null 2>&1; then pkill -9 -x hyprsunset; notify-send \"Night Light\" \"Disabled\"; else (hyprsunset -t 3000 &) 2>/dev/null; notify-send \"Night Light\" \"Enabled (3000K)\"; fi'"))
 
 -- 5. Screenshots (PrintScreen, Super + P, and modern Super + Shift + S)
