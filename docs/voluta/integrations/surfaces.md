@@ -40,6 +40,11 @@ rows at a time. The selected row has a 2px palette accent outline and a raised
 background color, with the same content position as ordinary rows.
 When Quickshell is installed and the monitor can fit the frame, the shared
 selector launcher projects moving bands of stained glass inside the opening.
+The launcher checks that `quickshell --version` succeeds before handing off
+the frame. A broken Quickshell binary keeps the static Rofi artwork. If effects
+are missing, run that check in a terminal: a Qt symbol lookup error requires
+repairing or rebuilding Quickshell against the installed Qt libraries;
+Super+Alt+R cannot repair a binary/library mismatch.
 The Wallust colors drift diagonally behind Rofi. The publisher derives a mask
 from the PNG's enclosed transparent opening, so the effect reaches the inner
 edge of the ornament. The boxes remain above the effect and the backdrop keeps
@@ -116,6 +121,15 @@ preferences, not companion files or generated extension assets. Clearing the
 extension's site data or removing its profile can erase them.
 
 ## Verification
+
+On 2026-11-06, the installed pinned Quickshell provider failed at startup with a
+Qt private-symbol lookup error. Replacing it with Arch's Quickshell 0.3.2 restored
+the renderer. A live dummy selector exposed both `rofi` and
+`voluta-selector-glass` layers without stderr output, and a separate renderer
+check loaded the QML and completed IPC dismissal successfully. Dependency tests
+cover loader failures, timeouts, preserving working providers, reinstalling a
+broken package, and rejecting an unsuccessful repair. The launcher regression
+test verifies that loader failure preserves the static artwork and arguments.
 
 `tests/test_surfaces.py` checks core publication with browser disabled, wallpaper
 refresh, background policy, missing-artwork tolerance, and preference preservation.

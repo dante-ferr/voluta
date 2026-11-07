@@ -14,7 +14,7 @@ from cli import ROOT, atomic_write, resolve, read
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'waypaper', 'wlogout', 'xdg-desktop-portal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
-BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
+BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 
 
@@ -56,10 +56,22 @@ def wallust_binary():
     return None
 
 
+def quickshell_works():
+    binary = shutil.which('quickshell')
+    if not binary:
+        return False
+    try:
+        result = subprocess.run([binary, '--version'], capture_output=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def missing_packages(settings):
     wallust = wallust_binary()
     return [pkg for pkg in package_list(settings)
             if (not wallust if pkg == 'wallust-git' else
+                not quickshell_works() if pkg == 'quickshell' else
                 subprocess.run(['pacman', '-T', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode)]
 
 
@@ -73,10 +85,15 @@ def dependencies(settings):
     helper = shutil.which('paru') or shutil.which('yay')
     if aur and (not helper or os.geteuid() == 0):
         raise ValueError('Install an AUR helper (paru/yay) as your regular user for: ' + ', '.join(aur) + '. Or install these manually and rerun.')
-    command = [helper, '-S', '--needed', *missing] if helper and os.geteuid() != 0 else ['pacman', '-S', '--needed', *missing]
+    # Reinstall a broken renderer even when pacman considers its package current.
+    # Prefer the official package when replacing a stale third-party provider.
+    flags = [] if 'quickshell' in missing else ['--needed']
+    command = [helper, '-S', *flags, *missing] if aur and helper and os.geteuid() != 0 else ['pacman', '-S', *flags, *missing]
     if command[0] == 'pacman' and os.geteuid() != 0:
         command.insert(0, 'sudo')
     subprocess.run(command, check=True)
+    if 'quickshell' in missing and not quickshell_works():
+        raise ValueError('Quickshell still cannot start after installation. Run quickshell --version and repair its Qt dependencies before retrying.')
 
 
 def load_manifest(state):
@@ -435,6 +452,10 @@ def dispatch(args, directory, host):
             if os.geteuid() != 0:
                 command.insert(0, 'sudo')
             subprocess.run(command, check=True)
+        elif args.command == 'deps':
+            settings, _ = resolve(directory, host)
+            dependencies(settings)
+            print('Voluta dependencies are ready.')
         elif args.command == 'doctor':
             settings, _ = resolve(directory, host)
             missing = []

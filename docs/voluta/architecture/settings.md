@@ -35,6 +35,7 @@ make init
 make dry-run
 make install
 make update
+make deps
 make doctor
 make apply
 make browser
@@ -130,6 +131,13 @@ Core defaults update from the checkout without rewriting companion preferences.
 
 Missing selected dependencies are installed through pacman/paru/yay. Native
 Waybar support builds locally. Initial Wallust colors are seeded when missing.
+`make install` and `make update` include Quickshell for the selector effects and
+check that its binary starts, even when a package already provides it. Broken
+Quickshell installations are replaced/reinstalled and checked again; failure
+stops setup. `make doctor` reports a broken renderer as a missing dependency.
+`make deps` runs dependency setup alone without deploying configuration.
+Package installation may prompt for sudo authentication and replacement of a
+conflicting third-party Quickshell provider.
 `--skip-deps` deploys configuration only and skips native/privileged setup; it is
 intended for provisioning environments and tests, not dependency verification.
 The installed CLI delegates updates to the recorded source checkout. Pull that

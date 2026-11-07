@@ -174,6 +174,7 @@ def main(argv=None):
     system_setup.add_argument("--disable", action="store_true")
     commands.add_parser("rice-switch", help="toggle a configured external rice without deleting config")
     commands.add_parser("doctor", help="check configuration, dependencies and device access")
+    commands.add_parser("deps", help="install or repair dependencies without deploying configuration")
     commands.add_parser("apply", help="activate enabled integrations and refresh managed config")
     rgb = commands.add_parser("rgb", help="apply Wallust lighting to selected devices")
     rgb.add_argument("action", nargs="?", choices=("apply", "list", "menu", "select"), default="apply")
@@ -207,7 +208,7 @@ def main(argv=None):
     if args.command == "rgb":
         from rgb_menu import dispatch
         return dispatch(args, directory, host)
-    if args.command in ("install", "update", "uninstall", "doctor", "apply", "rgb", "system-setup", "rice-switch"):
+    if args.command in ("install", "update", "uninstall", "doctor", "deps", "apply", "rgb", "system-setup", "rice-switch"):
         from deploy import dispatch
         return dispatch(args, directory, host)
     if args.command == "companion":

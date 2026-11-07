@@ -10,6 +10,13 @@ if ! command -v quickshell >/dev/null || ! command -v jq >/dev/null ||
     exec rofi "$@"
 fi
 
+# A binary can exist but fail to load after a Qt upgrade. Keep Rofi's own
+# artwork unless the renderer can actually start.
+if ! quickshell --version >/dev/null 2>&1; then
+    printf '%s\n' 'Voluta: Quickshell cannot start; using the static selector frame. Check quickshell --version.' >&2
+    exec rofi "$@"
+fi
+
 monitor=$(hyprctl -j monitors 2>/dev/null | jq -r '
     .[] | select(.focused) | (.transform // 0) as $rotation |
     (if $rotation % 2 == 0 then [.width, .height] else [.height, .width] end) as $size |

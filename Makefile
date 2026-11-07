@@ -1,7 +1,7 @@
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VOLUTA := $(ROOT)/bin/voluta
 
-.PHONY: help init dry-run install update doctor apply browser theme docs-serve
+.PHONY: help init dry-run install update deps doctor apply browser theme docs-serve
 
 help:
 	@printf '%s\n' \
@@ -9,6 +9,7 @@ help:
 		'make dry-run     Preview install' \
 		'make install     Install Voluta' \
 		'make update      Deploy the current checkout' \
+		'make deps        Install or repair dependencies' \
 		'make doctor      Check the installation' \
 		'make apply       Activate enabled integrations' \
 		'make browser     Enable Brave/Prismwing/Gallery publishing' \
@@ -26,6 +27,9 @@ install:
 
 update:
 	$(VOLUTA) update
+
+deps:
+	$(VOLUTA) deps
 
 doctor:
 	$(VOLUTA) doctor
