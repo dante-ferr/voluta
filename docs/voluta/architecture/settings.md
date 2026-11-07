@@ -161,3 +161,18 @@ restart SDDM. The SDDM QML remains root-owned; a dedicated, user-writable color-
 file lets the next greeter use the newest Wallust palette without repeated sudo.
 Legacy Imperium filenames/theme identifiers remain compatibility details, while
 public branding and the CLI use Voluta.
+
+## Cursor
+
+The default is Capitaine dark (`capitaine-cursors`), size 24. The Arch package
+`capitaine-cursors` supplies both variants; `capitaine-cursors-light` is the light
+theme name. Override `environment.XCURSOR_THEME` and `environment.XCURSOR_SIZE`
+(strings) in companion settings. Update/apply publishes GTK 3/4 cursor settings
+and login exports; Hyprland reload applies the resolved cursor to the compositor.
+Existing applications may need reopening. Cursor artwork uses the upstream theme's
+fixed colors; it is not recolored by Wallust.
+
+Validated on 2026-11-07: dark theme activated in the live session with
+`hyprctl setcursor`, reload returned no configuration errors, and isolated
+deployment checks cover companion cursor overrides and preservation of unrelated
+GTK settings. Existing application cursor caches were not exhaustively checked.

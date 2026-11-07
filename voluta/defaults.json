@@ -11,7 +11,10 @@
     "rice_switch": false
   },
   "hyprland": {},
-  "environment": {},
+  "environment": {
+    "XCURSOR_THEME": "capitaine-cursors",
+    "XCURSOR_SIZE": "24"
+  },
   "apps": {
     "terminal": "kitty",
     "file_manager": "dolphin",

@@ -56,3 +56,19 @@ if settings_ok and settings.initialized then
     for _, monitor in ipairs(settings.monitors or {}) do hl.monitor(monitor) end
     for _, workspace in ipairs(settings.workspaces or {}) do hl.workspace_rule(workspace) end
 end
+
+-- Capitaine is an Xcursor theme. Apply the resolved preference on every reload;
+-- companion environment values take precedence over the public default.
+if settings_ok then
+    local env = settings.environment or {}
+    local theme = env.XCURSOR_THEME
+    local size = env.XCURSOR_SIZE
+    if theme and size then
+        hl.env("XCURSOR_THEME", theme)
+        hl.env("XCURSOR_SIZE", size)
+        local function cursor_quote(value)
+            return "'" .. value:gsub("'", "'\\''") .. "'"
+        end
+        hl.exec_cmd("hyprctl setcursor " .. cursor_quote(theme) .. " " .. cursor_quote(size))
+    end
+end

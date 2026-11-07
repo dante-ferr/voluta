@@ -14,7 +14,7 @@ from cli import ROOT, atomic_write, resolve, read
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'waypaper', 'wlogout', 'xdg-desktop-portal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
-BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
+BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 
 
@@ -178,6 +178,24 @@ def render_environment(settings, config, manifest, state):
     for key, value in settings['environment'].items():
         lines.append(f'unset {key}' if value is None else f'export {key}={shlex.quote(value)}')
     write_managed(config / 'voluta-login-env.sh', ('\n'.join(lines) + '\n').encode(), manifest, state, 0o600)
+    # Cursor preferences share the environment's existing companion precedence.
+    for version in ('gtk-3.0', 'gtk-4.0'):
+        path = config / version / 'settings.ini'
+        parser = configparser.ConfigParser(interpolation=None)
+        if path.exists():
+            parser.read(path)
+        if not parser.has_section('Settings'):
+            parser.add_section('Settings')
+        for env, key in (('XCURSOR_THEME', 'gtk-cursor-theme-name'),
+                         ('XCURSOR_SIZE', 'gtk-cursor-theme-size')):
+            value = settings['environment'].get(env)
+            if value is not None:
+                parser.set('Settings', key, value)
+        import io
+        output = io.StringIO()
+        parser.write(output)
+        write_managed(path, output.getvalue().encode(), manifest, state)
+
 
 
 def module_links(settings, current, manifest, state):

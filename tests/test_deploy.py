@@ -27,6 +27,33 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(result.returncode, code, result.stderr)
         return result
 
+    def test_cursor_defaults_and_companion_override(self):
+        self.run_cli('init')
+        self.assertEqual(json.loads(self.run_cli('get', 'environment.XCURSOR_THEME').stdout),
+                         'capitaine-cursors')
+        gtk = self.home / '.config/gtk-3.0/settings.ini'
+        gtk.parent.mkdir(parents=True)
+        gtk.write_text('[Settings]\ngtk-font-name=Serif 11\n')
+        settings_path = self.home / '.config/voluta/settings.json'
+        settings = json.loads(settings_path.read_text())
+        settings['environment'] = {'XCURSOR_THEME': 'Adwaita', 'XCURSOR_SIZE': '32'}
+        settings_path.write_text(json.dumps(settings))
+        before = settings_path.read_bytes()
+        self.run_cli('install', '--skip-deps')
+        import configparser
+        for version in ('gtk-3.0', 'gtk-4.0'):
+            parser = configparser.ConfigParser()
+            parser.read(self.home / '.config' / version / 'settings.ini')
+            self.assertEqual(parser['Settings']['gtk-cursor-theme-name'], 'Adwaita')
+            self.assertEqual(parser['Settings']['gtk-cursor-theme-size'], '32')
+            if version == 'gtk-3.0':
+                self.assertEqual(parser['Settings']['gtk-font-name'], 'Serif 11')
+        login = (self.home / '.config/voluta-login-env.sh').read_text()
+        self.assertIn('export XCURSOR_THEME=Adwaita', login)
+        self.assertIn('export XCURSOR_SIZE=32', login)
+        self.run_cli('update', '--skip-deps')
+        self.assertEqual(settings_path.read_bytes(), before)
+
     def test_install_update_features_preserve_preferences_and_restore_originals(self):
         original = self.home / '.config/hypr'
         original.mkdir(parents=True)
