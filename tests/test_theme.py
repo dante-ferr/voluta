@@ -24,7 +24,7 @@ class ThemeTests(unittest.TestCase):
         self.config = self.root / "config"
         self.settings = self.config / "voluta"
         self.cache = self.root / "cache"
-        self.shell = self.write("hypr/wallust/colors-shell.sh", "wc_bg='0A1515'\nwc_fg='80BAED'\nwc_0='204060'\nwc_1='54222B'\n")
+        self.shell = self.write("hypr/wallust/colors-shell.sh", "wc_bg='0A1515'\nwc_fg='80BAED'\nwc_15='80BAED'\nwc_0='204060'\nwc_1='54222B'\n")
 
     def write(self, relative, text):
         path = self.config / relative

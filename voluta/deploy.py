@@ -227,6 +227,10 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     # The deployed CLI can update config/modules without trying to copy over itself.
     if ROOT.resolve() != current.resolve():
         sync_sources(current, manifest, state)
+    # Quickshell confines local QML imports to each entrypoint's directory.
+    # Both consumers link the one shared effect source into that import root.
+    for consumer in ('rofi', 'swaync'):
+        link(current / consumer / 'effects', current / 'wallust/effects', manifest, state)
     if not skip_deps:
         subprocess.run(['make', '-C', str(current / 'waybar')], check=True)
     for local_name in ('monitors.conf', 'workspaces.conf'):

@@ -52,7 +52,20 @@ hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 5, bezier = "soft
 hl.layer_rule({
     name = "notification-drop",
     match = { namespace = "^swaync-(control-center|notification-window)$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
     animation = "slide top",
+})
+
+-- The in-frame projection stays below SwayNC's native Overlay controls.
+hl.layer_rule({
+    name = "voluta-notification-glass",
+    match = { namespace = "^voluta-notification-glass$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    no_anim = true,
 })
 
 -- Rofi owns input and slides independently of the decorative layer.

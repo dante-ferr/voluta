@@ -112,8 +112,9 @@ bind("SUPER + comma", hl.dsp.exec_cmd(scriptsDir .. "/RofiPicker.sh symbols"))
 bind("SUPER + V", hl.dsp.exec_cmd("pkill rofi || cliphist list | rofi -dmenu | cliphist decode | wl-copy"))
 bind("SUPER + ALT + K", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))
 
--- 4. Night Light Filter (Super + N)
-bind("SUPER + N", hl.dsp.exec_cmd("sh -c 'if pgrep -x hyprsunset >/dev/null 2>&1; then pkill -9 -x hyprsunset; notify-send \"Night Light\" \"Disabled\"; else (hyprsunset -t 3000 &) 2>/dev/null; notify-send \"Night Light\" \"Enabled (3000K)\"; fi'"))
+-- 4. Notifications and Night Light
+bind("SUPER + N", hl.dsp.exec_cmd("swaync-client -t"))
+bind("SUPER + SHIFT + N", hl.dsp.exec_cmd("sh -c 'if pgrep -x hyprsunset >/dev/null 2>&1; then pkill -9 -x hyprsunset; notify-send \"Night Light\" \"Disabled\"; else (hyprsunset -t 3000 &) 2>/dev/null; notify-send \"Night Light\" \"Enabled (3000K)\"; fi'"))
 
 -- 5. Screenshots (PrintScreen, Super + P, and modern Super + Shift + S)
 bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("sh -c 'mkdir -p ~/Pictures/Screenshots && f=~/Pictures/Screenshots/Screenshot_$(date +%Y%m%d_%H%M%S).png && grim -g \"$(slurp)\" \"$f\" && wl-copy < \"$f\" && notify-send \"Screenshot Captured\" \"Saved to $f\"'"))

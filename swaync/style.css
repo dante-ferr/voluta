@@ -1,10 +1,35 @@
-/* Imperium notification salon: Dolphin typography, Waybar scrollwork.
+/* Voluta notification salon: sculpted angels and recessed glass.
    Keep ornament in the frame and generous quiet space around the message. */
 
 @import "wallust/colors-swaync.css";
 
+/* Derive every surface and rule from the active Wallust palette. */
+@define-color surface alpha(@background, 0.88);
+@define-color surface-raised alpha(@background, 0.96);
+@define-color surface-soft alpha(@background, 0.72);
+@define-color line mix(@background, @foreground, 0.24);
+@define-color muted mix(@foreground, @background, 0.32);
+@define-color shadow alpha(@background, 0.86);
+
+/* Replace SwayNC's stock GTK4 palette variables with Wallust colors. */
+:root {
+    --text-color: @foreground;
+    --text-color-disabled: @muted;
+    --cc-bg: @surface;
+    --noti-border-color: @line;
+    --noti-bg-darker: @surface-raised;
+    --noti-bg-hover: @surface-raised;
+    --noti-bg-focus: @surface-soft;
+    --noti-close-bg: @surface-raised;
+    --noti-close-bg-hover: @color1;
+    --bg-selected: @color1;
+    --mpris-album-art-overlay: @surface-raised;
+    --mpris-button-hover: @surface-soft;
+    --mpris-album-art-shadow: 0 4px 12px @shadow;
+}
+
 * {
-    border-radius: 0px; /* Strict 0px sharp geometric corners */
+    border-radius: 0px;
     font-family: "Monaspace Argon", "JetBrainsMono Nerd Font", monospace;
     font-size: 10pt;
     font-weight: 400;
@@ -44,16 +69,16 @@
 
 .notification-row .notification-background .notification {
     padding: 24px 20px;
-    background-color: @background;
+    background-color: @surface-raised;
     background-image: url("../wallust/assets/generated/small-corner-tl.svg"), url("../wallust/assets/generated/small-corner-tr.svg"),
                       url("../wallust/assets/generated/small-corner-bl.svg"), url("../wallust/assets/generated/small-corner-br.svg");
     background-repeat: no-repeat;
     background-position: 8px 8px, calc(100% - 8px) 8px,
                          8px calc(100% - 8px), calc(100% - 8px) calc(100% - 8px);
     background-size: 48px 48px;
-    border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
+    border: 1px solid @line;
     /* A fine illuminated edge joins the four corner carvings. */
-    box-shadow: inset 0 1px 0 alpha(@color1, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 1px 0 alpha(@color1, 0.5), 0 4px 12px @shadow;
     transition: background 0.15s ease-in-out;
 }
 
@@ -94,7 +119,7 @@
 }
 
 .time {
-    color: mix(@foreground, @background, 0.32);
+    color: @muted;
     font-size: 8pt;
     font-weight: 400;
     margin-right: 26px;
@@ -117,7 +142,7 @@
 
 .body-image {
     margin-top: 6px;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
 }
 
 .close-button {
@@ -125,17 +150,17 @@
     margin: 6px;
     min-width: 20px;
     min-height: 20px;
-    background: #101017;
+    background: @surface-raised;
     color: @foreground;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
     box-shadow: none;
     transition: background 0.15s ease-in-out;
 }
 
 .close-button:hover {
-    background: #7A0016;
+    background: @color1;
     color: @foreground;
-    border: 1px solid #7A0016;
+    border: 1px solid @color1;
 }
 
 /* Alternative actions below the body */
@@ -148,9 +173,9 @@
 .inline-reply-button {
     margin: 2px;
     padding: 3px 10px;
-    background: #101017;
+    background: @surface-raised;
     color: @foreground;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
 }
 
 .notification-action > button:hover,
@@ -160,10 +185,10 @@
 }
 
 .inline-reply-entry {
-    background: #0A0A0E;
+    background: @surface-raised;
     color: @foreground;
     caret-color: @color1;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
 }
 
 /* Grouped notifications */
@@ -187,18 +212,16 @@
    ==================================================== */
 
 .control-center {
-    background-color: @background;
-    background-image: url("../wallust/assets/generated/small-corner-tl.svg"), url("../wallust/assets/generated/small-corner-tr.svg"),
-                      url("../wallust/assets/generated/small-corner-bl.svg"), url("../wallust/assets/generated/small-corner-br.svg");
+    background-color: transparent;
+    background-image: url("../wallust/assets/generated/notification-angels-frame.png"),
+                      url("../wallust/assets/generated/notification-glass.png");
     background-repeat: no-repeat;
-    background-position: 10px 10px, calc(100% - 10px) 10px,
-                         10px calc(100% - 10px), calc(100% - 10px) calc(100% - 10px);
-    background-size: 68px 68px;
+    background-position: center, center;
+    background-size: 100% 100%, 100% 100%;
     color: @foreground;
-    padding: 38px 28px;
-    border: 1px solid #2A2A38;
-    /* Gilded lintel across the top of the tablet */
-    box-shadow: inset 0 2px 0 0 @color1, 0 4px 14px rgba(0, 0, 0, 0.8);
+    padding: 120px 224px 80px;
+    border: none;
+    box-shadow: none;
 }
 
 /* GTK4 dresses lists and viewports in its own slabs; strip them back to the tablet */
@@ -220,7 +243,7 @@ scrollbar trough {
 }
 
 scrollbar slider {
-    background: #2A2A38;
+    background: @line;
     border: none;
     min-width: 4px;
     min-height: 4px;
@@ -231,7 +254,7 @@ scrollbar slider:hover {
 }
 
 .control-center .control-center-list-placeholder {
-    color: mix(@foreground, @background, 0.32);
+    color: @muted;
     opacity: 1;
     letter-spacing: 0;
 }
@@ -241,10 +264,11 @@ scrollbar slider:hover {
    ==================================================== */
 
 .widget {
-    margin: 5px 4px;
-    padding: 12px 16px;
-    background: #101017;
-    border: 1px solid #22222E;
+    margin: 3px 0;
+    padding: 8px 12px;
+    background: @surface;
+    border: 1px solid @line;
+    border-left: 2px solid @color1;
 }
 
 /* Title */
@@ -252,8 +276,8 @@ scrollbar slider:hover {
     background-color: transparent;
     border: none;
     border-bottom: 1px solid alpha(@color1, 0.25);
-    padding: 12px 14px 16px;
-    margin-bottom: 8px;
+    padding: 4px 8px 8px;
+    margin-bottom: 2px;
 }
 
 .widget-title > label {
@@ -266,10 +290,10 @@ scrollbar slider:hover {
 
 .widget-title > button {
     margin-left: 8px;
-    padding: 2px 12px;
-    background: #101017;
+    padding: 2px 9px;
+    background: @surface-raised;
     color: @foreground;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
     transition: background 0.15s ease-in-out;
 }
 
@@ -288,8 +312,8 @@ scrollbar slider:hover {
 .widget-dnd > switch {
     margin-left: 8px;
     padding: 0;
-    background: #0A0A0E;
-    border: 1px solid #2A2A38;
+    background: @surface-raised;
+    border: 1px solid @line;
     min-width: 42px;
     min-height: 18px;
 }
@@ -300,7 +324,7 @@ scrollbar slider:hover {
 }
 
 .widget-dnd > switch slider {
-    background: #2A2A38;
+    background: @line;
     border: none;
     margin: 2px;
     min-width: 16px;
@@ -308,7 +332,7 @@ scrollbar slider:hover {
 }
 
 .widget-dnd > switch:checked slider {
-    background: #0A0A0E;
+    background: @surface-raised;
 }
 
 /* Buttons grid */
@@ -319,9 +343,9 @@ scrollbar slider:hover {
 .widget-buttons-grid > flowbox > flowboxchild > button {
     margin: 2px;
     padding: 6px 0;
-    background: #0A0A0E;
+    background: @surface-raised;
     color: @color1;
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
     font-size: 15px;
     transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
 }
@@ -355,8 +379,8 @@ scrollbar slider:hover {
 
 .widget-volume scale trough,
 .widget-backlight scale trough {
-    background: #0A0A0E;
-    border: 1px solid #2A2A38;
+    background: @surface-raised;
+    border: 1px solid @line;
     min-height: 4px;
 }
 
@@ -369,17 +393,17 @@ scrollbar slider:hover {
 .widget-volume scale slider,
 .widget-backlight scale slider {
     background: @foreground;
-    border: 1px solid #0A0A0E;
+    border: 1px solid @line;
     min-width: 12px;
     min-height: 12px;
-    margin: -5px 0;
+    margin: 0;
     padding: 0;
 }
 
 .per-app-volume {
-    background: #0A0A0E;
-    border: 1px solid #22222E;
-    margin: 6px;
+    background: @surface-raised;
+    border: 1px solid @line;
+    margin: 4px;
     margin-bottom: 0;
 }
 
@@ -391,20 +415,20 @@ scrollbar slider:hover {
 }
 
 .widget-mpris .widget-mpris-player {
-    margin: 5px 4px;
+    margin: 3px 0;
     padding: 0;
-    background: #101017;
-    border: 1px solid #22222E;
+    background: @surface;
+    border: 1px solid @line;
     box-shadow: none;
 }
 
 .widget-mpris .widget-mpris-player .mpris-overlay {
     padding: 10px;
-    background-color: rgba(10, 10, 14, 0.85);
+    background-color: @surface-raised;
 }
 
 .widget-mpris .widget-mpris-player .widget-mpris-album-art {
-    border: 1px solid #2A2A38;
+    border: 1px solid @line;
     box-shadow: none;
 }
 
@@ -434,7 +458,7 @@ scrollbar slider:hover {
 }
 
 .widget-mpris > box > button:disabled {
-    color: mix(@foreground, @background, 0.32);
+    color: @muted;
 }
 
 /* Emphasis belongs to headings; the message keeps Dolphin's regular weight. */
@@ -445,12 +469,44 @@ scrollbar slider:hover {
 
 /* Reserve corner artwork for the outer panel; keep archived messages quiet. */
 .control-center .notification-row .notification-background .notification {
+    background-color: @surface-soft;
     background-image: none;
-    padding: 8px 4px;
+    border-left: 3px solid @color1;
+    padding: 8px 8px;
+}
+
+.control-center .notification-row .notification-background .notification:hover {
+    background-color: @surface-raised;
+    border-left-color: @color2;
 }
 
 .widget-buttons-grid button label,
 .widget-volume > box > label,
 .widget-backlight > box > label {
     font-family: "JetBrainsMono Nerd Font", monospace;
+}
+
+/* The selector's opposing rounded corners and stepped focus edge. */
+.widget,
+.control-center .notification-row .notification-background .notification {
+    border-radius: 7px 0;
+}
+.widget-title,
+.widget-mpris {
+    border-radius: 0;
+}
+.widget-title > button,
+.widget-buttons-grid > flowbox > flowboxchild > button {
+    border-radius: 7px 0;
+}
+.control-center .notification-row:focus .notification-background .notification {
+    border-color: @color1;
+    background-color: @surface-raised;
+}
+
+/* Compact tracks leave the wide archive room to breathe. */
+.widget-volume scale,
+.widget-backlight scale {
+    padding: 0;
+    min-height: 16px;
 }

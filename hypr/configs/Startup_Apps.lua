@@ -13,6 +13,13 @@ local function start_palette_watcher()
 end
 start_palette_watcher()
 
+-- The per-session lock also makes this safe when the compositor reloads.
+-- Keep the native panel usable when the optional glass renderer cannot start.
+local function start_notification_glass()
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}/voluta\"; /usr/bin/python3 " .. config .. "/swaync/watch-glass.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta/notification-glass.log\" 2>&1'")
+end
+start_notification_glass()
+
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
@@ -51,6 +58,7 @@ hl.on("hyprland.start", function()
         if type(command) == "string" then hl.exec_cmd(command) end
     end
     start_palette_watcher()
+    start_notification_glass()
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.
     -- It notices enable/disable selections during this session.

@@ -39,6 +39,10 @@ class DeploymentTests(unittest.TestCase):
         self.run_cli('install', '--skip-deps')
         self.assertTrue(original.is_symlink())
         self.assertTrue((original / 'hyprland.lua').is_file())
+        for consumer in ('rofi', 'swaync'):
+            effect = self.home / '.config' / consumer / 'effects/StainedGlass.qml'
+            self.assertTrue(effect.is_file(), f'{consumer} can resolve its shared QML import')
+            self.assertEqual(effect.resolve(), self.home / '.local/share/voluta/current/wallust/effects/StainedGlass.qml')
         self.assertFalse((self.home / '.local/bin/dolphin').exists())
         self.run_cli('update', '--skip-deps')
         self.assertEqual(settings_path.read_bytes(), before)
@@ -88,7 +92,7 @@ class DeploymentTests(unittest.TestCase):
         self.run_cli('install', '--skip-deps')
         palette = self.home / '.config/hypr/wallust/colors-shell.sh'
         palette.parent.mkdir(parents=True, exist_ok=True)
-        palette.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_1='AA5577'\n")
+        palette.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_15='E0D0C0'\nwc_1='AA5577'\n")
         self.run_cli('feature', 'enable', 'browser')
         gallery = self.home / '.local/share/voluta/gallery'
         self.assertTrue((gallery / 'manifest.json').exists())

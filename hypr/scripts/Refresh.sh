@@ -11,8 +11,8 @@ if [[ -f "$rice_root/voluta/surfaces.py" ]]; then
     lock_dir=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
     [[ -w $lock_dir ]] || lock_dir=/tmp
     if ! flock -w 8 "$lock_dir/imperium-combined-wallust.lock" \
-        /usr/bin/python3 "$rice_root/voluta/surfaces.py" --refresh-selector; then
-        notify-send "App selector frame refresh failed" "Check the PNG and Wallust palette, then run Refresh again."
+        /usr/bin/python3 "$rice_root/voluta/surfaces.py" --refresh-frames; then
+        notify-send "Voluta frame refresh failed" "Check the frame PNGs and Wallust palette, then run Refresh again."
     fi
 fi
 # A pull also changes generated Qt styling, saved view defaults and the hook.

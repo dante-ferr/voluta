@@ -75,6 +75,55 @@ Frame sources live in `wallust/assets/`. `voluta/surfaces.py` renders them into
 Colors derive exclusively from Wallust tokens and the persistent background
 policy. Generated files are ignored and must not be committed.
 
+## Notification salon
+
+SwayNC opens a wide, top-centered framed panel below Waybar. Its exclusive-zone
+handling stays enabled; the 8px top margin matches `UserSettings.lua`'s window
+grid gap. The flat upper edge has no projecting pediment. Two serious-faced adult angels
+support the restrained side mouldings: one has an articulated robotic arm, the other a visible robotic leg. Their folded wings
+and drapery remain outside the controls and archive.
+`Super+N` toggles the panel; `Super+Shift+N` toggles the existing night-light
+filter. Waybar's notification button also toggles the panel.
+
+The transparent source is `wallust/assets/notification-angels-frame.png`.
+Both it and `big-angel-box.png` use `frame_tints` and `render_palette_frame` in
+`voluta/surfaces.py`: the same hue mapping, relief, shadow color, and alpha
+preservation apply to both. Only their canvas dimensions and backing layers
+differ. The notification canvas is 1056×640; GTK adds the frame's padding to
+SwayNC's configured content width, so those dimensions must be changed together.
+The publisher derives `notification-glass.png` from the enclosed transparent
+opening and the resolved background at 50% opacity, matching the selector
+glass. `notification-aperture.png` masks the animation to the same opening.
+Both leave the outer silhouette clear.
+Malformed/open cutouts produce no glass rather than painting outside the frame.
+
+Wallpaper publication regenerates both frames before reloading consumers.
+`Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout;
+the old `--refresh-selector` publisher option remains an alias for
+`--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
+Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
+existing light compositor blur settings. The artwork itself stays sharp.
+
+Both menus also use the same `wallust/effects/StainedGlass.qml` projection:
+slowly drifting palette bands and broad facets at 25fps. Each consumer has a
+local `effects` link because Quickshell restricts imports to its entrypoint
+root; the installer creates managed links to the single shared source.
+`swaync/watch-glass.py` watches native visibility and starts the bounded,
+input-transparent Quickshell surface only while the control center is open.
+The projection fades in over 150ms and out over 350ms. It sits on Top below
+SwayNC's Overlay frame and controls, leaving keyboard and pointer input with
+SwayNC. A per-compositor lock prevents duplicate watchers after reloads.
+The helper detects changed palette, aperture, or panel configuration while
+visible, and refreshes the projection. It drops the effect on daemon disconnect
+and reconnects with bounded backoff. A missing or broken renderer leaves the
+permanent dark GTK glass usable. Global blur strength and host GPU policy
+remain unchanged.
+
+After a geometry/widget change, test a fresh SwayNC process: reloading the
+running daemon can retain old widget allocations. Palette-only changes use the
+normal CSS refresh. If a personal compositor override changes the top grid gap,
+match `control-center-margin-top` to that gap in the personal SwayNC override.
+
 ## Optional Brave New Tab
 
 Voluta Gallery is an unpacked Manifest V3 extension, shipped under `brave/gallery/`.
@@ -131,6 +180,25 @@ preferences, not companion files or generated extension assets. Clearing the
 extension's site data or removing its profile can erase them.
 
 ## Verification
+
+On 2026-11-07, 32 notification, shared-theme, deployment, configuration, and
+selector checks passed. Frame checks cover palette changes, preserved alpha,
+consumer dimensions, matching backing/projection masks, and rejecting an
+aperture that leaks to the exterior. Installer checks resolve both local QML
+imports to the same managed source. Watcher checks exercise duplicate
+suppression, per-compositor locks, visibility, live palette changes without
+continuous monitor IPC, daemon reconnect, missing/invalid dependencies and
+monitor data, and process cleanup.
+
+Fresh and live SwayNC previews verified the angel frame, heading, DND switch,
+action grid, sliders, and projection below the native controls. The bounded
+glass layer measured 1056×640 at (432,42) on the 1080p notebook: Waybar's 34px
+exclusive zone plus the 8px window-grid gap. It disappears after panel closure.
+The two N shortcuts loaded with separate Super and Super+Shift modifiers;
+Hyprland reported no configuration errors. Night light was not toggled during
+validation. The inherited system GTK theme still emits its `gtk.css` warnings;
+the notification stylesheet loaded without parser errors. Physical GPU behavior
+remains subject to the runtime constraints.
 
 On 2026-11-06, the installed pinned Quickshell provider failed at startup with a
 Qt private-symbol lookup error. Replacing it with Arch's Quickshell 0.3.2 restored

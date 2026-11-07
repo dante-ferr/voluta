@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'voluta'))
@@ -24,7 +25,7 @@ class SurfaceTests(unittest.TestCase):
         self.settings.parent.mkdir(parents=True)
         self.shell = self.config / 'hypr/wallust/colors-shell.sh'
         self.shell.parent.mkdir(parents=True)
-        self.shell.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_1='AA5577'\n")
+        self.shell.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_15='E0D0C0'\nwc_1='AA5577'\n")
         self.wallpaper = self.root / 'private-name.png'
         self.wallpaper.write_bytes(b'wallpaper-test-fixture')
         self.frames = self.config / 'wallust/assets/generated'
@@ -94,6 +95,38 @@ class SurfaceTests(unittest.TestCase):
         self.publish()
         self.assertIsNone(json.loads((self.gallery / 'generated/palette.json').read_text())['wallpaper'])
         self.assertTrue((self.frames / 'panel-frame.svg').is_file())
+
+    def test_notification_glass_is_enclosed_and_tracks_palette(self):
+        self.publish(False)
+        source = ROOT / surfaces.NOTIFICATION_FRAME
+        first = (self.frames / source.name).read_bytes()
+        center = tuple(dimension // 2 for dimension in surfaces.NOTIFICATION_SIZE)
+        with Image.open(self.frames / source.name) as frame, Image.open(self.frames / 'notification-glass.png') as glass:
+            self.assertEqual(frame.size, surfaces.NOTIFICATION_SIZE)
+            self.assertEqual(glass.size, frame.size)
+            self.assertEqual(glass.getpixel(center), (10, 21, 31, 128))
+            self.assertEqual(glass.getpixel((0, 0))[3], 0)
+            alpha = frame.getchannel('A')
+            self.assertGreater(alpha.getextrema()[1], 0)
+            self.assertEqual(alpha.getpixel(center), 0)
+            with Image.open(self.frames / 'notification-aperture.png') as mask:
+                self.assertEqual(mask.size, frame.size)
+                self.assertEqual(mask.getpixel(center)[3], 255)
+                self.assertEqual(mask.getpixel((0, 0))[3], 0)
+                self.assertEqual(mask.getchannel('A'), surfaces.frame_aperture(frame))
+        self.shell.write_text("wc_bg='304050'\nwc_fg='FFEEDD'\nwc_15='FFEEDD'\nwc_1='55BB99'\n")
+        self.publish(False)
+        self.assertNotEqual(first, (self.frames / source.name).read_bytes())
+        with Image.open(self.frames / 'notification-glass.png') as glass:
+            self.assertEqual(glass.getpixel(center), (31, 42, 52, 128))
+
+    def test_open_frame_never_paints_glass_outside_the_sculpture(self):
+        frame = Image.new('RGBA', (40, 40))
+        draw = ImageDraw.Draw(frame)
+        draw.rectangle((5, 5, 34, 34), outline=(255, 255, 255, 255), width=2)
+        self.assertIsNotNone(surfaces.frame_aperture(frame).getbbox())
+        draw.rectangle((18, 0, 22, 10), fill=(0, 0, 0, 0))
+        self.assertIsNone(surfaces.frame_aperture(frame).getbbox())
 
 
 if __name__ == '__main__':

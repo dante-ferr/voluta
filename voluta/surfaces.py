@@ -27,6 +27,8 @@ GALLERY_FILES = ('manifest.json', 'index.html', 'style.css', 'app.js', 'logic.mj
 GALLERY_ORNAMENTS = ('big-corner-tl.svg', 'big-corner-br.svg')
 SELECTOR_FRAME = Path('wallust/assets/big-angel-box.png')
 SELECTOR_SIZE = (1152, 1024)  # Matches the centered slot in rofi/selector-frame.rasi.
+NOTIFICATION_FRAME = Path('wallust/assets/notification-angels-frame.png')
+NOTIFICATION_SIZE = (1056, 640)  # Matches swaync/config.json and its frame padding.
 
 
 def hex_color(color):
@@ -69,7 +71,7 @@ def write_bytes_changed(path, content):
     return True
 
 
-def selector_tints(palette, hue, saturation, luminance, alpha):
+def frame_tints(palette, hue, saturation, luminance, alpha):
     # Ignore transparent, neutral and very dark pixels when finding the source hues.
     mask = ImageChops.multiply(alpha, saturation.point(lambda value: 255 if value >= 24 else 0))
     mask = ImageChops.multiply(mask, luminance.point(lambda value: 255 if value > 24 else 0))
@@ -117,13 +119,13 @@ def selector_tints(palette, hue, saturation, luminance, alpha):
     return lookup, neutral
 
 
-def render_selector_frame(source, palette):
+def render_palette_frame(source, palette, size=SELECTOR_SIZE):
     with Image.open(source) as original:
         image = original.convert('RGBA')
         alpha = image.getchannel('A')
         hue, saturation, _ = image.convert('HSV').split()
         luminance = ImageOps.grayscale(image)
-        lookup, neutral = selector_tints(palette, hue, saturation, luminance, alpha)
+        lookup, neutral = frame_tints(palette, hue, saturation, luminance, alpha)
         tinted = Image.merge('RGB', tuple(hue.point(channel) for channel in zip(*lookup)))
         # Weakly saturated pixels have unreliable hues. Fade them to the middle tint.
         tinted = Image.composite(tinted, Image.new('RGB', image.size, neutral),
@@ -132,14 +134,14 @@ def render_selector_frame(source, palette):
         relief = luminance.point(lambda value: min(224, max(0, round((value - 24) * 224 / 151))))
         frame = Image.composite(tinted, Image.new('RGB', image.size, palette['bg']), relief)
         frame.putalpha(alpha)
-        # Rofi tiles the unused area after fitting an image of a different ratio.
-        frame = ImageOps.pad(frame, SELECTOR_SIZE, Image.Resampling.LANCZOS,
+        # Use an exact consumer-sized canvas so GTK and Rofi never tile the artwork.
+        frame = ImageOps.pad(frame, size, Image.Resampling.LANCZOS,
                              color=(0, 0, 0, 0))
         return frame
 
 
-def publish_selector_frame(assets, source, palette):
-    frame = render_selector_frame(source, palette)
+def frame_aperture(frame):
+    """Find only the enclosed hollow; open/missing cutouts never fill the desktop."""
     alpha = frame.getchannel('A')
     opening = alpha.point(lambda value: 255 if value >= 128 else 0)
     center = (frame.width // 2, frame.height // 2)
@@ -153,7 +155,13 @@ def publish_selector_frame(assets, source, palette):
     else:
         # An open or missing cutout must never project outside the frame.
         opening = Image.new('L', frame.size)
+    return opening
+
+
+def publish_selector_frame(assets, source, palette):
+    frame = render_palette_frame(source, palette)
     mask = Image.new('RGBA', frame.size)
+    opening = frame_aperture(frame)
     mask.putalpha(opening)
     for name, image in ((SELECTOR_FRAME.name, frame), ('selector-aperture.png', mask)):
         with BytesIO() as output:
@@ -161,23 +169,42 @@ def publish_selector_frame(assets, source, palette):
             write_bytes_changed(assets / name, output.getvalue())
 
 
-def refresh_selector_frame():
+def publish_notification_frame(assets, source, palette):
+    frame = render_palette_frame(source, palette, NOTIFICATION_SIZE)
+    # Paint glass only inside the sculpture, leaving the outer silhouette clear.
+    opening = frame_aperture(frame)
+    glass = Image.new('RGBA', frame.size, (*palette['bg'], 0))
+    glass.putalpha(opening.point(lambda value: round(value * .50)))
+    mask = Image.new('RGBA', frame.size)
+    mask.putalpha(opening)
+    for name, image in ((NOTIFICATION_FRAME.name, frame), ('notification-glass.png', glass),
+                        ('notification-aperture.png', mask)):
+        with BytesIO() as output:
+            image.save(output, format='PNG')
+            write_bytes_changed(assets / name, output.getvalue())
+
+
+def refresh_frames():
     from cli import atomic_write
     from deploy import deployment_lock, load_manifest, locations, write_managed
 
     config, data, state = locations()
     with deployment_lock():
         manifest = load_manifest(state)
-        installed = ROOT / SELECTOR_FRAME
-        checkout = Path(manifest.get('source', str(ROOT))) / SELECTOR_FRAME
-        use_checkout = ROOT == (data / 'current').resolve() and checkout.is_file()
-        source = checkout if use_checkout else installed
-        content = source.read_bytes()
+        managed_changed = False
         palette = read_palette(config / 'hypr/wallust/colors-shell.sh')
         palette['bg'] = preferred_background(palette, config / 'voluta')
-        publish_selector_frame(config / SELECTOR_FRAME.parent / 'generated', BytesIO(content), palette)
-        if use_checkout and (not installed.is_file() or installed.read_bytes() != content):
-            write_managed(installed, content, manifest, state, 0o644)
+        for relative, publisher in ((SELECTOR_FRAME, publish_selector_frame),
+                                    (NOTIFICATION_FRAME, publish_notification_frame)):
+            installed = ROOT / relative
+            checkout = Path(manifest.get('source', str(ROOT))) / relative
+            use_checkout = ROOT == (data / 'current').resolve() and checkout.is_file()
+            content = (checkout if use_checkout else installed).read_bytes()
+            publisher(config / relative.parent / 'generated', BytesIO(content), palette)
+            if use_checkout and (not installed.is_file() or installed.read_bytes() != content):
+                write_managed(installed, content, manifest, state, 0o644)
+                managed_changed = True
+        if managed_changed:
             atomic_write(state / 'install.json', manifest)
 
 
@@ -244,6 +271,7 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
     # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
     write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
     publish_selector_frame(assets, root / SELECTOR_FRAME, palette)
+    publish_notification_frame(assets, root / NOTIFICATION_FRAME, palette)
     write_changed(assets / 'panel-frame-wide.svg', rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
     for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
         for name in ('tile-frame', 'tile-selected'):
@@ -280,12 +308,12 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--refresh-selector', action='store_true',
-                        help='sync and filter only the app selector frame')
+    parser.add_argument('--refresh-frames', '--refresh-selector', dest='refresh_frames', action='store_true',
+                        help='sync and filter the selector and notification frames')
     args = parser.parse_args()
     try:
-        if args.refresh_selector:
-            refresh_selector_frame()
+        if args.refresh_frames:
+            refresh_frames()
         else:
             publish()
     except (OSError, ValueError, KeyError) as error:
