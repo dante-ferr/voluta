@@ -7,7 +7,23 @@ local UserScripts = home .. "/.config/hypr/UserScripts"
 
 local settings = require("configs.Voluta")
 local seen = {}
+local function has_trigger(chord)
+    if type(chord) ~= "string" then return false end
+    for part in chord:gmatch("[^+]+") do
+        local token = part:match("^%s*(.-)%s*$"):upper()
+        if token ~= "" and token ~= "SUPER" and token ~= "CTRL"
+            and token ~= "CONTROL" and token ~= "ALT" and token ~= "SHIFT" then
+            return true
+        end
+    end
+    return false
+end
 local function bind(chord, dispatcher, options)
+    -- A malformed private override must not abort loading every later bind.
+    if not has_trigger(chord) then
+        print("[Voluta] Skipping keybinding without a trigger")
+        return
+    end
     seen[chord] = true
     local choice = settings.keybindings[chord]
     if choice == false then return end
@@ -95,7 +111,6 @@ bind("SUPER + period", hl.dsp.exec_cmd(scriptsDir .. "/RofiPicker.sh emoji"))
 bind("SUPER + comma", hl.dsp.exec_cmd(scriptsDir .. "/RofiPicker.sh symbols"))
 bind("SUPER + V", hl.dsp.exec_cmd("pkill rofi || cliphist list | rofi -dmenu | cliphist decode | wl-copy"))
 bind("SUPER + ALT + K", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))
-bind("ALT + SHIFT", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))
 
 -- 4. Night Light Filter (Super + N)
 bind("SUPER + N", hl.dsp.exec_cmd("sh -c 'if pgrep -x hyprsunset >/dev/null 2>&1; then pkill -9 -x hyprsunset; notify-send \"Night Light\" \"Disabled\"; else (hyprsunset -t 3000 &) 2>/dev/null; notify-send \"Night Light\" \"Enabled (3000K)\"; fi'"))
@@ -265,7 +280,7 @@ hl.window_rule({
 
 -- New personal bindings are additive; matching chords replace defaults above.
 for chord, command in pairs(settings.keybindings) do
-    if not seen[chord] and type(command) == "string" then
+    if has_trigger(chord) and not seen[chord] and type(command) == "string" then
         hl.bind(chord, hl.dsp.exec_cmd(command))
     end
 end
