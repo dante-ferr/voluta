@@ -47,8 +47,12 @@ repairing or rebuilding Quickshell against the installed Qt libraries;
 Super+Alt+R cannot repair a binary/library mismatch.
 The Wallust colors drift diagonally behind Rofi. The publisher derives a mask
 from the PNG's enclosed transparent opening, so the effect reaches the inner
-edge of the ornament. The boxes remain above the effect and the backdrop keeps
-its blur. The layer accepts no input and closes shortly after the menu.
+edge of the ornament. The boxes remain above the effects on the Top layer. A separate
+`voluta-selector-frame` Overlay surface renders after Rofi (`order = -1`), so
+the ornament covers the button edges. Both decorative surfaces accept no input
+and share the same entrance and dismissal motion. Only the lower glass surface
+receives backdrop blur; the frame does not blur the buttons beneath it.
+The static fallback retains Rofi’s background frame when Quickshell is unavailable.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
 SVG aspect ratios when scaling background images and can tile the result, so

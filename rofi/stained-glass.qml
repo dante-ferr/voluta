@@ -22,6 +22,33 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     WlrLayershell.namespace: "voluta-selector-glass"
 
+    // Rofi owns the overlay input surface. A separate, input-transparent
+    // overlay puts the ornament above its buttons while the glass stays on Top.
+    PanelWindow {
+        screen: panel.screen
+        visible: panel.visible
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        mask: Region {}
+        anchors { top: true; bottom: true; left: true; right: true }
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        WlrLayershell.namespace: "voluta-selector-frame"
+
+        Item {
+            width: parent.width
+            height: parent.height
+            y: retable.y
+            opacity: retable.opacity
+            Image {
+                anchors.centerIn: parent
+                width: panel.plateWidth
+                height: panel.plateHeight
+                source: Qt.resolvedUrl(panel.assets + "/big-angel-box.png")
+            }
+        }
+    }
+
     // Keep the blur veil fixed while the frame and its effects move.
     anchors { top: true; bottom: true; left: true; right: true }
 
@@ -94,14 +121,6 @@ PanelWindow {
         y: 130
         opacity: 0
         Component.onCompleted: entrance.start()
-
-        Image {
-            anchors.centerIn: parent
-            width: panel.plateWidth
-            height: panel.plateHeight
-            z: 2
-            source: Qt.resolvedUrl(panel.assets + "/big-angel-box.png")
-        }
 
         Canvas {
             id: ignition

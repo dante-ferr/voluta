@@ -74,3 +74,12 @@ hl.layer_rule({
     ignore_alpha = 0,
     no_anim = true,
 })
+
+-- Render after Rofi within Overlay; the frame must cover button edges without
+-- taking focus or blurring the text beneath it. Glass remains on the Top layer.
+hl.layer_rule({
+    name = "voluta-selector-frame",
+    match = { namespace = "^voluta-selector-frame$" },
+    order = -1,
+    no_anim = true,
+})
