@@ -93,6 +93,12 @@ class DeploymentTests(unittest.TestCase):
         gallery = self.home / '.local/share/voluta/gallery'
         self.assertTrue((gallery / 'manifest.json').exists())
         self.assertTrue((gallery / 'generated/palette.json').exists())
+        # Wallpaper refreshes invoke the deployed publisher, so its runtime
+        # sources must be available independently of the original checkout.
+        current = self.home / '.local/share/voluta/current'
+        result = subprocess.run(['python3', str(current / 'voluta/theme.py')],
+                                env=self.env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
         marker = gallery / 'user-marker'
         marker.write_text('preserve')
         self.run_cli('feature', 'disable', 'browser')

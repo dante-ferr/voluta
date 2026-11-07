@@ -13,7 +13,7 @@ from cli import ROOT, atomic_write, resolve, read
 
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'waypaper', 'wlogout', 'xdg-desktop-portal')
 # Theme sources and runtime support must remain siblings in the installed tree.
-SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations')
+SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 
@@ -41,10 +41,32 @@ def package_list(settings):
     return list(dict.fromkeys(packages))
 
 
+def wallust_binary():
+    # Match the wallpaper refresher's preference for the user's Cargo v4 build.
+    candidates = [Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')) / 'bin/wallust', shutil.which('wallust')]
+    for candidate in candidates:
+        if not candidate or not os.access(candidate, os.X_OK):
+            continue
+        try:
+            result = subprocess.run([str(candidate), '--version'], capture_output=True, text=True, timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if result.returncode == 0 and result.stdout.startswith('wallust 4.'):
+            return str(candidate)
+    return None
+
+
+def missing_packages(settings):
+    wallust = wallust_binary()
+    return [pkg for pkg in package_list(settings)
+            if (not wallust if pkg == 'wallust-git' else
+                subprocess.run(['pacman', '-T', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode)]
+
+
 def dependencies(settings):
     if not shutil.which('pacman'):
         raise ValueError('Arch Linux pacman is required')
-    missing = [pkg for pkg in package_list(settings) if subprocess.run(['pacman', '-T', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
+    missing = missing_packages(settings)
     if not missing:
         return
     aur = [pkg for pkg in missing if subprocess.run(['pacman', '-Si', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
@@ -238,10 +260,10 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     atomic_write(state / 'install.json', manifest)
     palette = config / 'hypr/wallust/colors-shell.sh'
     if not skip_deps and not palette.exists():
-        version = subprocess.check_output(['wallust', '--version'], text=True)
-        if not version.startswith('wallust 4.'):
+        wallust = wallust_binary()
+        if wallust is None:
             raise ValueError('Voluta requires Wallust v4; install wallust-git before proceeding')
-        subprocess.run(['wallust', '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
+        subprocess.run([wallust, '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
     if palette.exists():
         from theme import publish
         publish(config=config, directory=directory, host=host)
@@ -417,7 +439,7 @@ def dispatch(args, directory, host):
             settings, _ = resolve(directory, host)
             missing = []
             if shutil.which('pacman'):
-                missing = [p for p in package_list(settings) if subprocess.run(['pacman', '-T', p], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
+                missing = missing_packages(settings)
             print(json.dumps({'host': host, 'settings_valid': True, 'missing_packages': missing, 'kvm': os.access('/dev/kvm', os.R_OK | os.W_OK)}, indent=2))
             return int(bool(missing))
         elif args.command == 'rgb':
