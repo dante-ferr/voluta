@@ -37,6 +37,10 @@ PanelWindow {
         entranceStarted = true;
         // Establish the blur veil before moving the ornament into view.
         vignette.opacity = 1;
+        // Replay the cached inner-rim routes with the entrance, without a late flash.
+        ignition.started = Date.now();
+        ignition.finished = false;
+        ignition.requestPaint();
         entrance.start();
     }
 
@@ -93,6 +97,9 @@ PanelWindow {
                 vignette.source = Qt.resolvedUrl(assets + "/launcher-vignette.svg");
                 projection.unloadImage(panel.aperture);
                 projection.loadImage(panel.aperture);
+                ignition.prepared = false;
+                ignition.unloadImage(panel.aperture);
+                ignition.loadImage(panel.aperture);
             }
             panel.request = request;
             panel.entranceStarted = false;
@@ -107,6 +114,8 @@ PanelWindow {
             if (request !== panel.request || departure.running)
                 return;
             startDelay.stop();
+            ignition.finished = true;
+            ignition.requestPaint();
             entrance.stop();
             departure.start();
         }
@@ -178,6 +187,104 @@ PanelWindow {
         y: 130
         opacity: 0
 
+
+        Canvas {
+            id: ignition
+            anchors.centerIn: parent
+            width: panel.plateWidth
+            height: panel.plateHeight
+            z: 1
+            property var routes: []
+            property double started: 0
+            property bool finished: true
+            property bool prepared: false
+            Component.onCompleted: loadImage(panel.aperture)
+            onImageLoaded: requestPaint()
+
+            function edgePoint(pixels, cx, cy, angle) {
+                const radians = angle * Math.PI / 180;
+                const dx = Math.cos(radians), dy = Math.sin(radians);
+                let distance = 0;
+                for (; distance < Math.max(width, height); ++distance) {
+                    const x = Math.round(cx + dx * distance);
+                    const y = Math.round(cy + dy * distance);
+                    if (x < 0 || x >= width || y < 0 || y >= height || pixels[(y * width + x) * 4 + 3] < 128)
+                        break;
+                }
+                return [cx + dx * Math.max(0, distance - 5), cy + dy * Math.max(0, distance - 5), distance];
+            }
+
+            function route(pixels, cx, cy, first, top, direction) {
+                const points = [];
+                let corner = 0;
+                for (let angle = first; angle !== top + direction; angle += direction) {
+                    const point = edgePoint(pixels, cx, cy, angle);
+                    if (points.length < 45 && (!points.length || point[2] > points[corner][2]))
+                        corner = points.length;
+                    points.push(point);
+                }
+                return points.slice(corner);
+            }
+
+            function trail(ctx, points, head, length, color, width, opacity) {
+                const first = Math.max(0, head - length);
+                const last = Math.min(points.length - 1, head);
+                if (last <= first)
+                    return;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.moveTo(points[first][0], points[first][1]);
+                for (let index = first + 1; index <= last; ++index)
+                    ctx.lineTo(points[index][0], points[index][1]);
+                ctx.stroke();
+            }
+
+            onPaint: {
+                if (!isImageLoaded(panel.aperture))
+                    return;
+                const ctx = getContext("2d");
+                ctx.clearRect(0, 0, width, height);
+                if (!prepared) {
+                    ctx.drawImage(panel.aperture, 0, 0);
+                    const pixels = ctx.getImageData(0, 0, width, height).data;
+                    const cx = Math.floor(width / 2), cy = Math.floor(height / 2);
+                    routes = pixels[(cy * width + cx) * 4 + 3] >= 128
+                        ? [route(pixels, cx, cy, 110, 270, 1), route(pixels, cx, cy, 70, -90, -1)] : [];
+                    ctx.clearRect(0, 0, width, height);
+                    prepared = true;
+                }
+                if (finished || !panel.active || !panel.entranceStarted)
+                    return;
+                const elapsed = Date.now() - started;
+                if (elapsed >= 450 || routes.length === 0) {
+                    finished = true;
+                    return;
+                }
+                const progress = Math.max(0, Math.min(1, elapsed / 390));
+                const fade = Math.max(0, Math.min(1, elapsed / 45, (450 - elapsed) / 75));
+                ctx.save();
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                for (const points of routes) {
+                    const head = Math.round(progress * (points.length - 1));
+                    trail(ctx, points, head, 22, Qt.lighter(panel.palette[1], 1.7), 14, fade * 0.65);
+                    trail(ctx, points, head, 13, Qt.lighter(panel.palette[2], 1.55), 4, fade);
+                }
+                ctx.globalAlpha = 1;
+                ctx.globalCompositeOperation = "destination-in";
+                ctx.drawImage(panel.aperture, 0, 0);
+                ctx.restore();
+            }
+
+            Timer {
+                interval: 16
+                repeat: true
+                running: panel.active && panel.entranceStarted && !ignition.finished
+                onTriggered: ignition.requestPaint()
+            }
+        }
 
         Glass.StainedGlass {
             id: projection

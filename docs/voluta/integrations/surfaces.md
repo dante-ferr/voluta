@@ -8,8 +8,10 @@ Hyprland can softly blur the desktop behind the frame. Rofi starts accepting
 input without waiting for Quickshell. The glass veil is established before the
 frame rises in 135ms. The entrance waits for the artwork and blur veil, while
 the animated projection paints during the rise to keep the frame close behind
-the menu;
-the delayed edge-reflection flash has been removed. A resident renderer is
+the menu. Two palette-colored light trails travel around the inner rim during
+the entrance. Their aperture-derived routes are cached by the resident renderer,
+and each opening restarts the 450ms trace without the old 180ms post-load delay.
+The trace clears at completion and its timer stops while idle. A resident renderer is
 prewarmed at compositor startup/reload and reused on subsequent openings. A
 session-scoped live-PID cache lets the warm launcher start Rofi before Qt
 checks, compositor IPC, palette reads, and artwork timestamp checks. Rofi chooses
