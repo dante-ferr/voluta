@@ -46,3 +46,6 @@ class ExclusiveFramedTests(unittest.TestCase):
             calls = log.read_text()
             self.assertIn('SetVisibility false', calls)
             self.assertNotIn('pkill', calls)
+            script_text = (ROOT / 'hypr/scripts/exclusive-framed.sh').read_text()
+            self.assertIn('call session dismiss', script_text)
+            self.assertIn('[ "$keep" = session ]', script_text)

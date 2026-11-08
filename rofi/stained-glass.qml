@@ -97,6 +97,7 @@ PanelWindow {
         targetScreen: panel.targetScreen
         aperture: panel.aperture
         vignetteSource: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
+        plateGlass: Qt.resolvedUrl(panel.assets + "/selector-glass.png")
         palette: panel.palette
         projectionParent: retable
         projectionWidth: panel.plateWidth

@@ -59,6 +59,7 @@ PanelWindow {
         backdropNamespace: "voluta-notification-backdrop"
         aperture: panel.aperture
         vignetteSource: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
+        suppressPlate: true
         palette: panel.palette
         projectionParent: panel.contentItem
         projectionWidth: panel.plateWidth

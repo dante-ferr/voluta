@@ -32,6 +32,11 @@ local function start_music_salon()
 end
 start_music_salon()
 
+local function start_session_column()
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}/voluta\"; setsid -f /usr/bin/python3 " .. config .. "/session-menu/watch.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta/session.log\" 2>&1 </dev/null'")
+end
+start_session_column()
+
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
 hl.on("hyprland.start", function()
@@ -72,6 +77,7 @@ hl.on("hyprland.start", function()
     start_palette_watcher()
     start_notification_glass()
     start_music_salon()
+    start_session_column()
     warm_selector()
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.

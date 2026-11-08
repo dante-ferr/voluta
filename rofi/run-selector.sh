@@ -46,6 +46,7 @@ fallback() {
 
 if ! command -v quickshell >/dev/null || ! command -v jq >/dev/null ||
     [ ! -r "$assets/selector-aperture.png" ] || [ ! -r "$assets/big-angel-box.png" ] ||
+    [ ! -r "$assets/selector-glass.png" ] ||
     [ ! -r "$assets/launcher-vignette.svg" ]; then
     fallback "$@"
 fi
@@ -80,7 +81,7 @@ fi
 
 # The resident renderer keeps Qt, decoded artwork, and graphics resources warm.
 # --no-duplicate scopes the singleton to this config and Wayland display.
-version=$(stat -c '%y:%s' "$assets/big-angel-box.png" "$assets/launcher-vignette.svg" "$assets/selector-aperture.png" 2>/dev/null)
+version=$(stat -c '%y:%s' "$assets/big-angel-box.png" "$assets/launcher-vignette.svg" "$assets/selector-aperture.png" "$assets/selector-glass.png" 2>/dev/null)
 start_renderer() {
     mkdir -p "$runtime"
     # Serialize startup/reconciliation, including autostart overlapping a menu.

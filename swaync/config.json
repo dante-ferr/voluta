@@ -32,7 +32,6 @@
   "widgets": [
     "title",
     "dnd",
-    "buttons-grid",
     "mpris",
     "volume",
     "backlight",
@@ -59,34 +58,6 @@
     },
     "backlight": {
       "label": "\udb80\udcdf"
-    },
-    "buttons-grid": {
-      "actions": [
-        {
-          "label": "\udb81\udc25",
-          "command": "bash -c $HOME/.config/hypr/scripts/Wlogout.sh"
-        },
-        {
-          "label": "\udb80\udf3e",
-          "command": "bash -c $HOME/.config/hypr/scripts/LockScreen.sh"
-        },
-        {
-          "label": "\udb80\udf43",
-          "command": "hyprctl dispatch 'hl.dsp.exit()'"
-        },
-        {
-          "label": "\udb80\udc1d",
-          "command": "bash -c $HOME/.config/hypr/scripts/AirplaneMode.sh"
-        },
-        {
-          "label": "\udb81\udf5f",
-          "command": "pactl set-sink-mute @DEFAULT_SINK@ toggle"
-        },
-        {
-          "label": "\udb80\udcaf",
-          "command": "blueman-manager"
-        }
-      ]
     }
   },
   "notification-visibility": {

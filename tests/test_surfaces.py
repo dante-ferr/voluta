@@ -54,10 +54,11 @@ class SurfaceTests(unittest.TestCase):
         self.assertNotIn('#161615', angel_text)
         self.assertIn('#0a151f', angel_text)
         vignette = (self.frames / 'launcher-vignette.svg').read_text()
-        self.assertIn('voluta-vignette', vignette)
-        self.assertIn('width="1024"', vignette)
-        self.assertIn('height="784"', vignette)
-        self.assertIn('fill-opacity="0.50"', vignette)
+        self.assertNotIn('voluta-vignette', vignette)
+        self.assertNotIn('feGaussianBlur', vignette)
+        self.assertNotIn('fill-opacity="0.50"', vignette)
+        self.assertEqual(vignette.count('fill-opacity='), 1)
+        self.assertIn('fill-opacity="0.06"', vignette)
         self.assertNotIn('fill="#e0d0c0"', vignette)
         self.assertIn('fill="#0a151f"', vignette)
         for name in self.frames.glob('*.svg'):
@@ -145,13 +146,30 @@ class SurfaceTests(unittest.TestCase):
             safe = safe.filter(ImageFilter.MinFilter(33))
             self.assertEqual(safe.crop((left, top, width-right, height-bottom)).getextrema(), (255, 255))
 
-    def test_refresh_frames_republishes_dark_glass_vignette(self):
+    def test_selector_glass_stays_inside_the_opening(self):
+        self.publish(False)
+        with Image.open(self.frames / surfaces.SELECTOR_FRAME.name) as frame, \
+             Image.open(self.frames / 'selector-glass.png') as glass, \
+             Image.open(self.frames / 'selector-plate.png') as plate:
+            self.assertEqual(frame.size, surfaces.SELECTOR_SIZE)
+            self.assertEqual(glass.size, frame.size)
+            self.assertEqual(plate.size, frame.size)
+            opening = surfaces.frame_aperture(frame)
+            box = opening.getbbox()
+            center = ((box[0] + box[2]) // 2, (box[1] + box[3]) // 2)
+            self.assertEqual(frame.getchannel('A').getpixel(center), 0)
+            self.assertEqual(glass.getpixel((0, 0))[3], 0)
+            self.assertEqual(glass.getpixel(center), (10, 21, 31, 128))
+            self.assertEqual(plate.getpixel((0, 0))[3], 0)
+            self.assertEqual(plate.getpixel(center), (10, 21, 31, 128))
+
+    def test_refresh_frames_republishes_clear_screen_veil(self):
         self.publish(False)
         vignette = self.frames / 'launcher-vignette.svg'
         vignette.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>')
         # Copy the angel PNGs so refresh_frames can filter them under a temp ROOT.
         asset_root = self.root / 'checkout'
-        for relative in (surfaces.SELECTOR_FRAME, surfaces.NOTIFICATION_FRAME, surfaces.MUSIC_FRAME):
+        for relative in (surfaces.SELECTOR_FRAME, surfaces.NOTIFICATION_FRAME, surfaces.MUSIC_FRAME, surfaces.SESSION_FRAME):
             destination = asset_root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
@@ -171,8 +189,13 @@ class SurfaceTests(unittest.TestCase):
         }), patch.object(surfaces, 'ROOT', asset_root):
             surfaces.refresh_frames()
         text = vignette.read_text()
-        self.assertIn('fill-opacity="0.50"', text)
+        self.assertEqual(text.count('fill-opacity='), 1)
+        self.assertIn('fill-opacity="0.06"', text)
+        self.assertNotIn('feGaussianBlur', text)
+        self.assertNotIn('fill-opacity="0.50"', text)
         self.assertIn('fill="#0a151f"', text)
+        with Image.open(self.frames / 'selector-glass.png') as glass:
+            self.assertEqual(glass.getpixel((0, 0))[3], 0)
 
     def test_music_frame_is_enclosed_and_scaled_for_1080p(self):
         self.publish(False)

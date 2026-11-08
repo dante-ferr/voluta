@@ -52,7 +52,7 @@ class SelectorLauncherTests(unittest.TestCase):
             binaries.mkdir()
             assets = root / 'config/wallust/assets/generated'
             assets.mkdir(parents=True)
-            for name in ('selector-aperture.png', 'big-angel-box.png', 'launcher-vignette.svg'):
+            for name in ('selector-aperture.png', 'big-angel-box.png', 'selector-glass.png', 'launcher-vignette.svg'):
                 (assets / name).touch()
             colors = root / 'config/hypr/wallust/colors-shell.sh'
             colors.parent.mkdir(parents=True)
@@ -133,7 +133,7 @@ class SelectorLauncherTests(unittest.TestCase):
             config = root / 'config'
             assets = config / 'wallust/assets/generated'
             assets.mkdir(parents=True)
-            for name in ('selector-aperture.png', 'big-angel-box.png', 'launcher-vignette.svg'):
+            for name in ('selector-aperture.png', 'big-angel-box.png', 'selector-glass.png', 'launcher-vignette.svg'):
                 (assets / name).touch()
             colors = config / 'hypr/wallust/colors-shell.sh'
             colors.parent.mkdir(parents=True)
@@ -176,7 +176,7 @@ class SelectorLauncherTests(unittest.TestCase):
             binaries.mkdir()
             assets = root / 'config/wallust/assets/generated'
             assets.mkdir(parents=True)
-            for name in ('selector-aperture.png', 'big-angel-box.png', 'launcher-vignette.svg'):
+            for name in ('selector-aperture.png', 'big-angel-box.png', 'selector-glass.png', 'launcher-vignette.svg'):
                 (assets / name).touch()
             scripts = {
                 'quickshell': 'echo "symbol lookup error: Qt_6_PRIVATE_API" >&2\nexit 127\n',

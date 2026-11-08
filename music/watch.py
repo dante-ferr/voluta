@@ -144,6 +144,9 @@ def renderer_environment(config=CONFIG):
         if scale <= 0 or width / scale < plate_width + edges['right'] or height / scale < plate_height:
             return None
         version = '%s:%s' % (aperture.stat().st_mtime_ns, aperture.stat().st_size)
+        veil = assets / 'launcher-vignette.svg'
+        if veil.is_file():
+            version += ':%s:%s' % (veil.stat().st_mtime_ns, veil.stat().st_size)
         environment = dict(os.environ, VOLUTA_MUSIC_ASSETS=str(assets), VOLUTA_MUSIC_COLORS=palette,
                            VOLUTA_MUSIC_MONITOR=monitor['name'], VOLUTA_MUSIC_WIDTH=str(plate_width),
                            VOLUTA_MUSIC_HEIGHT=str(plate_height), VOLUTA_MUSIC_VERSION=version,

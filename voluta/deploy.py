@@ -11,7 +11,7 @@ import time
 
 from cli import ROOT, atomic_write, resolve, read
 
-CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'waypaper', 'wlogout', 'xdg-desktop-portal')
+CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
@@ -294,7 +294,7 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         sync_sources(current, manifest, state)
     # Quickshell confines local QML imports to each entrypoint's directory.
     # Both consumers link the one shared effect source into that import root.
-    for consumer in ('rofi', 'swaync', 'music'):
+    for consumer in ('rofi', 'swaync', 'music', 'session-menu'):
         link(current / consumer / 'effects', current / 'wallust/effects', manifest, state)
     if not skip_deps:
         subprocess.run(['make', '-C', str(current / 'waybar')], check=True)

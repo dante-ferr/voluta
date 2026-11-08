@@ -32,6 +32,8 @@ NOTIFICATION_SIZE = (1056, 736)  # Matches swaync/config.json and its frame padd
 MUSIC_FRAME = Path('wallust/assets/music-frame.png')
 # Portrait plate fills 1080p under Waybar; native art is 971×1620.
 MUSIC_SIZE = (624, 1040)
+SESSION_FRAME = Path('wallust/assets/session-frame.png')
+SESSION_SIZE = MUSIC_SIZE
 MUSIC_CONTENT_PAD = 18
 
 
@@ -182,7 +184,16 @@ def publish_cutout_frame(assets, source, palette, size, frame_name, aperture_nam
 
 def publish_selector_frame(assets, source, palette):
     publish_cutout_frame(assets, source, palette, SELECTOR_SIZE,
-                         SELECTOR_FRAME.name, 'selector-aperture.png')
+                         SELECTOR_FRAME.name, 'selector-aperture.png',
+                         'selector-glass.png')
+    # Static Rofi has one background image, so the fallback plate carries the
+    # same opening glass under the angel. The animated path suppresses it and
+    # draws selector-glass.png on the lower surface instead.
+    with Image.open(assets / 'selector-glass.png') as glass, Image.open(assets / SELECTOR_FRAME.name) as frame:
+        plate = Image.alpha_composite(glass.convert('RGBA'), frame.convert('RGBA'))
+    with BytesIO() as output:
+        plate.save(output, format='PNG')
+        write_bytes_changed(assets / 'selector-plate.png', output.getvalue())
 
 
 def publish_notification_frame(assets, source, palette):
@@ -223,6 +234,29 @@ def publish_music_frame(assets, source, palette):
     write_changed(assets / 'music-edges.json', json.dumps(edges) + '\n')
 
 
+def publish_session_frame(assets, source, palette):
+    publish_cutout_frame(assets, source, palette, SESSION_SIZE,
+                         SESSION_FRAME.name, 'session-aperture.png', 'session-glass.png')
+    with Image.open(assets / SESSION_FRAME.name) as frame:
+        opening = frame_aperture(frame)
+        content = music_content_rect(opening)
+        edges = opaque_padding(frame)
+        if content:
+            alpha = frame.getchannel('A')
+            hang = content['top']
+            limit = content['top'] + content['height'] // 3
+            for y in range(content['top'], limit):
+                for x in range(content['left'], content['left'] + content['width']):
+                    if alpha.getpixel((x, y)) > 40:
+                        hang = max(hang, y + 12)
+            if hang > content['top']:
+                content['height'] = max(64, content['height'] - (hang - content['top']))
+                content['top'] = hang
+    if content:
+        write_changed(assets / 'session-content.json', json.dumps(content) + '\n')
+    write_changed(assets / 'session-edges.json', json.dumps(edges) + '\n')
+
+
 def checkout_root(manifest, data):
     # Installed trees keep a recorded public checkout; live checkouts are ROOT.
     recorded = Path(manifest.get('source', str(ROOT)))
@@ -259,12 +293,13 @@ def refresh_frames():
         palette['bg'] = preferred_background(palette, config / 'voluta')
         root = checkout_root(manifest, data)
         assets = config / 'wallust/assets/generated'
-        # Pull + Super+Alt+R must republish the dark-glass vignette and other SVG
+        # Pull + Super+Alt+R must republish the clear screen veil and other SVG
         # templates, not only the filtered angel-frame PNGs.
         publish_core_svgs(assets, root, palette)
         for relative, publisher in ((SELECTOR_FRAME, publish_selector_frame),
                                     (NOTIFICATION_FRAME, publish_notification_frame),
-                                    (MUSIC_FRAME, publish_music_frame)):
+                                    (MUSIC_FRAME, publish_music_frame),
+                                    (SESSION_FRAME, publish_session_frame)):
             installed = ROOT / relative
             checkout = root / relative
             use_checkout = root != ROOT and checkout.is_file()
@@ -337,6 +372,7 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
     publish_selector_frame(assets, root / SELECTOR_FRAME, palette)
     publish_notification_frame(assets, root / NOTIFICATION_FRAME, palette)
     publish_music_frame(assets, root / MUSIC_FRAME, palette)
+    publish_session_frame(assets, root / SESSION_FRAME, palette)
 
     settings, _ = resolve(directory, hostname(host))
     if not settings['features']['browser']:

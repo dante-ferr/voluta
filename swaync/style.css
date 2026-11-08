@@ -337,36 +337,6 @@ scrollbar slider:hover {
     background: @surface-raised;
 }
 
-/* Buttons grid */
-.widget-buttons-grid {
-    padding: 3px;
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button {
-    margin: 2px;
-    padding: 6px 0;
-    background: @surface-raised;
-    color: @color1;
-    border: 1px solid @line;
-    font-size: 15px;
-    transition: background 0.15s ease-in-out, color 0.15s ease-in-out;
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button label {
-    color: @color1;
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button:hover,
-.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked {
-    background: @color1;
-    color: @background;
-}
-
-.widget-buttons-grid > flowbox > flowboxchild > button:hover label,
-.widget-buttons-grid > flowbox > flowboxchild > button.toggle:checked label {
-    color: @background;
-}
-
 /* Volume & backlight sliders */
 .widget-volume,
 .widget-backlight {
@@ -482,7 +452,6 @@ scrollbar slider:hover {
     border-left-color: @color2;
 }
 
-.widget-buttons-grid button label,
 .widget-volume > box > label,
 .widget-backlight > box > label {
     font-family: "JetBrainsMono Nerd Font", monospace;
@@ -497,8 +466,7 @@ scrollbar slider:hover {
 .widget-mpris {
     border-radius: 0;
 }
-.widget-title > button,
-.widget-buttons-grid > flowbox > flowboxchild > button {
+.widget-title > button {
     border-radius: 7px 0;
 }
 .control-center .notification-row:focus .notification-background .notification {

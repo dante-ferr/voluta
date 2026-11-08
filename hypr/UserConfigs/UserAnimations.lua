@@ -49,6 +49,8 @@ hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 5, bezier = "soft
 -- Popup and panel share the same entrance, exit, and inertial easing.
 -- These layers inherit snappySpring on entry and inertialLift on exit above;
 -- slide also animates alpha from zero to one and back on every map/unmap.
+-- The veil is one opacity across the screen. Hyprland blurs those pixels;
+-- a fully transparent layer shows the sharp wallpaper instead.
 hl.layer_rule({
     name = "notification-drop",
     match = { namespace = "^swaync-(control-center|notification-window)$" },
@@ -68,7 +70,7 @@ hl.layer_rule({
     animation = "slide top",
 })
 
--- Keep the full-desktop veil below the sharp menu and its projection.
+-- Full-desktop blur sits below the sharp menu. The veil image adds no color.
 hl.layer_rule({
     name = "voluta-notification-backdrop",
     match = { namespace = "^voluta-notification-backdrop$" },
@@ -102,6 +104,15 @@ hl.layer_rule({
 hl.layer_rule({
     name = "voluta-music-glass",
     match = { namespace = "^voluta-music-glass$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    no_anim = true,
+})
+
+hl.layer_rule({
+    name = "voluta-session-glass",
+    match = { namespace = "^voluta-session-glass$" },
     blur = true,
     xray = false,
     ignore_alpha = 0,

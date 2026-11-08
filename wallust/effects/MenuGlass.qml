@@ -11,6 +11,19 @@ Item {
     required property var targetScreen
     required property url aperture
     required property url vignetteSource
+    // Aperture-shaped dark glass. Empty uses the sibling *-glass.png so a new
+    // framed menu gets the same plate without a second property. Set
+    // suppressPlate when a native toolkit already paints that glass.
+    property url plateGlass: ""
+    property bool suppressPlate: false
+    readonly property url resolvedPlate: {
+        if (suppressPlate)
+            return "";
+        if (plateGlass.toString() !== "")
+            return plateGlass;
+        const text = aperture.toString();
+        return text.indexOf("-aperture.") >= 0 ? text.replace("-aperture.", "-glass.") : "";
+    }
     required property var palette
     required property Item projectionParent
     required property real projectionWidth
@@ -23,8 +36,9 @@ Item {
     property real itemEnterFrom: 130
     property real itemLeaveTo: -1
     property Item motionTarget: projectionParent
-    readonly property real itemExitTo: itemLeaveTo >= 0 ? itemLeaveTo
-        : (itemAxis === "x" ? width : height)
+    // -1 means "leave through the far edge". A smaller value leaves to the left.
+    readonly property real itemExitTo: itemLeaveTo < -1 ? itemLeaveTo
+        : (itemLeaveTo >= 0 ? itemLeaveTo : (itemAxis === "x" ? width : height))
     property bool separateBackdrop: motion === "compositor"
     property string backdropNamespace: ""
     property bool externalReady: true
@@ -78,6 +92,21 @@ Item {
         onStatusChanged: glass.startWhenReady()
     }
 
+    // Moves with the frame. The PNG's own alpha keeps the frost inside the opening.
+    Image {
+        id: plate
+        parent: glass.projectionParent
+        x: glass.projectionX
+        y: glass.projectionY
+        width: glass.projectionWidth
+        height: glass.projectionHeight
+        z: -1
+        visible: glass.resolvedPlate.toString() !== ""
+        cache: false
+        asynchronous: false
+        source: glass.resolvedPlate
+    }
+
     StainedGlass {
         id: projection
         // Prepaint the notification mask on the mapped resident surface while
@@ -119,6 +148,10 @@ Item {
         preparedAperture = aperture;
         veil.source = "";
         veil.source = vignetteSource;
+        if (resolvedPlate.toString() !== "") {
+            plate.source = "";
+            plate.source = resolvedPlate;
+        }
         projection.ready = false;
         projection.loadImage(aperture);
         projection.requestPaint();

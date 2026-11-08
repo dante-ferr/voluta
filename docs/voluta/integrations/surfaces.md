@@ -3,10 +3,11 @@
 Status: implemented. The visual direction emphasizes geometry: stepped surrounds,
 chamfered cards, recessed input panels, fine rules, and asymmetrical ornament.
 The shared Rofi theme uses a `big-angel-box` SVG silhouette in the Wallust
-palette. The app and Wi-Fi selectors use a translucent fullscreen vignette so
-Hyprland can softly blur the desktop behind the frame. Rofi starts accepting
-input without waiting for Quickshell. The glass veil is established before the
-frame rises in 135ms. The entrance waits for the artwork and blur veil, while
+palette. A framed menu blurs the whole desktop evenly and does not vignette
+it: wallpaper colors stay consistent from edge to edge. The dark frosted glass
+remains inside the frame. Rofi starts accepting
+input without waiting for Quickshell. The uniform veil is established before the
+frame rises in 135ms. The entrance waits for the artwork and veil, while
 the animated projection paints during the rise to keep the frame close behind
 the menu. Two palette-colored light trails travel around the inner rim during
 the entrance on every framed menu. Their aperture-derived routes live in
@@ -30,10 +31,13 @@ when closed. Each request carries an ID so a late dismissal cannot close a newer
 menu. Startup is serialized with `flock` and consolidates any surviving
 one-shot renderer instances into one. Open/dismiss IPC addresses that exact PID,
 so old instances cannot receive requests through ambiguous config selection. Generated-artwork timestamps trigger reloads after wallpaper changes. On dismissal, the boxes leave
-first and the frame follows 90ms later. The fullscreen blur veil stays in
-place and fades independently on closing. Its central glass uses
-the palette background at 50% opacity, with a soft feather, rather than a
-foreground-colored glow. This is more transparent than Kitty’s 75% background.
+first and the frame follows 90ms later. The fullscreen veil stays in
+place and fades independently on closing. It is one palette tint at 6% opacity
+across the whole screen, which is what gives Hyprland pixels to blur. There is
+no feathered center, so the wallpaper is not darker in the middle. Each frame
+keeps a dark frosted glass plate clipped to its opening, using the palette
+background at 50% opacity, rather than a foreground-colored glow. This is more
+transparent than Kitty’s 75% background.
 Gallery still uses the large corner scrolls on the artwork frame. Labels stay
 plain; tab-group names do not receive symbols.
 
@@ -42,8 +46,8 @@ plain; tab-group names do not receive symbols.
 `rofi/frame.rasi` supplies the shared angel surround, input relief, and tile
 outlines. The shared plate is 1152×1024, with padding that matches the frame
 hollow so ornaments sit outside the content. The app selector and Wi-Fi menu
-import `rofi/selector-frame.rasi`, which loads the same generated
-`big-angel-box.png`. The publisher uses the original artwork's hue range to
+import `rofi/selector-frame.rasi`. The static theme loads `selector-plate.png`;
+the animated popup still loads `big-angel-box.png`. The publisher uses the original artwork's hue range to
 map different areas to several colors from the active Wallust palette. It
 blends between those colors and uses the original luminance to retain detail,
 with deep shadows matching the background of the Rofi boxes. It preserves the
@@ -78,7 +82,9 @@ Hyprland draws closing Overlay snapshots after live Overlay surfaces, so a
 second Overlay layer with a lower `order` only fixes the open-menu stacking.
 Both decorative surfaces accept no input. The frame and stained-glass
 projection share the same entrance and dismissal motion. Only the lower glass
-surface receives backdrop blur; the frame does not blur the buttons beneath it.
+surface receives backdrop blur, across the whole screen; the frame does not
+blur the buttons beneath it. The wallpaper outside the opening is blurred
+evenly and is not vignetted.
 The static fallback retains Rofi’s background frame when Quickshell is unavailable.
 The main launcher, dashboard, picker, and RGB selector import the shared frame;
 two-column and wide selectors use frames sized to their own rows. Rofi preserves
@@ -125,6 +131,10 @@ the top and bottom insets when the plate fits; on a 1080p output it stays on
 screen even if the plate is taller than the inner grid. Changing focus re-reads
 the insets, because another monitor can reserve a different edge.
 
+The session column is left-anchored. Its straight rail faces the screen edge, and
+its opaque left pixel sits on `inset.left`. The ornate side and the cherub face
+the desktop. The music salon is the mirror on the right.
+
 The notification panel is top-anchored. Its glass starts at `inset.top`: the
 layer accounts for the reserved bar, and the projection adds only `gaps_out.top`.
 `swaync/launch.sh` copies `control-center-margin-top` from that same top gap
@@ -132,7 +142,8 @@ into a runtime config. The value in `swaync/config.json` is the fallback used
 when Hyprland cannot be queried. Horizontal SwayNC margins stay at zero because
 that panel is centered, not side-anchored. A future menu anchored to the left
 or the bottom reads `VOLUTA_GRID_LEFT` or `VOLUTA_GRID_BOTTOM` from the same
-object. Do not copy `gaps_out` into another menu, stylesheet, or margin key.
+object. The session column is the left reader. Do not copy `gaps_out` into
+another menu, stylesheet, or margin key.
 
 ## Notification salon
 
@@ -142,7 +153,8 @@ separate margin. The flat upper edge has no projecting pediment. Two serious-fac
 adult angels fly beside the frame, pressing their palms beneath its lower
 corners. One bears the weight with an articulated robotic arm; the other has
 a visible robotic leg. Spread wings and trailing drapery stay outside the
-controls and archive. Compact controls fit above the raised lower rail.
+archive. Lock, power, and the other session actions live in the left column,
+not in this panel.
 `Super+N` toggles the panel; `Super+Shift+N` toggles the existing night-light
 filter. Waybar's notification button also toggles the panel. Both invoke
 `swaync/toggle-panel.sh`, which calls the native D-Bus toggle directly when
@@ -156,21 +168,23 @@ Both it and `big-angel-box.png` use `frame_tints` and `render_palette_frame` in
 preservation apply to both. Only their canvas dimensions and backing layers
 differ. The notification canvas is 1056×736; GTK adds the frame's padding to
 SwayNC's configured content width, so those dimensions must be changed together.
-The publisher derives `notification-glass.png` from the enclosed transparent
-opening and the resolved background at 50% opacity, matching the selector
-glass. `notification-aperture.png` masks the animation to the same opening.
+The publisher derives `notification-glass.png`, `selector-glass.png`, and
+`music-glass.png` from each enclosed transparent opening and the resolved
+background at 50% opacity. The selector's static fallback composites that glass
+under the angel as `selector-plate.png`; the animated path draws
+`selector-glass.png` on the lower surface and suppresses the plate. `notification-aperture.png` masks the animation to the same opening.
 Both leave the outer silhouette clear.
 Malformed/open cutouts produce no glass rather than painting outside the frame.
 
 Wallpaper publication regenerates both frames before reloading consumers.
 `Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout,
-and re-renders shared SVG templates such as the dark-glass `launcher-vignette.svg`;
+and re-renders shared SVG templates such as the clear `launcher-vignette.svg`;
 the old `--refresh-selector` publisher option remains an alias for
 `--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
 Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
 existing light compositor blur settings. The artwork itself stays sharp.
 
-Both menus use `wallust/effects/MenuGlass.qml` for the blur veil, masked glass,
+Both menus use `wallust/effects/MenuGlass.qml` for the clear veil, masked glass,
 preloading, readiness, inner-rim ignition, and entrance/dismissal lifecycle.
 The component uses `StainedGlass.qml` for drifting palette bands and facets at
 25fps, and `RimIgnition.qml` for the 450ms palette trails that travel the inner
@@ -234,8 +248,8 @@ otherwise it synthesizes a gentle playing waveform and holds still while paused.
 Opening the salon starts the watcher if it is not already running. Media keys
 keep controlling playback.
 
-Selector, notification, and music salons are mutually exclusive:
-`hypr/scripts/exclusive-framed.sh` closes the other two before one of them
+Selector, notification, music, and session menus are mutually exclusive:
+`hypr/scripts/exclusive-framed.sh` closes the other three before one of them
 opens. Opening music does not toggle the notification panel.
 
 The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`.
@@ -244,6 +258,33 @@ The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`.
 `music/watch.py` prewarms one renderer at compositor start/reload, with a
 per-session lock matching the notification watcher. A missing Quickshell, CAVA,
 or player leaves the rest of the desktop unchanged.
+
+## Session column
+
+`Super+O` toggles a portrait framed column on the left edge of the window grid.
+The source is `wallust/assets/session-frame.png`. Its left rail is straight and
+spare; the acanthus and a cherub with a key face inward, the reverse of the
+music frame. The plate is the same 624×1040 size, so it fits 1080p, and it
+slides in from the left.
+
+The opening keeps the clock and date at the top, with uptime and battery
+charge when a battery exists. The default audio sink, its volume, and one chip
+per monitor sit at the bottom. Night light is a full-width row: the moon stays
+the moon, and the row reads **On** or **Off**. A gap separates that row from
+the session icons, which span the width of the opening: lock, sleep, log out,
+reboot, and power off. Sleep, log out, reboot, and power off ask for a second
+click before they run; that click shows a check. Lock uses
+`hypr/scripts/LockScreen.sh`. Log out, reboot, and power off use the same
+`session_manager.py prepare-shutdown` sequence as the power menu. The column
+closes the other framed menus when it opens, and they close it in return.
+The column fills its output, like the other framed menus, so the shared veil,
+aperture glass, and blur cover the desktop instead of a tiny default window.
+`MenuGlass` loads `*-glass.png` beside the aperture when the menu does not
+pass its own plate. The notification panel sets `suppressPlate` because GTK
+already paints that glass.
+`session-menu/watch.py` prewarms one renderer. The directory is `session-menu`,
+not `session`, because `~/.config/session` already stores desktop-session files.
+A missing Quickshell or frame leaves the rest of the desktop unchanged.
 
 ## Optional Brave New Tab
 

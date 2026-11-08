@@ -12,8 +12,7 @@ window {
        the plate to the top-left. */
     padding: calc(50% - 512px) calc(50% - 576px) calc(50% - 512px) calc(50% - 576px);
     background-color: transparent;
-    /* The thin veil gives Hyprland a surface to blur behind the menu. */
-    background-image: url("~/.config/wallust/assets/generated/launcher-vignette.svg", both);
+    background-image: none;
 }
 mainbox {
     width: 1152px;
@@ -24,7 +23,9 @@ mainbox {
     margin: 0px;
     padding: 369px 230px 255px 330px;
     background-color: transparent;
-    background-image: url("~/.config/wallust/assets/generated/big-angel-box.png", both);
+    /* Glass under the angel, clipped to the opening. The animated path clears
+       this image and draws selector-glass.png behind the buttons instead. */
+    background-image: url("~/.config/wallust/assets/generated/selector-plate.png", both);
 }
 inputbar {
     margin: 0px;
