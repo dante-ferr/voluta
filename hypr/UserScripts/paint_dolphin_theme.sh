@@ -227,6 +227,19 @@ if os.path.lexists(svg_path):
     os.remove(svg_path)
 os.symlink(shared_dolphin_svg, svg_path)
 
+# The portal file dialog is a separate process, so it never loads Dolphin's
+# hook. Give it the same translucent palette with tighter margins than the
+# main window's 12px Kvantum layout and its extra stylesheet padding.
+picker_theme = os.path.join(home, ".config", "Kvantum", "dolphin-picker")
+os.makedirs(picker_theme, exist_ok=True)
+picker_kv = dolphin_kv.replace("layout_margin=12", "layout_margin=6", 1)
+with open(os.path.join(picker_theme, "dolphin-picker.kvconfig"), "w", encoding="utf-8") as handle:
+    handle.write(picker_kv)
+picker_svg = os.path.join(picker_theme, "dolphin-picker.svg")
+if os.path.lexists(picker_svg):
+    os.remove(picker_svg)
+os.symlink(shared_dolphin_svg, picker_svg)
+
 kvantum_rc = os.path.join(home, ".config", "Kvantum", "kvantum.kvconfig")
 if os.path.isfile(kvantum_rc):
     with open(kvantum_rc, encoding="utf-8") as handle:
@@ -241,11 +254,15 @@ else:
     rc = "[General]\ntheme=imperium\n" + rc
 if "[Applications]" not in rc:
     rc = rc.rstrip() + "\n\n[Applications]\n"
-for app_name in ("dolphin", "org.kde.dolphin"):
-    if re.search(rf"(?m)^{app_name}=", rc):
-        rc = re.sub(rf"(?m)^{app_name}=.*$", f"{app_name}=dolphin", rc)
+for app_name, theme_name in (
+    ("dolphin", "dolphin"),
+    ("org.kde.dolphin", "dolphin"),
+    ("xdg-desktop-portal-kde", "dolphin-picker"),
+):
+    if re.search(rf"(?m)^{re.escape(app_name)}=", rc):
+        rc = re.sub(rf"(?m)^{re.escape(app_name)}=.*$", f"{app_name}={theme_name}", rc)
     else:
-        rc = rc.rstrip() + f"\n{app_name}=dolphin"
+        rc = rc.rstrip() + f"\n{app_name}={theme_name}"
 if not rc.endswith("\n"):
     rc += "\n"
 with open(kvantum_rc, "w", encoding="utf-8") as handle:
@@ -1110,10 +1127,112 @@ konsole_lines = ensure_pair(konsole_lines, "TabBar", "TabBarVisibility", "Always
 with open(konsolerc, "w", encoding="utf-8") as handle:
     handle.writelines(konsole_lines)
 
+def has_key(lines, section, key):
+    in_section = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_section = stripped == f"[{section}]"
+        elif in_section and stripped.startswith(f"{key}="):
+            return True
+    return False
+
+
+def ensure_missing(lines, section, key, value):
+    if has_key(lines, section, key):
+        return lines
+    return ensure_pair(lines, section, key, value)
+
+
+def monitor_layout():
+    try:
+        raw = subprocess.check_output(
+            ["hyprctl", "monitors", "-j"], text=True, stderr=subprocess.DEVNULL, timeout=2
+        )
+        monitors = json.loads(raw)
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError):
+        return []
+    return monitors if isinstance(monitors, list) else []
+
+
+def dialog_size_for(prefix, monitors):
+    match = re.fullmatch(r"(\d+)x(\d+) screen", prefix)
+    if match:
+        screen_w, screen_h = int(match.group(1)), int(match.group(2))
+    elif monitors:
+        screen_w = max(int(item.get("width") or 0) for item in monitors)
+        screen_h = max(int(item.get("height") or 0) for item in monitors)
+    else:
+        screen_w, screen_h = 1920, 1080
+    # Large enough to read a details view, and still short of a maximized window.
+    width = min(1280, max(960, round(screen_w * 0.72 / 10) * 10))
+    height = min(800, max(640, round(screen_h * 0.74 / 10) * 10))
+    return width, height
+
+
+def configure_file_dialog():
+    """Size and density for the KDE portal file dialog.
+
+    Width is written once. Later resizes stay in the portal state file.
+    A saved maximize flag without a width opens at the widget's small hint
+    on this compositor, so that case receives an explicit size too.
+    """
+    monitors = monitor_layout()
+    state_path = os.path.join(home, ".local", "state", "xdg-desktop-portal-kdestaterc")
+    if os.path.isfile(state_path):
+        with open(state_path, encoding="utf-8") as handle:
+            state_lines = handle.readlines()
+    else:
+        state_lines = []
+    prefixes = []
+    if len(monitors) == 1:
+        prefixes.append(f"{int(monitors[0].get('width') or 0)}x{int(monitors[0].get('height') or 0)} screen")
+    elif len(monitors) > 1:
+        prefixes.append(f"{len(monitors)} screens")
+    for line in state_lines:
+        match = re.match(r"(.+): Window-Maximized=", line.strip())
+        if match and match.group(1) not in prefixes:
+            prefixes.append(match.group(1))
+    for prefix in prefixes:
+        width_key = f"{prefix}: Width"
+        if has_key(state_lines, "FileDialogSize", width_key):
+            continue
+        width, height = dialog_size_for(prefix, monitors)
+        state_lines = ensure_pair(state_lines, "FileDialogSize", width_key, str(width))
+        state_lines = ensure_pair(state_lines, "FileDialogSize", f"{prefix}: Height", str(height))
+        state_lines = ensure_pair(state_lines, "FileDialogSize", f"{prefix}: Window-Maximized", "false")
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    with open(state_path, "w", encoding="utf-8") as handle:
+        handle.writelines(state_lines)
+
+    portal_rc = os.path.join(home, ".config", "xdg-desktop-portal-kderc")
+    if os.path.isfile(portal_rc):
+        with open(portal_rc, encoding="utf-8") as handle:
+            portal_lines = handle.readlines()
+    else:
+        portal_lines = []
+    # DetailTree matches Dolphin's expandable details view. The places column
+    # is narrower than Dolphin's 240px sidebar.
+    for key, value in (
+        ("View Style", "DetailTree"),
+        ("Show Places Panel", "true"),
+        ("Show Speedbar", "true"),
+        ("Speedbar Width", "200"),
+        ("Breadcrumb Navigation", "true"),
+        ("Show Preview", "false"),
+        ("Places Icons Auto-resize", "false"),
+        ("Places Icons Static Size", "22"),
+    ):
+        portal_lines = ensure_missing(portal_lines, "KFileDialog Settings", key, value)
+    with open(portal_rc, "w", encoding="utf-8") as handle:
+        handle.writelines(portal_lines)
+
+
 # Converge existing installations too; appearance is owned by the repo.
 if dolphin_enabled:
     subprocess.run([sys.executable, os.path.join(root, "dolphin", "apply-config.py"),
                     "--home", home], check=True)
+    configure_file_dialog()
 
 def session_env():
     env = os.environ.copy()
