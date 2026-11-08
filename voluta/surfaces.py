@@ -191,6 +191,17 @@ def publish_notification_frame(assets, source, palette):
                          'notification-glass.png', centering=(.5, 0))
 
 
+def opaque_padding(image, threshold=16):
+    """Pixels of transparent margin around a frame. Right and bottom are exclusive."""
+    mask = image.getchannel('A').point(lambda value: 255 if value > threshold else 0)
+    box = mask.getbbox()
+    if not box:
+        return {'left': 0, 'top': 0, 'right': 0, 'bottom': 0}
+    left, top, right, bottom = box
+    width, height = image.size
+    return {'left': left, 'top': top, 'right': width - right, 'bottom': height - bottom}
+
+
 def music_content_rect(opening, padding=MUSIC_CONTENT_PAD):
     box = opening.getbbox()
     if not box:
@@ -206,8 +217,10 @@ def publish_music_frame(assets, source, palette):
                          MUSIC_FRAME.name, 'music-aperture.png', 'music-glass.png')
     with Image.open(assets / MUSIC_FRAME.name) as frame:
         content = music_content_rect(frame_aperture(frame))
+        edges = opaque_padding(frame)
     if content:
         write_changed(assets / 'music-content.json', json.dumps(content) + '\n')
+    write_changed(assets / 'music-edges.json', json.dumps(edges) + '\n')
 
 
 def checkout_root(manifest, data):

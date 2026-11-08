@@ -31,14 +31,25 @@ class MusicSalonTests(unittest.TestCase):
         self.monitors = [{'name': 'DP-2', 'focused': True, 'width': 1920,
                           'height': 1080, 'scale': 1, 'reserved': [0, 34, 0, 0]}]
 
+    def hypr(self, arguments):
+        if 'getoption' in arguments:
+            return json.dumps({'css': '8 16 16 16'})
+        return json.dumps(self.monitors)
+
     def test_logical_geometry_and_fail_closed(self):
-        with patch.object(watch, 'run', side_effect=lambda _: json.dumps(self.monitors)):
+        (self.root / 'wallust/assets/generated/music-edges.json').write_text(
+            '{"left": 22, "top": 0, "right": 25, "bottom": 23}\n')
+        with patch.object(watch, 'run', side_effect=self.hypr):
             environment = watch.renderer_environment(self.root)
             self.assertEqual(environment['VOLUTA_MUSIC_MONITOR'], 'DP-2')
             self.assertEqual(environment['VOLUTA_MUSIC_COLORS'], '#112233 #445566 #aabbcc')
             self.assertEqual(environment['VOLUTA_MUSIC_WIDTH'], '624')
             self.assertEqual(environment['VOLUTA_MUSIC_HEIGHT'], '1040')
-            self.assertEqual(environment['VOLUTA_MUSIC_RESERVED_TOP'], '34')
+            self.assertEqual(environment['VOLUTA_GRID_TOP'], '42')
+            self.assertEqual(environment['VOLUTA_GRID_RIGHT'], '16')
+            self.assertEqual(environment['VOLUTA_GRID_BOTTOM'], '16')
+            self.assertEqual(environment['VOLUTA_GRID_LEFT'], '16')
+            self.assertEqual(environment['VOLUTA_MUSIC_PAD_RIGHT'], '25')
             self.assertEqual(environment['VOLUTA_MUSIC_INSET_WIDTH'], '358')
             self.monitors[0]['scale'] = 2
             self.assertIsNone(watch.renderer_environment(self.root))
@@ -60,6 +71,8 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn('Glass.CavaBars', salon)
         self.assertIn('voluta-music-glass', salon)
         self.assertIn('itemAxis: "x"', salon)
+        self.assertIn('music-glass.png', salon)
+        self.assertIn('plateGlass', shared)
         self.assertIn('WlrKeyboardFocus.Exclusive', salon)
         self.assertIn('sequence: "Escape"', salon)
         self.assertIn('Nothing playing', salon)

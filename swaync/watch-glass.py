@@ -16,9 +16,14 @@ import signal
 import subprocess
 import struct
 import time
+import sys
 import threading
 
 DIRECTORY = Path(__file__).resolve().parent
+ROOT = DIRECTORY.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from voluta.window_grid import gaps_from_option, grid_for_monitor
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
 GLASS_QML = DIRECTORY / 'glass.qml'
 
@@ -63,17 +68,21 @@ def renderer_environment(config=CONFIG):
         if monitor.get('transform', 0) % 2:
             width, height = height, width
         scale = monitor['scale']
-        top = int(monitor.get('reserved', [0, 0, 0, 0])[1]) + max(0, int(settings.get('control-center-margin-top', 8)))
-        if scale <= 0 or width / scale < plate_width or height / scale < plate_height + top:
+        grid = grid_for_monitor(monitor, gaps_from_option(
+            run(['hyprctl', '-j', 'getoption', 'general:gaps_out']) or ''))
+        edges = grid['insets']
+        if scale <= 0 or width / scale < plate_width or height / scale < plate_height + edges['top']:
             return None
         return dict(os.environ, VOLUTA_NOTIFICATION_ASSETS=str(assets),
                     VOLUTA_NOTIFICATION_COLORS=palette,
                     VOLUTA_NOTIFICATION_MONITOR=monitor['name'],
-                    VOLUTA_NOTIFICATION_TOP=str(top),
+                    VOLUTA_NOTIFICATION_TOP=str(edges['top']),
                     VOLUTA_NOTIFICATION_WIDTH=str(plate_width),
                     VOLUTA_NOTIFICATION_HEIGHT=str(plate_height),
-                    VOLUTA_NOTIFICATION_RESERVED_TOP=str(int(monitor.get('reserved', [0, 0, 0, 0])[1])),
-                    VOLUTA_NOTIFICATION_MARGIN_TOP=str(max(0, int(settings.get('control-center-margin-top', 8)))))
+                    VOLUTA_NOTIFICATION_RESERVED_TOP=str(grid['reserved']['top']),
+                    VOLUTA_NOTIFICATION_MARGIN_TOP=str(grid['gaps']['top']),
+                    VOLUTA_GRID_LEFT=str(edges['left']), VOLUTA_GRID_TOP=str(edges['top']),
+                    VOLUTA_GRID_RIGHT=str(edges['right']), VOLUTA_GRID_BOTTOM=str(edges['bottom']))
     except (OSError, ValueError, KeyError, TypeError, StopIteration, IndexError, ZeroDivisionError):
         return None
 

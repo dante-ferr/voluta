@@ -31,6 +31,7 @@ do not stage, revert, or commit another task's changes incidentally.
 | Session restoration default | Optional; disabled unless selected for a new public install. Preserve the owner’s existing choice during migration. | Accepted |
 | Implementation | Begin building; use isolated local checks until the VM is available. Keep the other agent’s Brave work uncommitted. | Accepted |
 | Project name | Voluta. Name availability has not been checked. | Accepted |
+| Framed-menu edges | The Hyprland window grid (monitor reserved area plus live `general:gaps_out`) is the only inset for left, top, right, and bottom anchors. | Accepted |
 
 Use `voluta` as the settings namespace. Migrate existing `imperium`/`imperivm`
 paths and identifiers deliberately with compatibility for existing installations. Companion architecture alone does not protect preferences: loaders,

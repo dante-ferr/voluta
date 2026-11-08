@@ -96,11 +96,49 @@ Frame sources live in `wallust/assets/`. `voluta/surfaces.py` renders them into
 Colors derive exclusively from Wallust tokens and the persistent background
 policy. Generated files are ignored and must not be committed.
 
+## Window grid anchors
+
+Framed menus that sit on an edge use one inset source:
+`voluta/window_grid.py`. It reads the focused monitor's reserved exclusive
+zone and Hyprland's live `general:gaps_out`. The window grid's outer edge is
+the sum of those two, on every side:
+
+> **inset = reserved + gaps_out**
+
+`gaps_out` follows CSS order: top, right, bottom, left. A single value applies
+to every side; two values are vertical then horizontal; three values are top,
+horizontal, then bottom. Hyprland reports each monitor's reserved area as
+left, top, right, bottom. Waybar's exclusive zone is the top entry on this
+desktop, so a 34px bar and an 8px top gap put the grid's top edge at 42px.
+
+| Anchor | Screen position |
+| --- | --- |
+| Left | `inset.left` |
+| Top | `inset.top` |
+| Right | `screen width − inset.right` |
+| Bottom | `screen height − inset.bottom` |
+
+The music salon is right-anchored. Its opaque right pixel, not the transparent
+canvas margin, sits on that right edge. `music-edges.json` records the frame's
+transparent padding when the plate is published. The salon is centered between
+the top and bottom insets when the plate fits; on a 1080p output it stays on
+screen even if the plate is taller than the inner grid. Changing focus re-reads
+the insets, because another monitor can reserve a different edge.
+
+The notification panel is top-anchored. Its glass starts at `inset.top`: the
+layer accounts for the reserved bar, and the projection adds only `gaps_out.top`.
+`swaync/launch.sh` copies `control-center-margin-top` from that same top gap
+into a runtime config. The value in `swaync/config.json` is the fallback used
+when Hyprland cannot be queried. Horizontal SwayNC margins stay at zero because
+that panel is centered, not side-anchored. A future menu anchored to the left
+or the bottom reads `VOLUTA_GRID_LEFT` or `VOLUTA_GRID_BOTTOM` from the same
+object. Do not copy `gaps_out` into another menu, stylesheet, or margin key.
+
 ## Notification salon
 
-SwayNC opens a wide, top-centered framed panel below Waybar. Its exclusive-zone
-handling stays enabled; the 8px top margin matches `UserSettings.lua`'s window
-grid gap. The flat upper edge has no projecting pediment. Two serious-faced
+SwayNC opens a wide, top-centered framed panel below Waybar. Its top edge is
+the window-grid inset from [Window grid anchors](#window-grid-anchors), not a
+separate margin. The flat upper edge has no projecting pediment. Two serious-faced
 adult angels fly beside the frame, pressing their palms beneath its lower
 corners. One bears the weight with an articulated robotic arm; the other has
 a visible robotic leg. Spread wings and trailing drapery stay outside the
@@ -172,15 +210,15 @@ unchanged, as do host GPU selection and global environment policy.
 
 After a geometry/widget change, test a fresh SwayNC process: reloading the
 running daemon can retain old widget allocations. Palette-only changes use the
-normal CSS refresh. If a personal compositor override changes the top grid gap,
-match `control-center-margin-top` to that gap in the personal SwayNC override.
+normal CSS refresh. A change to `gaps_out` reaches the native panel the next
+time `swaync/launch.sh` starts it. The glass reads the same gap on the next open.
 
 ## Music salon
 
 `Super+M` toggles a portrait framed overlay for the current MPRIS player. The
 owner artwork is `wallust/assets/music-frame.png`, published to a 624×1040 plate
-so it fills 1080p under Waybar and docks to the right edge. It slides in from
-the right and leaves the same way. The enclosed opening holds album art, title,
+so it fills 1080p under Waybar. Its opaque right edge meets the window grid's
+right inset, and it slides in from that side and leaves the same way. The enclosed opening holds album art, title,
 artist, album, a seek bar, previous/play/next, volume, loop, shuffle, and
 CAVA-like bars. The overlay opens on the Hyprland focused monitor, and moves there if focus
 changes while it is open. It reads MPRIS itself on open and every second while

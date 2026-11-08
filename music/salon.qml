@@ -13,8 +13,11 @@ PanelWindow {
     readonly property url aperture: Qt.resolvedUrl(assets + "/music-aperture.png")
     readonly property int plateWidth: Number(Quickshell.env("VOLUTA_MUSIC_WIDTH") || "624")
     readonly property int plateHeight: Number(Quickshell.env("VOLUTA_MUSIC_HEIGHT") || "1040")
-    readonly property int plateMargin: 16
-    readonly property int reservedTop: Number(Quickshell.env("VOLUTA_MUSIC_RESERVED_TOP") || "0")
+    property int gridLeft: Number(Quickshell.env("VOLUTA_GRID_LEFT") || "0")
+    property int gridTop: Number(Quickshell.env("VOLUTA_GRID_TOP") || "0")
+    property int gridRight: Number(Quickshell.env("VOLUTA_GRID_RIGHT") || "0")
+    property int gridBottom: Number(Quickshell.env("VOLUTA_GRID_BOTTOM") || "0")
+    readonly property int framePadRight: Number(Quickshell.env("VOLUTA_MUSIC_PAD_RIGHT") || "0")
     readonly property int contentLeft: Number(Quickshell.env("VOLUTA_MUSIC_INSET_LEFT") || Math.round(plateWidth * 0.26))
     readonly property int contentTop: Number(Quickshell.env("VOLUTA_MUSIC_INSET_TOP") || Math.round(plateHeight * 0.27))
     readonly property int contentWidth: Number(Quickshell.env("VOLUTA_MUSIC_INSET_WIDTH") || Math.round(plateWidth * 0.58))
@@ -35,14 +38,18 @@ PanelWindow {
     property real duration: 0
     property real volume: 1
     readonly property var targetScreen: Quickshell.screens.find(candidate => candidate.name === output) ?? null
-    readonly property int plateX: Math.max(0, (targetScreen?.width ?? plateWidth) - plateWidth - plateMargin)
-    readonly property int plateY: reservedTop + Math.max(0,
-        Math.floor(((targetScreen?.height ?? plateHeight) - reservedTop - plateHeight) / 2))
+    readonly property int plateX: Math.max(0, (targetScreen?.width ?? plateWidth) - plateWidth - gridRight + framePadRight)
+    readonly property int plateY: {
+        const height = targetScreen?.height ?? plateHeight;
+        const room = height - gridTop - gridBottom - plateHeight;
+        const centered = gridTop + Math.max(0, Math.floor(room / 2));
+        return Math.max(0, Math.min(centered, Math.max(0, height - plateHeight)));
+    }
     readonly property color ink: panel.palette[2] || "#fdeed5"
     readonly property color accent: panel.palette[0] || "#a46b54"
 
     screen: targetScreen
-    visible: targetScreen !== null && targetScreen.width >= plateWidth + plateMargin &&
+    visible: targetScreen !== null && targetScreen.width >= plateWidth + gridRight - framePadRight &&
              targetScreen.height >= plateHeight
     color: "transparent"
     exclusionMode: ExclusionMode.Ignore
@@ -76,9 +83,31 @@ PanelWindow {
         const candidate = Quickshell.screens.find(item => item.name === monitor.name) ?? null;
         if (candidate === null)
             return;
-        if (candidate.width < panel.plateWidth + panel.plateMargin || candidate.height < panel.plateHeight)
+        if (candidate.width < panel.plateWidth + panel.gridRight - panel.framePadRight || candidate.height < panel.plateHeight)
             return;
         panel.output = monitor.name;
+        panel.refreshGrid(monitor.name);
+    }
+
+    function refreshGrid(name: string): void {
+        const bin = Quickshell.env("VOLUTA_WINDOW_GRID");
+        if (bin === "" || name === "")
+            return;
+        const python = Quickshell.env("VOLUTA_PYTHON") || "python3";
+        gridQuery.command = [python, bin, name];
+        gridQuery.running = false;
+        gridQuery.running = true;
+    }
+
+    function applyGrid(text: string): void {
+        try {
+            const edge = JSON.parse(text).insets;
+            panel.gridLeft = Number(edge.left);
+            panel.gridTop = Number(edge.top);
+            panel.gridRight = Number(edge.right);
+            panel.gridBottom = Number(edge.bottom);
+        } catch (error) {
+        }
     }
 
     function clearPlayback(): void {
@@ -156,6 +185,14 @@ PanelWindow {
         focus: glass.showing
         Keys.onEscapePressed: (event) => { glass.close(); event.accepted = true; }
         onClicked: glass.close()
+    }
+
+    Process {
+        id: gridQuery
+        stdout: StdioCollector {
+            waitForEnd: true
+            onStreamFinished: panel.applyGrid(this.text)
+        }
     }
 
     Process {
@@ -303,6 +340,7 @@ PanelWindow {
         targetScreen: panel.targetScreen
         aperture: panel.aperture
         vignetteSource: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
+        plateGlass: Qt.resolvedUrl(panel.assets + "/music-glass.png")
         palette: panel.palette
         projectionParent: retable
         projectionWidth: panel.plateWidth
@@ -311,7 +349,7 @@ PanelWindow {
         projectionY: panel.plateY
         projectionOpacity: 0.30
         itemAxis: "x"
-        itemEnterFrom: panel.plateWidth + panel.plateMargin
+        itemEnterFrom: panel.plateWidth + panel.gridRight
         externalReady: frameArtwork.status === Image.Ready
         initialVersion: panel.artworkVersion
     }
@@ -320,7 +358,7 @@ PanelWindow {
         id: retable
         width: panel.width
         height: panel.height
-        x: panel.plateWidth + panel.plateMargin
+        x: panel.plateWidth + panel.gridRight
         y: 0
         opacity: 0
 

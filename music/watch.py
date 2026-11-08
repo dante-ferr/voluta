@@ -17,8 +17,13 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import sys
 
 DIRECTORY = Path(__file__).resolve().parent
+ROOT = DIRECTORY.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from voluta.window_grid import gaps_from_option, grid_for_monitor
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
 RUNTIME = Path(os.environ.get('XDG_RUNTIME_DIR', Path.home() / '.cache/voluta'))
 PLAYER_FORMAT = ('{{status}}|{{mpris:artUrl}}|{{artist}}|{{title}}|{{album}}|'
@@ -133,20 +138,33 @@ def renderer_environment(config=CONFIG):
         if monitor.get('transform', 0) % 2:
             width, height = height, width
         scale = monitor['scale']
-        reserved = int(monitor.get('reserved', [0, 0, 0, 0])[1])
-        if scale <= 0 or width / scale < plate_width + 16 or height / scale < plate_height + reserved:
+        grid = grid_for_monitor(monitor, gaps_from_option(
+            run(['hyprctl', '-j', 'getoption', 'general:gaps_out']) or ''))
+        edges = grid['insets']
+        if scale <= 0 or width / scale < plate_width + edges['right'] or height / scale < plate_height:
             return None
         version = '%s:%s' % (aperture.stat().st_mtime_ns, aperture.stat().st_size)
         environment = dict(os.environ, VOLUTA_MUSIC_ASSETS=str(assets), VOLUTA_MUSIC_COLORS=palette,
                            VOLUTA_MUSIC_MONITOR=monitor['name'], VOLUTA_MUSIC_WIDTH=str(plate_width),
                            VOLUTA_MUSIC_HEIGHT=str(plate_height), VOLUTA_MUSIC_VERSION=version,
-                           VOLUTA_MUSIC_RESERVED_TOP=str(reserved))
+                           VOLUTA_GRID_LEFT=str(edges['left']), VOLUTA_GRID_TOP=str(edges['top']),
+                           VOLUTA_GRID_RIGHT=str(edges['right']), VOLUTA_GRID_BOTTOM=str(edges['bottom']),
+                           VOLUTA_WINDOW_GRID=str(ROOT / 'voluta/window_grid.py'),
+                           VOLUTA_PYTHON=sys.executable)
         try:
             content = json.loads((assets / 'music-content.json').read_text())
             environment.update(VOLUTA_MUSIC_INSET_LEFT=str(int(content['left'])),
                                VOLUTA_MUSIC_INSET_TOP=str(int(content['top'])),
                                VOLUTA_MUSIC_INSET_WIDTH=str(int(content['width'])),
                                VOLUTA_MUSIC_INSET_HEIGHT=str(int(content['height'])))
+        except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+            pass
+        try:
+            padding = json.loads((assets / 'music-edges.json').read_text())
+            environment.update(VOLUTA_MUSIC_PAD_LEFT=str(int(padding['left'])),
+                               VOLUTA_MUSIC_PAD_TOP=str(int(padding['top'])),
+                               VOLUTA_MUSIC_PAD_RIGHT=str(int(padding['right'])),
+                               VOLUTA_MUSIC_PAD_BOTTOM=str(int(padding['bottom'])))
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             pass
         return environment

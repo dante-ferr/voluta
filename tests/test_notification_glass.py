@@ -31,10 +31,18 @@ class NotificationGlassTests(unittest.TestCase):
         self.monitors = [{'name': 'test', 'focused': True, 'width': 1920,
                           'height': 1080, 'scale': 1, 'reserved': [0, 32, 0, 0]}]
 
+    def hypr(self, arguments):
+        if 'getoption' in arguments:
+            return json.dumps({'css': '8 16 16 16'})
+        return json.dumps(self.monitors)
+
     def test_logical_geometry_and_palette_and_fail_closed(self):
-        with patch.object(glass, 'run', side_effect=lambda _: json.dumps(self.monitors)):
+        with patch.object(glass, 'run', side_effect=self.hypr):
             environment = glass.renderer_environment(self.root)
             self.assertEqual(environment['VOLUTA_NOTIFICATION_TOP'], '40')
+            self.assertEqual(environment['VOLUTA_NOTIFICATION_MARGIN_TOP'], '8')
+            self.assertEqual(environment['VOLUTA_GRID_RIGHT'], '16')
+            self.assertEqual(environment['VOLUTA_GRID_BOTTOM'], '16')
             self.assertEqual(environment['VOLUTA_NOTIFICATION_COLORS'], '#112233 #445566 #aabbcc')
             self.monitors[0]['scale'] = 2
             self.assertTrue(glass.renderer_environment(self.root) is None)
@@ -44,7 +52,8 @@ class NotificationGlassTests(unittest.TestCase):
             self.assertEqual(environment['VOLUTA_NOTIFICATION_WIDTH'], '1056')
             self.assertEqual(environment['VOLUTA_NOTIFICATION_HEIGHT'], '736')
             (self.root / 'swaync/config.json').write_text('{"control-center-preferred-output":"absent","control-center-margin-top":14}')
-            self.assertEqual(glass.renderer_environment(self.root)['VOLUTA_NOTIFICATION_TOP'], '46')
+            # SwayNC's own margin is not the grid. The top stays reserved plus gaps_out.
+            self.assertEqual(glass.renderer_environment(self.root)['VOLUTA_NOTIFICATION_TOP'], '40')
             self.monitors.append(dict(self.monitors[0], name='preferred', description='External display', focused=False))
             (self.root / 'swaync/config.json').write_text('{"control-center-preferred-output":"External display"}')
             self.assertEqual(glass.renderer_environment(self.root)['VOLUTA_NOTIFICATION_MONITOR'], 'preferred')
@@ -116,8 +125,11 @@ root = pathlib.Path(os.environ['FAKE_ROOT'])
 def log(text):
     with (root / 'log').open('a') as stream: stream.write(text + '\\n')
 if name == 'hyprctl':
-    log('monitors')
-    print(os.environ['FAKE_MONITORS'])
+    if 'getoption' in sys.argv:
+        print(json.dumps({'css': '8 16 16 16'}))
+    else:
+        log('monitors')
+        print(os.environ['FAKE_MONITORS'])
 elif name == 'quickshell':
     if '--version' in sys.argv: sys.exit(0)
     if 'ipc' in sys.argv:
