@@ -98,3 +98,12 @@ hl.layer_rule({
     ignore_alpha = 0,
     no_anim = true,
 })
+
+hl.layer_rule({
+    name = "voluta-music-glass",
+    match = { namespace = "^voluta-music-glass$" },
+    blur = true,
+    xray = false,
+    ignore_alpha = 0,
+    no_anim = true,
+})

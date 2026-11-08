@@ -19,7 +19,12 @@ Item {
     property real projectionY: (projectionParent.height - projectionHeight) / 2
     property real projectionOpacity: 0.34
     property string motion: "item"
+    property string itemAxis: "y"
+    property real itemEnterFrom: 130
+    property real itemLeaveTo: -1
     property Item motionTarget: projectionParent
+    readonly property real itemExitTo: itemLeaveTo >= 0 ? itemLeaveTo
+        : (itemAxis === "x" ? width : height)
     property bool separateBackdrop: motion === "compositor"
     property string backdropNamespace: ""
     property bool externalReady: true
@@ -90,6 +95,19 @@ Item {
         onReadyChanged: glass.startWhenReady()
     }
 
+    RimIgnition {
+        id: ignition
+        parent: projection.parent
+        x: projection.x
+        y: projection.y
+        width: projection.width
+        height: projection.height
+        z: 1
+        aperture: glass.aperture
+        palette: glass.palette
+        active: glass.showing
+    }
+
     // Publishers can replace bytes at an unchanged URL. This is also the common
     // prewarm entrypoint, used before either native menu receives an open event.
     function prepare(version: string): void {
@@ -104,6 +122,7 @@ Item {
         projection.ready = false;
         projection.loadImage(aperture);
         projection.requestPaint();
+        ignition.reset();
     }
 
     function startWhenReady(): void {
@@ -116,6 +135,7 @@ Item {
         veil.opacity = 1;
         lastEntranceAt = Date.now();
         projection.requestPaint();
+        ignition.arm();
         entranceStarting();
         if (motion === "item")
             entrance.start();
@@ -142,7 +162,8 @@ Item {
         entranceStarted = false;
         veil.opacity = 0;
         if (motion === "item") {
-            motionTarget.y = 130;
+            motionTarget.x = itemAxis === "x" ? itemEnterFrom : 0;
+            motionTarget.y = itemAxis === "y" ? itemEnterFrom : 0;
             motionTarget.opacity = 0;
         }
         active = true;
@@ -157,6 +178,7 @@ Item {
             return;
         startDelay.stop();
         entrance.stop();
+        ignition.disarm();
         closing();
         if (motion === "compositor") {
             // Unmapping captures the projection for the compositor's native
@@ -177,7 +199,7 @@ Item {
 
     ParallelAnimation {
         id: entrance
-        NumberAnimation { target: glass.motionTarget; property: "y"; to: 0; duration: 135; easing.type: Easing.OutCubic }
+        NumberAnimation { target: glass.motionTarget; property: glass.itemAxis; to: 0; duration: 135; easing.type: Easing.OutCubic }
         NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 1; duration: 85; easing.type: Easing.OutQuad }
     }
 
@@ -190,8 +212,8 @@ Item {
                 ParallelAnimation {
                     NumberAnimation {
                         target: glass.motionTarget
-                        property: "y"
-                        to: glass.height
+                        property: glass.itemAxis
+                        to: glass.itemExitTo
                         duration: 350
                         easing.type: Easing.InCubic
                     }

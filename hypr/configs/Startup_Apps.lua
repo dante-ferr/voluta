@@ -16,7 +16,7 @@ start_palette_watcher()
 -- The per-session lock also makes this safe when the compositor reloads.
 -- Keep the native panel usable when the optional glass renderer cannot start.
 local function start_notification_glass()
-    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}/voluta\"; /usr/bin/python3 " .. config .. "/swaync/watch-glass.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta/notification-glass.log\" 2>&1'")
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}/voluta\"; PYTHONUNBUFFERED=1 setsid -f /usr/bin/python3 " .. config .. "/swaync/watch-glass.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta/notification-glass.log\" 2>&1 </dev/null'")
 end
 start_notification_glass()
 
@@ -26,6 +26,11 @@ local function warm_selector()
     hl.exec_cmd("sh " .. config .. "/rofi/run-selector.sh --prewarm")
 end
 warm_selector()
+
+local function start_music_salon()
+    hl.exec_cmd("sh -c 'mkdir -p \"${XDG_STATE_HOME:-$HOME/.local/state}/voluta\"; setsid -f /usr/bin/python3 " .. config .. "/music/watch.py >>\"${XDG_STATE_HOME:-$HOME/.local/state}/voluta/music-salon.log\" 2>&1 </dev/null'")
+end
+start_music_salon()
 
 -- Official autostart: only on hyprland.start (not on every hyprctl reload).
 -- See https://wiki.hypr.land/Configuring/Basics/Autostart/
@@ -66,6 +71,7 @@ hl.on("hyprland.start", function()
     end
     start_palette_watcher()
     start_notification_glass()
+    start_music_salon()
     warm_selector()
 
     -- Supervisor preserves legacy behavior until explicit Voluta initialization.

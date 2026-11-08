@@ -9,8 +9,9 @@ input without waiting for Quickshell. The glass veil is established before the
 frame rises in 135ms. The entrance waits for the artwork and blur veil, while
 the animated projection paints during the rise to keep the frame close behind
 the menu. Two palette-colored light trails travel around the inner rim during
-the entrance. Their aperture-derived routes are cached by the resident renderer,
-and each opening restarts the 450ms trace without the old 180ms post-load delay.
+the entrance on every framed menu. Their aperture-derived routes live in
+`RimIgnition.qml`, cached by the resident renderer, and each opening restarts
+the 450ms trace without the old 180ms post-load delay.
 The trace clears at completion and its timer stops while idle. A resident renderer is
 prewarmed at compositor startup/reload and reused on subsequent openings. A
 session-scoped live-PID cache lets the warm launcher start Rofi before Qt
@@ -124,19 +125,23 @@ Both leave the outer silhouette clear.
 Malformed/open cutouts produce no glass rather than painting outside the frame.
 
 Wallpaper publication regenerates both frames before reloading consumers.
-`Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout;
+`Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout,
+and re-renders shared SVG templates such as the dark-glass `launcher-vignette.svg`;
 the old `--refresh-selector` publisher option remains an alias for
 `--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
 Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
 existing light compositor blur settings. The artwork itself stays sharp.
 
 Both menus use `wallust/effects/MenuGlass.qml` for the blur veil, masked glass,
-preloading, readiness, and entrance/dismissal lifecycle. The component uses
-`StainedGlass.qml` internally for drifting palette bands and facets at 25fps.
-Each consumer has a local `effects` link because Quickshell restricts imports
-to its entrypoint root; the installer links the same canonical source.
-The selector retains its frame popup and inner-rim ignition around that shared
-lifecycle. Native SwayNC keeps its compositor-owned slide and input handling.
+preloading, readiness, inner-rim ignition, and entrance/dismissal lifecycle.
+The component uses `StainedGlass.qml` for drifting palette bands and facets at
+25fps, and `RimIgnition.qml` for the 450ms palette trails that travel the inner
+opening. Selector, notification, and music salons do not keep private copies of
+those effects. Each consumer has a local `effects` link because Quickshell
+restricts imports to its entrypoint root; the installer links the same canonical
+source. Native SwayNC keeps its compositor-owned slide and input handling. The
+selector and music salon keep only their frame popups and content (Rofi buttons,
+album poster, CAVA bars) around that shared lifecycle.
 
 The notification backdrop stays mapped but fully transparent when closed,
 matching the selector's warm surface. The shared module preloads its veil at
@@ -149,7 +154,9 @@ while hidden. Neither menu maintains a separate copy of the blur or animation
 implementation.
 
 `swaync/watch-glass.py` is the native visibility/IPC adapter. It prewarms one
-resident renderer, and numbered requests prevent stale closes. The optional
+resident renderer, reattaches or respawns it if that process dies while the
+watcher is still running, and numbered requests prevent stale closes.
+`Super+N` starts the watcher when it is missing. The optional
 `status` IPC reports readiness and open/paint timestamps for real effect
 latency checks; native D-Bus acknowledgement alone is insufficient.
 A per-compositor lock prevents duplicate watchers after reloads.
@@ -167,6 +174,38 @@ After a geometry/widget change, test a fresh SwayNC process: reloading the
 running daemon can retain old widget allocations. Palette-only changes use the
 normal CSS refresh. If a personal compositor override changes the top grid gap,
 match `control-center-margin-top` to that gap in the personal SwayNC override.
+
+## Music salon
+
+`Super+M` toggles a portrait framed overlay for the current MPRIS player. The
+owner artwork is `wallust/assets/music-frame.png`, published to a 624×1040 plate
+so it fills 1080p under Waybar and docks to the right edge. It slides in from
+the right and leaves the same way. The enclosed opening holds album art, title,
+artist, album, a seek bar, previous/play/next, volume, loop, shuffle, and
+CAVA-like bars. The overlay opens on the Hyprland focused monitor, and moves there if focus
+changes while it is open. It reads MPRIS itself on open and every second while
+visible, so a stale watcher cannot leave **Nothing playing** on screen.
+A decoded cover stays up until the next one is ready. A cached copy is not
+replaced by Brave's temporary thumbnail, which is often only 150×83.
+Previous, next, play/pause, volume, loop, and shuffle call `playerctl`.
+Escape, Space, arrow keys, a click on the veiled desktop, or `Super+M`
+again close or control it. `playerctl` also still follows from `music/watch.py`. Local `file://` artwork, including browser temp files, is copied under
+`$XDG_RUNTIME_DIR` so Chromium can delete the original. HTTP artwork uses the
+same cache. If `cava` is installed, `music/watch.py` reads its raw ASCII bars;
+otherwise it synthesizes a gentle playing waveform and holds still while paused.
+Opening the salon starts the watcher if it is not already running. Media keys
+keep controlling playback.
+
+Selector, notification, and music salons are mutually exclusive:
+`hypr/scripts/exclusive-framed.sh` closes the other two before one of them
+opens. Opening music does not toggle the notification panel.
+
+The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`.
+`MenuGlass` slides the selector on `y` and the music salon on `x`.
+`music/salon.qml` owns only the cherub frame popup, poster, bars, and labels.
+`music/watch.py` prewarms one renderer at compositor start/reload, with a
+per-session lock matching the notification watcher. A missing Quickshell, CAVA,
+or player leaves the rest of the desktop unchanged.
 
 ## Optional Brave New Tab
 

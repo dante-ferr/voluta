@@ -29,6 +29,10 @@ SELECTOR_FRAME = Path('wallust/assets/big-angel-box.png')
 SELECTOR_SIZE = (1152, 1024)  # Matches the centered slot in rofi/selector-frame.rasi.
 NOTIFICATION_FRAME = Path('wallust/assets/notification-angels-frame.png')
 NOTIFICATION_SIZE = (1056, 736)  # Matches swaync/config.json and its frame padding.
+MUSIC_FRAME = Path('wallust/assets/music-frame.png')
+# Portrait plate fills 1080p under Waybar; native art is 971×1620.
+MUSIC_SIZE = (624, 1040)
+MUSIC_CONTENT_PAD = 18
 
 
 def hex_color(color):
@@ -158,30 +162,76 @@ def frame_aperture(frame):
     return opening
 
 
-def publish_selector_frame(assets, source, palette):
-    frame = render_palette_frame(source, palette)
-    mask = Image.new('RGBA', frame.size)
+def publish_cutout_frame(assets, source, palette, size, frame_name, aperture_name,
+                         glass_name=None, centering=(.5, .5)):
+    frame = render_palette_frame(source, palette, size, centering)
     opening = frame_aperture(frame)
+    mask = Image.new('RGBA', frame.size)
     mask.putalpha(opening)
-    for name, image in ((SELECTOR_FRAME.name, frame), ('selector-aperture.png', mask)):
+    outputs = [(frame_name, frame), (aperture_name, mask)]
+    if glass_name:
+        # Paint glass only inside the sculpture, leaving the outer silhouette clear.
+        glass = Image.new('RGBA', frame.size, (*palette['bg'], 0))
+        glass.putalpha(opening.point(lambda value: round(value * .50)))
+        outputs.append((glass_name, glass))
+    for name, image in outputs:
         with BytesIO() as output:
             image.save(output, format='PNG')
             write_bytes_changed(assets / name, output.getvalue())
+
+
+def publish_selector_frame(assets, source, palette):
+    publish_cutout_frame(assets, source, palette, SELECTOR_SIZE,
+                         SELECTOR_FRAME.name, 'selector-aperture.png')
 
 
 def publish_notification_frame(assets, source, palette):
-    frame = render_palette_frame(source, palette, NOTIFICATION_SIZE, centering=(.5, 0))
-    # Paint glass only inside the sculpture, leaving the outer silhouette clear.
-    opening = frame_aperture(frame)
-    glass = Image.new('RGBA', frame.size, (*palette['bg'], 0))
-    glass.putalpha(opening.point(lambda value: round(value * .50)))
-    mask = Image.new('RGBA', frame.size)
-    mask.putalpha(opening)
-    for name, image in ((NOTIFICATION_FRAME.name, frame), ('notification-glass.png', glass),
-                        ('notification-aperture.png', mask)):
-        with BytesIO() as output:
-            image.save(output, format='PNG')
-            write_bytes_changed(assets / name, output.getvalue())
+    publish_cutout_frame(assets, source, palette, NOTIFICATION_SIZE,
+                         NOTIFICATION_FRAME.name, 'notification-aperture.png',
+                         'notification-glass.png', centering=(.5, 0))
+
+
+def music_content_rect(opening, padding=MUSIC_CONTENT_PAD):
+    box = opening.getbbox()
+    if not box:
+        return None
+    left, top, right, bottom = box[0] + padding, box[1] + padding, box[2] - padding, box[3] - padding
+    if right - left < 64 or bottom - top < 64:
+        left, top, right, bottom = box
+    return {'left': left, 'top': top, 'width': right - left, 'height': bottom - top}
+
+
+def publish_music_frame(assets, source, palette):
+    publish_cutout_frame(assets, source, palette, MUSIC_SIZE,
+                         MUSIC_FRAME.name, 'music-aperture.png', 'music-glass.png')
+    with Image.open(assets / MUSIC_FRAME.name) as frame:
+        content = music_content_rect(frame_aperture(frame))
+    if content:
+        write_changed(assets / 'music-content.json', json.dumps(content) + '\n')
+
+
+def checkout_root(manifest, data):
+    # Installed trees keep a recorded public checkout; live checkouts are ROOT.
+    recorded = Path(manifest.get('source', str(ROOT)))
+    if ROOT == (data / 'current').resolve() and recorded.is_dir():
+        return recorded
+    return ROOT
+
+
+def publish_core_svgs(assets, root, palette):
+    rendered = {}
+    for name in ASSETS:
+        rendered[name] = render((root / 'wallust/assets' / name).read_text(), palette)
+        write_changed(assets / name, rendered[name])
+    # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
+    write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
+    write_changed(assets / 'panel-frame-wide.svg',
+                  rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
+    for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
+        for name in ('tile-frame', 'tile-selected'):
+            # A small clear gutter absorbs icon/text row-height differences.
+            write_changed(assets / (name + variant + '.svg'), canvas(rendered[name + '.svg'], width, 45))
+    return rendered
 
 
 def refresh_frames():
@@ -194,13 +244,19 @@ def refresh_frames():
         managed_changed = False
         palette = read_palette(config / 'hypr/wallust/colors-shell.sh')
         palette['bg'] = preferred_background(palette, config / 'voluta')
+        root = checkout_root(manifest, data)
+        assets = config / 'wallust/assets/generated'
+        # Pull + Super+Alt+R must republish the dark-glass vignette and other SVG
+        # templates, not only the filtered angel-frame PNGs.
+        publish_core_svgs(assets, root, palette)
         for relative, publisher in ((SELECTOR_FRAME, publish_selector_frame),
-                                    (NOTIFICATION_FRAME, publish_notification_frame)):
+                                    (NOTIFICATION_FRAME, publish_notification_frame),
+                                    (MUSIC_FRAME, publish_music_frame)):
             installed = ROOT / relative
-            checkout = Path(manifest.get('source', str(ROOT))) / relative
-            use_checkout = ROOT == (data / 'current').resolve() and checkout.is_file()
+            checkout = root / relative
+            use_checkout = root != ROOT and checkout.is_file()
             content = (checkout if use_checkout else installed).read_bytes()
-            publisher(config / relative.parent / 'generated', BytesIO(content), palette)
+            publisher(assets, BytesIO(content), palette)
             if use_checkout and (not installed.is_file() or installed.read_bytes() != content):
                 write_managed(installed, content, manifest, state, 0o644)
                 managed_changed = True
@@ -264,19 +320,10 @@ def publish(config=None, data=None, directory=None, host=None, root=ROOT):
     palette = read_palette(config / 'hypr/wallust/colors-shell.sh')
     palette['bg'] = preferred_background(palette, directory, host)
     assets = config / 'wallust/assets/generated'
-    rendered = {}
-    for name in ASSETS:
-        rendered[name] = render((root / 'wallust/assets' / name).read_text(), palette)
-        write_changed(assets / name, rendered[name])
-    # Match rofi/frame.rasi: 1.6× the 720×640 art so the hollow center stays usable.
-    write_changed(assets / 'big-angel-box.svg', canvas(rendered['big-angel-box.svg'], 1152, 1024))
+    rendered = publish_core_svgs(assets, root, palette)
     publish_selector_frame(assets, root / SELECTOR_FRAME, palette)
     publish_notification_frame(assets, root / NOTIFICATION_FRAME, palette)
-    write_changed(assets / 'panel-frame-wide.svg', rendered['panel-frame.svg'].replace('width="720" height="640"', 'width="1150" height="760"'))
-    for variant, width in (('', 324), ('-list', 656), ('-wide', 1086)):
-        for name in ('tile-frame', 'tile-selected'):
-            # A small clear gutter absorbs icon/text row-height differences.
-            write_changed(assets / (name + variant + '.svg'), canvas(rendered[name + '.svg'], width, 45))
+    publish_music_frame(assets, root / MUSIC_FRAME, palette)
 
     settings, _ = resolve(directory, hostname(host))
     if not settings['features']['browser']:

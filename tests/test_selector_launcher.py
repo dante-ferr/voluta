@@ -74,6 +74,9 @@ class SelectorLauncherTests(unittest.TestCase):
                 'rofi': 'printf "rofi-start\\n" >> "$SELECTOR_TEST_LOG"\n'
                         'printf "%s\\n" "$@" > "$SELECTOR_TEST_ROFI_ARGS"\n'
                         'touch "$SELECTOR_TEST_STARTED"\ncat\nexit 23\n',
+                'pkill': 'exit 0\n',
+                'gdbus': 'exit 0\n',
+                'swaync-client': 'exit 0\n',
             }
             for name, body in scripts.items():
                 executable = binaries / name
@@ -180,6 +183,9 @@ class SelectorLauncherTests(unittest.TestCase):
                 'jq': 'exit 99\n',
                 'hyprctl': 'echo "should not query the compositor" >&2\nexit 99\n',
                 'rofi': 'printf "%s\\n" "$@"\nexit 23\n',
+                'pkill': 'exit 0\n',
+                'gdbus': 'exit 0\n',
+                'swaync-client': 'exit 0\n',
             }
             for name, body in scripts.items():
                 executable = binaries / name

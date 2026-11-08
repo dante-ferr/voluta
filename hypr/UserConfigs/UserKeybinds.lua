@@ -114,6 +114,7 @@ bind("SUPER + ALT + K", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"))
 
 -- 4. Notifications and Night Light
 bind("SUPER + N", hl.dsp.exec_cmd("sh " .. home .. "/.config/swaync/toggle-panel.sh"))
+bind("SUPER + M", hl.dsp.exec_cmd("sh " .. home .. "/.config/music/toggle.sh"))
 bind("SUPER + SHIFT + N", hl.dsp.exec_cmd("sh -c 'if pgrep -x hyprsunset >/dev/null 2>&1; then pkill -9 -x hyprsunset; notify-send \"Night Light\" \"Disabled\"; else (hyprsunset -t 3000 &) 2>/dev/null; notify-send \"Night Light\" \"Enabled (3000K)\"; fi'"))
 
 -- 5. Screenshots (PrintScreen, Super + P, and modern Super + Shift + S)

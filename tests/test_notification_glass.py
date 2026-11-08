@@ -54,6 +54,45 @@ class NotificationGlassTests(unittest.TestCase):
             with self.subTest(monitors=unexpected), patch.object(glass, 'run', return_value=json.dumps(unexpected)):
                 self.assertTrue(glass.renderer_environment(self.root) is None)
 
+    def test_dead_renderer_is_replaced_and_shown_when_active(self):
+        overlay = glass.Glass()
+        overlay.environment = {
+            'VOLUTA_NOTIFICATION_MONITOR': 'DP-2',
+            'VOLUTA_NOTIFICATION_COLORS': '#111111 #222222 #ffffff',
+            'VOLUTA_NOTIFICATION_ASSETS': '/tmp',
+            'VOLUTA_NOTIFICATION_RESERVED_TOP': '34',
+            'VOLUTA_NOTIFICATION_MARGIN_TOP': '8',
+            'VOLUTA_NOTIFICATION_WIDTH': '1056',
+            'VOLUTA_NOTIFICATION_HEIGHT': '736',
+        }
+        overlay.active = True
+        overlay.fingerprint = ()
+        class Dead:
+            pid = 1
+            def poll(self):
+                return 1
+        overlay.process = Dead()
+        spawned = []
+
+        class Alive:
+            pid = 99
+            def poll(self):
+                return None
+
+        def popen(*_args, **_kwargs):
+            spawned.append(True)
+            return Alive()
+
+        with patch.object(glass, 'renderer_pid', return_value=None), \
+             patch.object(glass, 'renderer_environment', return_value=overlay.environment), \
+             patch.object(glass.subprocess, 'Popen', side_effect=popen), \
+             patch.object(overlay, '_send') as send:
+            overlay.recover()
+        self.assertTrue(spawned)
+        self.assertEqual(overlay.process.pid, 99)
+        send.assert_called()
+        self.assertEqual(send.call_args.args[0], 'showPanel')
+
     def test_lock_is_scoped_to_compositor_session(self):
         with patch.dict(os.environ, {'HYPRLAND_INSTANCE_SIGNATURE': 'first/session'}):
             first = glass.lock_path(self.root)

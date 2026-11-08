@@ -11,7 +11,7 @@ import time
 
 from cli import ROOT, atomic_write, resolve, read
 
-CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'waypaper', 'wlogout', 'xdg-desktop-portal')
+CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'waypaper', 'wlogout', 'xdg-desktop-portal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
@@ -75,23 +75,70 @@ def missing_packages(settings):
                 subprocess.run(['pacman', '-T', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode)]
 
 
+def _run_visible(command):
+    # Ask for the password on the real terminal first. The install itself is
+    # streamed below; capturing sudo's prompt makes the command look frozen.
+    if command and command[0] == 'sudo':
+        subprocess.run(['sudo', '-v'], check=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    lines = []
+    assert process.stdout is not None
+    for line in process.stdout:
+        sys.stdout.write(line)
+        sys.stdout.flush()
+        lines.append(line)
+    return subprocess.CompletedProcess(command, process.wait(), ''.join(lines), '')
+
+
+def _install_packages(packages, *, force_quickshell=False, overwrite=False):
+    if not packages:
+        return
+    aur = [pkg for pkg in packages
+           if subprocess.run(['pacman', '-Si', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
+    helper = shutil.which('paru') or shutil.which('yay')
+    if aur and (not helper or os.geteuid() == 0):
+        raise ValueError('Install an AUR helper (paru/yay) as your regular user for: '
+                         + ', '.join(aur) + '. Or install these manually and rerun.')
+    # Reinstall a broken renderer even when pacman considers its package current.
+    # Prefer the official package when replacing a stale third-party provider.
+    flags = ['--noconfirm']
+    if not force_quickshell:
+        flags.append('--needed')
+    if overwrite:
+        flags.extend(['--overwrite', '*'])
+    command = ([helper, '-S', *flags, *packages] if aur and helper and os.geteuid() != 0
+               else ['pacman', '-S', *flags, *packages])
+    if command[0] == 'pacman' and os.geteuid() != 0:
+        command.insert(0, 'sudo')
+    return _run_visible(command)
+
+
 def dependencies(settings):
     if not shutil.which('pacman'):
         raise ValueError('Arch Linux pacman is required')
     missing = missing_packages(settings)
     if not missing:
         return
-    aur = [pkg for pkg in missing if subprocess.run(['pacman', '-Si', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
-    helper = shutil.which('paru') or shutil.which('yay')
-    if aur and (not helper or os.geteuid() == 0):
-        raise ValueError('Install an AUR helper (paru/yay) as your regular user for: ' + ', '.join(aur) + '. Or install these manually and rerun.')
-    # Reinstall a broken renderer even when pacman considers its package current.
-    # Prefer the official package when replacing a stale third-party provider.
-    flags = [] if 'quickshell' in missing else ['--needed']
-    command = [helper, '-S', *flags, *missing] if aur and helper and os.geteuid() != 0 else ['pacman', '-S', *flags, *missing]
-    if command[0] == 'pacman' and os.geteuid() != 0:
-        command.insert(0, 'sudo')
-    subprocess.run(command, check=True)
+    # Install one package at a time so an orphaned-file conflict on one name
+    # cannot roll back siblings that were otherwise ready (e.g. cursors).
+    failures = []
+    for package in missing:
+        result = _install_packages([package], force_quickshell=(package == 'quickshell'))
+        if result.returncode == 0:
+            continue
+        combined = (result.stdout or '') + (result.stderr or '')
+        if 'conflicting files' in combined and 'exists in filesystem' in combined:
+            # Adopt unpackaged leftovers into the official package.
+            retry = _install_packages([package], force_quickshell=(package == 'quickshell'), overwrite=True)
+            if retry.returncode == 0:
+                continue
+            combined = (retry.stdout or '') + (retry.stderr or '')
+            result = retry
+        failures.append((package, combined.strip() or f'exit {result.returncode}'))
+    if failures:
+        detail = '; '.join(f'{name}: {error.splitlines()[-1] if error else "failed"}'
+                           for name, error in failures)
+        raise ValueError('Could not install: ' + detail)
     if 'quickshell' in missing and not quickshell_works():
         raise ValueError('Quickshell still cannot start after installation. Run quickshell --version and repair its Qt dependencies before retrying.')
 
@@ -247,7 +294,7 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         sync_sources(current, manifest, state)
     # Quickshell confines local QML imports to each entrypoint's directory.
     # Both consumers link the one shared effect source into that import root.
-    for consumer in ('rofi', 'swaync'):
+    for consumer in ('rofi', 'swaync', 'music'):
         link(current / consumer / 'effects', current / 'wallust/effects', manifest, state)
     if not skip_deps:
         subprocess.run(['make', '-C', str(current / 'waybar')], check=True)

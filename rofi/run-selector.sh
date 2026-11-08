@@ -19,6 +19,9 @@ if [ "${1:-}" = --prewarm ]; then
     prewarm=true
     shift
 fi
+if [ "$prewarm" = false ]; then
+    sh "$directory/../hypr/scripts/exclusive-framed.sh" selector
+fi
 selector=
 request=$$
 launch_selector() {

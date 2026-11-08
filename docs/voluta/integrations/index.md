@@ -8,7 +8,7 @@ prevent the core desktop from starting when unavailable.
 | --- | --- |
 | [Shared background](theme.md) | One persistent palette policy for application backgrounds and generated theme exports. |
 | [Brave with Prismwing and Gallery](brave.md) | User setup for Brave GTK theming, Prismwing favicons, and the Gallery New Tab page. |
-| [Architectural surfaces and Gallery](surfaces.md) | Stepped launcher/power-menu frames and Gallery geometry, motion, and storage. |
+| [Architectural surfaces and Gallery](surfaces.md) | Stepped launcher, notification, and music frames, plus Gallery geometry, motion, and storage. |
 | [Wallust RGB integration](rgb.md) | Preset gallery, native animations, palette fidelity and desktop scoping. |
 | [Custom animation research](rgb_research.md) | Stock protocol evidence, alternative mouse SDKs and remaining firmware leads. |
 

@@ -15,6 +15,10 @@ if [[ -f "$rice_root/voluta/surfaces.py" ]]; then
         notify-send "Voluta frame refresh failed" "Check the frame PNGs and Wallust palette, then run Refresh again."
     fi
 fi
+# Capitaine is required for the default cursor; reload cannot invent the theme.
+if ! pacman -Q capitaine-cursors >/dev/null 2>&1; then
+    notify-send "Cursor theme missing" "Install capitaine-cursors (voluta deps), then refresh again."
+fi
 # A pull also changes generated Qt styling, saved view defaults and the hook.
 # Do this before setting Waybar's LD_PRELOAD below.
 if [[ -f "$rice_root/dolphin/apply.sh" ]]; then

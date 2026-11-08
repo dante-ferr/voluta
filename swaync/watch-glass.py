@@ -20,6 +20,7 @@ import threading
 
 DIRECTORY = Path(__file__).resolve().parent
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
+GLASS_QML = DIRECTORY / 'glass.qml'
 
 
 def run(arguments, timeout=1):
@@ -88,6 +89,58 @@ def terminate(process):
         process.wait()
 
 
+class AttachedProcess:
+    def __init__(self, pid):
+        self.pid = pid
+
+    def poll(self):
+        try:
+            os.kill(self.pid, 0)
+        except OSError:
+            return 1
+        return None
+
+    def terminate(self):
+        try:
+            os.kill(self.pid, signal.SIGTERM)
+        except OSError:
+            pass
+
+    def kill(self):
+        try:
+            os.kill(self.pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+    def wait(self, timeout=None):
+        deadline = time.monotonic() + (timeout if timeout is not None else 1e9)
+        while self.poll() is None:
+            if time.monotonic() >= deadline:
+                raise subprocess.TimeoutExpired('quickshell', timeout)
+            time.sleep(0.02)
+
+
+def renderer_pid(path=GLASS_QML):
+    raw = run(['quickshell', 'list', '-j', '-p', str(path)])
+    if not raw:
+        return None
+    try:
+        entries = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(entries, list):
+        return None
+    for entry in entries:
+        pid = entry.get('pid') if isinstance(entry, dict) else None
+        if isinstance(pid, int) and pid > 0:
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                continue
+            return pid
+    return None
+
+
 def artwork_fingerprint(config=CONFIG):
     paths = ('hypr/wallust/colors-shell.sh', 'wallust/assets/generated/notification-aperture.png',
              'swaync/config.json', 'wallust/assets/generated/launcher-vignette.svg')
@@ -127,8 +180,8 @@ class Glass:
             # Only the initial prewarm normally needs retries while QML loads.
             # A newer state supersedes retries immediately; the event reader is
             # never blocked by renderer startup, close animations, or IPC waits.
-            deadline = time.monotonic() + 1
-            while run(command, timeout=.25) is None:
+            deadline = time.monotonic() + 2
+            while run(command, timeout=.4) is None:
                 with self.condition:
                     if self.closed or self.token != token or time.monotonic() >= deadline:
                         break
@@ -152,6 +205,29 @@ class Glass:
                 environment['VOLUTA_NOTIFICATION_MARGIN_TOP'], environment['VOLUTA_NOTIFICATION_WIDTH'],
                 environment['VOLUTA_NOTIFICATION_HEIGHT'], version)
 
+    def respawn(self):
+        """Attach to a live renderer or start one. True when a new pid is bound."""
+        if self.process is not None and self.process.poll() is None:
+            return False
+        # A previous pid is gone. Reuse a leftover Quickshell before spawning.
+        if self.process is not None:
+            live = renderer_pid()
+            if live:
+                self.process = AttachedProcess(live)
+                return True
+        if self.environment is None:
+            return False
+        try:
+            # Keep this process as the IPC pid. -n collapses duplicates; do not
+            # daemonize, or Popen would point at an exited parent.
+            self.process = subprocess.Popen(
+                ['quickshell', '-n', '-p', str(GLASS_QML)],
+                env=self.environment, stdin=subprocess.DEVNULL)
+        except OSError:
+            self.process = None
+            return False
+        return True
+
     def warm(self):
         self.fingerprint = artwork_fingerprint()
         self.next_check = time.monotonic() + .5
@@ -161,16 +237,15 @@ class Glass:
             # publication can restore decoration while the center stays open.
             self._send('dismiss')
             return
-        if self.process is None or self.process.poll() is not None:
-            try:
-                self.process = subprocess.Popen(
-                    ['quickshell', '-p', str(DIRECTORY / 'glass.qml')],
-                    env=self.environment, stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except OSError:
-                self.process = None
-                return
+        self.respawn()
         self._send('showPanel' if self.active else 'prepare', *self._arguments())
+
+    def recover(self):
+        if self.process is not None and self.process.poll() is None:
+            return
+        self.environment = renderer_environment() or self.environment
+        if self.respawn() and self.active and self.environment is not None:
+            self._send('showPanel', *self._arguments())
 
     def refresh(self):
         now = time.monotonic()
@@ -230,6 +305,8 @@ def main():
     glass = Glass()
     subscriber = None
     delay = .5
+    pidfile = runtime / 'voluta-notification-glass.pid'
+    pidfile.write_text(str(os.getpid()) + '\n')
     try:
         glass.warm()
         while not stopped:
@@ -241,6 +318,7 @@ def main():
                 events.register(subscriber.stdout, selectors.EVENT_READ)
                 pending = b''
                 while not stopped:
+                    glass.recover()
                     if visible:
                         glass.refresh()
                     if not events.select(timeout=.25):
@@ -276,6 +354,7 @@ def main():
     finally:
         glass.shutdown()
         terminate(subscriber)
+        pidfile.unlink(missing_ok=True)
         lock.close()
 
 

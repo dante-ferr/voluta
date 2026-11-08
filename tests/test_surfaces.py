@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 import sys
 import tempfile
@@ -143,6 +144,56 @@ class SurfaceTests(unittest.TestCase):
             safe = mask.getchannel('A').point(lambda value: 255 if value >= 248 else 0)
             safe = safe.filter(ImageFilter.MinFilter(33))
             self.assertEqual(safe.crop((left, top, width-right, height-bottom)).getextrema(), (255, 255))
+
+    def test_refresh_frames_republishes_dark_glass_vignette(self):
+        self.publish(False)
+        vignette = self.frames / 'launcher-vignette.svg'
+        vignette.write_text('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>')
+        # Copy the angel PNGs so refresh_frames can filter them under a temp ROOT.
+        asset_root = self.root / 'checkout'
+        for relative in (surfaces.SELECTOR_FRAME, surfaces.NOTIFICATION_FRAME, surfaces.MUSIC_FRAME):
+            destination = asset_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, destination)
+        for name in surfaces.ASSETS:
+            destination = asset_root / 'wallust/assets' / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / 'wallust/assets' / name, destination)
+        data_home = self.root / 'xdg-data'
+        state_home = self.root / 'xdg-state'
+        (state_home / 'voluta').mkdir(parents=True)
+        (state_home / 'voluta/install.json').write_text(
+            json.dumps({'files': {}, 'links': {}, 'version': 1}))
+        with patch.dict(os.environ, {
+            'XDG_CONFIG_HOME': str(self.config),
+            'XDG_DATA_HOME': str(data_home),
+            'XDG_STATE_HOME': str(state_home),
+        }), patch.object(surfaces, 'ROOT', asset_root):
+            surfaces.refresh_frames()
+        text = vignette.read_text()
+        self.assertIn('fill-opacity="0.50"', text)
+        self.assertIn('fill="#0a151f"', text)
+
+    def test_music_frame_is_enclosed_and_scaled_for_1080p(self):
+        self.publish(False)
+        with Image.open(self.frames / surfaces.MUSIC_FRAME.name) as frame, \
+             Image.open(self.frames / 'music-aperture.png') as mask, \
+             Image.open(self.frames / 'music-glass.png') as glass:
+            self.assertEqual(frame.size, surfaces.MUSIC_SIZE)
+            self.assertEqual(mask.size, frame.size)
+            self.assertEqual(glass.size, frame.size)
+            self.assertEqual(glass.getpixel((0, 0))[3], 0)
+            opening = surfaces.frame_aperture(frame)
+            self.assertIsNotNone(opening.getbbox())
+            center = ((opening.getbbox()[0] + opening.getbbox()[2]) // 2,
+                      (opening.getbbox()[1] + opening.getbbox()[3]) // 2)
+            self.assertEqual(glass.getpixel(center)[3], 128)
+            content = json.loads((self.frames / 'music-content.json').read_text())
+            box = opening.getbbox()
+            self.assertGreaterEqual(content['left'], box[0])
+            self.assertGreaterEqual(content['top'], box[1])
+            self.assertLessEqual(content['left'] + content['width'], box[2])
+            self.assertLessEqual(content['top'] + content['height'], box[3])
 
 
 if __name__ == '__main__':

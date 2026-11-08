@@ -69,8 +69,8 @@ class DeploymentTests(unittest.TestCase):
         service = self.home / '.config/systemd/user/swaync.service.d/10-voluta.conf'
         self.assertIn('ExecStart=\nExecStart=/bin/sh ', service.read_text())
         self.assertIn('/swaync/launch.sh', service.read_text())
-        for consumer in ('rofi', 'swaync'):
-            for module in ('MenuGlass.qml', 'StainedGlass.qml'):
+        for consumer in ('rofi', 'swaync', 'music'):
+            for module in ('MenuGlass.qml', 'StainedGlass.qml', 'RimIgnition.qml'):
                 effect = self.home / '.config' / consumer / 'effects' / module
                 self.assertTrue(effect.is_file(), f'{consumer} can resolve {module}')
                 self.assertEqual(effect.resolve(), self.home / '.local/share/voluta/current/wallust/effects' / module)

@@ -50,11 +50,40 @@ class QuickshellDependencyTests(unittest.TestCase):
                  patch.object(deploy.shutil, 'which', side_effect=lambda name: '/usr/bin/' + name), \
                  patch.object(deploy.os, 'geteuid', return_value=1000), \
                  patch.object(deploy, 'quickshell_works', return_value=repaired) as check, \
-                 patch.object(deploy.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as run:
+                 patch.object(deploy.subprocess, 'run',
+                              return_value=subprocess.CompletedProcess([], 0, '', '')), \
+                 patch.object(deploy, '_run_visible',
+                              return_value=subprocess.CompletedProcess([], 0, '', '')) as run:
                 if repaired:
                     deploy.dependencies({})
                 else:
                     with self.assertRaisesRegex(ValueError, 'still cannot start'):
                         deploy.dependencies({})
-                self.assertEqual(run.call_args.args[0], ['sudo', 'pacman', '-S', 'quickshell'])
+                self.assertEqual(run.call_args.args[0], ['sudo', 'pacman', '-S', '--noconfirm', 'quickshell'])
                 check.assert_called_once()
+
+    def test_conflicting_sibling_does_not_block_other_packages(self):
+        outcomes = {
+            'capitaine-cursors': subprocess.CompletedProcess([], 0, '', ''),
+            'nwg-displays': subprocess.CompletedProcess(
+                [], 1, '', 'error: failed to commit transaction (conflicting files)\n'
+                           'nwg-displays: /usr/bin/nwg-displays exists in filesystem\n'),
+        }
+
+        def visible(command):
+            package = command[-1]
+            if '--overwrite' in command:
+                return subprocess.CompletedProcess(command, 0, '', '')
+            return outcomes[package]
+
+        with patch.object(deploy, 'missing_packages', return_value=['capitaine-cursors', 'nwg-displays']), \
+             patch.object(deploy.shutil, 'which', side_effect=lambda name: '/usr/bin/' + name), \
+             patch.object(deploy.os, 'geteuid', return_value=1000), \
+             patch.object(deploy.subprocess, 'run',
+                          return_value=subprocess.CompletedProcess([], 0, '', '')), \
+             patch.object(deploy, '_run_visible', side_effect=visible) as mocked:
+            deploy.dependencies({})
+        installs = [call.args[0] for call in mocked.call_args_list]
+        self.assertEqual(installs[0], ['sudo', 'pacman', '-S', '--noconfirm', '--needed', 'capitaine-cursors'])
+        self.assertEqual(installs[1], ['sudo', 'pacman', '-S', '--noconfirm', '--needed', 'nwg-displays'])
+        self.assertEqual(installs[2], ['sudo', 'pacman', '-S', '--noconfirm', '--needed', '--overwrite', '*', 'nwg-displays'])
