@@ -148,3 +148,20 @@ element-text {
 
 @import "frame.rasi"
 @import "selector-frame.rasi"
+
+/* Twin-volute Voluta mark from wallust/assets/patera.svg, left of the search. */
+inputbar {
+    children: [ "icon-voluta", "prompt", "entry" ];
+}
+icon-voluta {
+    expand: false;
+    filename: "~/.config/wallust/assets/generated/voluta-mark.png";
+    size: 22px;
+    squared: false;
+    vertical-align: 0.5;
+    padding: 0px 6px 0px 0px;
+    background-color: transparent;
+}
+prompt, entry {
+    vertical-align: 0.5;
+}

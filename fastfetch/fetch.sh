@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Responsive crown-and-angels banner, with the original image and its proportions.
+# The twin-volute Voluta mark stays a small brand detail elsewhere (Waybar, app
+# selector); this banner keeps the angels and only the VOLUTA title text.
 
 # Below this the information column wraps, so nothing is printed at all. zshrc
 # reads the same two variables for its banner bookkeeping, so keep the names and

@@ -265,6 +265,38 @@ def checkout_root(manifest, data):
     return ROOT
 
 
+def publish_voluta_mark(assets, root, palette):
+    """Rasterize the twin-volute logo for the app selector and other brand slots."""
+    source = root / 'wallust/assets/patera.svg'
+    if not source.is_file():
+        return
+    paint = hex_color(palette['fg'])
+    svg = source.read_text()
+    svg = re.sub(r'\bfill="[^"]*"', f'fill="{paint}"', svg)
+    svg = re.sub(r'\bstroke="[^"]*"', f'stroke="{paint}"', svg)
+    with tempfile.NamedTemporaryFile(suffix='.svg', delete=False) as handle:
+        temporary = Path(handle.name)
+        handle.write(svg.encode())
+    try:
+        # Wide mark with square canvas so Rofi's icon widget does not squash it.
+        subprocess.run(
+            ['rsvg-convert', '--width', '128', '--height', '128', '--keep-aspect-ratio',
+             str(temporary), '-o', str(assets / 'voluta-mark-raw.png')],
+            check=True, capture_output=True,
+        )
+    finally:
+        temporary.unlink(missing_ok=True)
+    with Image.open(assets / 'voluta-mark-raw.png') as mark:
+        mark = mark.convert('RGBA')
+        canvas_image = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
+        canvas_image.alpha_composite(
+            mark, ((128 - mark.width) // 2, (128 - mark.height) // 2))
+        output = BytesIO()
+        canvas_image.save(output, format='PNG')
+        write_bytes_changed(assets / 'voluta-mark.png', output.getvalue())
+    (assets / 'voluta-mark-raw.png').unlink(missing_ok=True)
+
+
 def publish_core_svgs(assets, root, palette):
     rendered = {}
     for name in ASSETS:
@@ -278,6 +310,7 @@ def publish_core_svgs(assets, root, palette):
         for name in ('tile-frame', 'tile-selected'):
             # A small clear gutter absorbs icon/text row-height differences.
             write_changed(assets / (name + variant + '.svg'), canvas(rendered[name + '.svg'], width, 45))
+    publish_voluta_mark(assets, root, palette)
     return rendered
 
 

@@ -62,7 +62,9 @@ the filtered PNG on a transparent 1152×1024 canvas while preserving its aspect
 ratio, so Rofi fills the slot without repeating the image.
 The fullscreen window centers that plate with padding, using half the
 monitor minus half the plate. Super+D, Super+Shift+Enter, and
-Super+Ctrl+Enter all run `rofi/launch-dashboard.sh`. Both menus use opposing
+Super+Ctrl+Enter all run `rofi/launch-dashboard.sh`. The app selector shows the
+Voluta twin-volute mark (`wallust/assets/patera.svg`, published as
+`voluta-mark.png`) to the left of the search prompt. Both menus use opposing
 rounded corners and a heavier left edge on ordinary rows, with more space
 between the boxes and the surrounding ornament. Both lists show up to seven
 rows at a time. The selected row has a 2px palette accent outline and a raised

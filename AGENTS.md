@@ -38,6 +38,9 @@ keep the public defaults portable.
   hover and contrast colors from palette tokens; do not introduce fixed colors.
 - Share SVG sources in `wallust/assets/` and rendered assets in
   `wallust/assets/generated/`. Regenerate and reload consumers on wallpaper changes.
+- `wallust/assets/patera.svg` is the Voluta logo: a twin Ionic volute mark. Keep it
+  a small brand detail (Waybar `#custom-patera`, app selector). The Kitty/fastfetch
+  banner keeps the crown-and-angels image and only the VOLUTA title text.
 
 ## Secrets and commits
 
