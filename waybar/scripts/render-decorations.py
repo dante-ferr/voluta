@@ -138,7 +138,7 @@ def main():
     settings = json.loads((ROOT / "glow.json").read_text())
     heaven = {"opacity": 0.55, "height_px": 220, "fps": 10, "drift_px_per_s": 14,
               "animate": True, "pause_on_battery": True,
-              "full_below": 0.08, "off_above": 0.2, **settings.get("heaven", {})}
+              "full_below": 0.05, "off_above": 0.14, **settings.get("heaven", {})}
     for key in ("opacity", "height_px", "fps", "drift_px_per_s"):
         value = heaven[key]
         if (isinstance(value, bool) or not isinstance(value, (int, float))
