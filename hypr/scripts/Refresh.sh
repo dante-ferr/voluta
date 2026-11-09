@@ -58,6 +58,10 @@ if [[ -f "${waybar_dir}/Makefile" ]]; then
         notify-send -u critical "Waybar build failed" "The existing Waybar shim will be used. Check the build output and run Refresh again."
     fi
 fi
+if [[ -f "${waybar_dir}/scripts/render-decorations.py" ]]; then
+    python3 "$waybar_dir/scripts/render-decorations.py" ||
+        notify-send "Waybar decorations failed" "Check glow.json and the Wallust palette, then run Refresh again."
+fi
 shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"
 if [[ -f $shim ]]; then
     export LD_PRELOAD="$shim${LD_PRELOAD:+:$LD_PRELOAD}"
@@ -70,6 +74,9 @@ if [[ -d ${waybar_dir:-} ]]; then
 else
     setsid waybar "${waybar_config_args[@]}" >/dev/null 2>&1 &
 fi
+
+# The top glow reads the state file render-decorations.py just wrote.
+"$(dirname -- "$refresh_script")/StartTopGlow.sh" --restart || true
 
 # 3. Reload SwayNC Notification Center
 if command -v swaync-client >/dev/null 2>&1; then

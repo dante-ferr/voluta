@@ -1,75 +1,36 @@
-# Adaptive decorations
+# Decorations and top glow
 
-Decorations facing the wallpaper use one shared color decision from the complete
-wallpaper strip behind that bar. Gaps between icons and wallpaper underneath opaque
-plates also contribute. The window title and music icons sit inside opaque boxes
-and always use the bright Wallust ink to contrast with their dark backgrounds.
+Wallpaper-facing decorations (angels, ornaments, patera) always use the dark
+Wallust ink: half-brightness `color0`, shared with the box backgrounds. The window
+title and music icons sit inside opaque boxes and use the muted bright ink.
 
-`scripts/render-decorations.py` creates three Wallust-colored variants in
-`../wallust/assets/generated/waybar/`: dark (half-brightness `color0`, shared with the box backgrounds), light (the
-selected workspace accent), and a brighter palette fallback (`foreground` or `color15`).
-Both light colors are muted with 20% Wallust dark ink (`color0`).
-Light variants have no glow. Dark variants use the faint decoration glow in
-`glow.json`; plate shadows retain the separate `boxes` settings.
+`scripts/render-decorations.py` rasterizes these into
+`../wallust/assets/generated/waybar/` and writes `wallust/angel-paths.css`.
+Wallpaper changes run it through the existing Waypaper/Wallust refresh hook.
 
-## Wallpaper placement and sampling
+## Top glow
 
-The renderer queries the live awww/swww daemon for each output's current image,
-logical dimensions, and scale. Query dimensions already include output rotation;
-they must not be swapped again. It reconstructs the complete output at native
-pixel resolution, using awww's cached resize method, crop gravity, and filter
-when the cache matches the live image and default namespace. Without that cache,
-it follows the installed Waypaper awww/swww mapping: fill/stretch use crop,
-center/tile use no-resize, and fit uses centered padding. The padding color comes
-from Waypaper. The complete canvas avoids the former arbitrary 128-row limit.
+`glow.qml` is a Quickshell surface on the Bottom layer of every display. It sits
+above the wallpaper and below all windows and Waybar. Light falls from the top edge
+like sun through chapel windows: a soft wash plus leaning beams in the Wallust
+palette, fading smoothly well below the bar. It lifts the backdrop so the dark
+artwork keeps its contrast.
 
-For fill/crop, the scale is `max(output_width / image_width, output_height /
-image_height)`. Crop gravity determines which excess image area is removed.
-The crop applies to the entire output, including Waybar's reserved space.
-That reservation moves application windows; it does not shorten or shift awww's
-wallpaper surface. awww's raster decoder does not apply EXIF orientation, so the
-reconstruction likewise leaves the decoded orientation unchanged.
+The beams are painted once per palette. Animation slides and slowly brightens that
+texture at `fps` frames per second, so the cost is small. It pauses on battery by
+default. `scripts/render-decorations.py` writes `wallust/glow-state.json` from the
+`heaven` section of `glow.json`, and the QML reloads it on change:
 
-The GTK helper asynchronously queries `hyprctl -j layers` every two seconds. It
-matches the bar by output, namespace and process ID, and finds the wallpaper
-surface on the same output. Both rectangles share the compositor's coordinate
-system, so subtracting the wallpaper origin handles monitor placement, margins,
-other reserved surfaces, and changes to the bar's size without inferred anchors.
-The sampled image rectangle is:
+- `opacity` (0 to 1): peak brightness at the top edge.
+- `height_px`: how far the light reaches below the top edge.
+- `fps`, `drift_px_per_s`: animation rate and beam speed.
+- `full_below`, `off_above`: relative luminance (0 to 1) of the wallpaper's top
+  band. The glow is full below `full_below`, fades out toward `off_above`, and is
+  off above it, so light tops get no glow. `render-decorations.py` measures each
+  display's wallpaper on every refresh.
+- `animate`, `pause_on_battery`: set `animate` to `false` for a static glow.
 
-```
-x = (bar.x - wallpaper.x) * image.width / wallpaper.width
-y = (bar.y - wallpaper.y) * image.height / wallpaper.height
-w = bar.width * image.width / wallpaper.width
-h = bar.height * image.height / wallpaper.height
-```
+`hypr/scripts/StartTopGlow.sh` starts it at login and on Refresh.
 
-Every native pixel in that rectangle contributes, with fractional edge coverage
-weighted by area. Static geometry is not resampled. A single CSS class on the
-bar selects the same variant for every wallpaper-facing decoration. Each monitor's bar uses its
-own wallpaper strip.
-
-Dark ink remains the default. `contrast.dark_luminance` (currently 0.02, roughly
-sRGB grey 39/255) defines nearly black pixels. `contrast.dark_coverage` in
-`glow.json` is the required fraction of the full strip before light ink is used;
-the user's current setting is 0.7. Hysteresis prevents threshold flicker. Lower
-luminance or higher coverage makes light ink less likely.
-
-Startup keeps dark artwork if exact geometry or wallpaper data is unavailable.
-Wallpaper changes should use the existing Waypaper/Wallust refresh hook, which
-regenerates the cache and restarts Waybar. Animated images use their first frame.
-Pillow and awww use separate decoder/filter implementations, so reconstructed
-colors can differ slightly; Mitchell currently uses Pillow's bicubic filter.
-The crop and sampled area follow the backend placement.
-
-Rebuild with `make -C waybar` from the repository root. Set
-`WAYBAR_CONTRAST_DEBUG=1` at launch to log the shared decision, native image
-rectangle, and dark coverage. No changes to SVG dimensions require sampler edits.
-
-## Checks
-
-```sh
-python3 tools/check-waybar-contrast.py
-cc -Wall -Wextra -o /tmp/check-waybar-contrast tools/check-waybar-contrast.c $(pkg-config --cflags --libs gtk+-3.0 json-glib-1.0) -ldl -lm
-/tmp/check-waybar-contrast
-```
+Rebuild the native helper with `make -C waybar` from the repository root. The
+helper only animates the workspace selection.

@@ -56,6 +56,7 @@ hl.on("hyprland.start", function()
     -- Early bar from last session's CSS so a hung wallust path cannot leave
     -- the desktop bare. combined_wallust restarts it once colors are ready.
     hl.exec_cmd(Scripts .. "/StartWaybar.sh")
+    hl.exec_cmd(Scripts .. "/StartTopGlow.sh")
 
     -- Wallpaper restore without post_command: waypaper fires post_command once
     -- per monitor in parallel, which used to stack duplicate waybars. Once restored,

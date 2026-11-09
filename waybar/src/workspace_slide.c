@@ -167,8 +167,6 @@ static gboolean discover_workspaces(gpointer unused) {
     GList *windows = gtk_window_list_toplevels();
     for (GList *it = windows; it; it = it->next)
         attach_selection(it->data, NULL);
-    extern void update_decoration_contrast(GList *windows);
-    update_decoration_contrast(windows);
     g_list_free(windows);
     return G_SOURCE_CONTINUE;
 }

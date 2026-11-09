@@ -28,7 +28,6 @@
 /* Transparent bar; plates and decorations share a soft Wallust glow. */
 window#waybar {
     background-color: transparent;
-    background: transparent;
     color: @foreground;
     box-shadow: none;
 }
