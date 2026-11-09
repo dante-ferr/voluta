@@ -64,6 +64,44 @@ class SessionColumnTests(unittest.TestCase):
         self.assertIn('text: "\\u{F0594}"', panel)
         self.assertIn('spacing: Math.max(8, (width - 220) / 4)', panel)
 
+    def test_publication_follows_recolored_frame_and_palette(self):
+        with patch.object(watch, 'CONFIG', self.root), patch.object(watch, 'run', side_effect=self.hypr):
+            first = watch.renderer_environment()
+            (self.root / 'wallust/assets/generated/session-frame.png').write_bytes(b'recolored-frame')
+            second = watch.renderer_environment()
+            self.assertNotEqual(first['VOLUTA_SESSION_VERSION'], second['VOLUTA_SESSION_VERSION'])
+            (self.root / 'hypr/wallust/colors-shell.sh').write_text(
+                "wc_2='aabbcc'\nwc_4='ddeeff'\nwc_fg='001122'\n")
+            third = watch.renderer_environment()
+        self.assertEqual(third['VOLUTA_SESSION_COLORS'], '#aabbcc #ddeeff #001122')
+        self.assertNotEqual(second['VOLUTA_SESSION_VERSION'], third['VOLUTA_SESSION_VERSION'])
+        panel = (ROOT / 'session-menu/panel.qml').read_text()
+        self.assertIn('function applyPublication', panel)
+        self.assertIn('function recolor', panel)
+        toggle = panel.split('function toggle', 1)[1].split('function recolor', 1)[0]
+        self.assertIn('applyPublication', toggle)
+        self.assertLess(toggle.index('applyPublication'), toggle.index('glass.open'))
+        script = (ROOT / 'session-menu/toggle.sh').read_text()
+        self.assertIn('voluta/menus.py', script)
+        self.assertIn('call session toggle', script)
+
+    def test_sync_publication_recolors_without_reopening(self):
+        column = watch.Session()
+        self.addCleanup(column.shutdown)
+        with patch.object(watch, 'CONFIG', self.root), patch.object(watch, 'run', side_effect=self.hypr):
+            column.theme_stamp = watch.renderer_environment()['VOLUTA_SESSION_VERSION']
+            column.process = type('Alive', (), {
+                'pid': 7, 'poll': lambda self: None, 'terminate': lambda self: None,
+                'kill': lambda self: None, 'wait': lambda self, timeout=None: None})()
+            with patch.object(watch, 'renderer_environment', side_effect=AssertionError('palette reread')):
+                column.sync_publication()
+            (self.root / 'hypr/wallust/colors-shell.sh').write_text(
+                "wc_2='aabbcc'\nwc_4='ddeeff'\nwc_fg='001122'\n")
+            with patch.object(column, '_send') as send:
+                column.sync_publication()
+        self.assertEqual(send.call_args.args[0], 'recolor')
+        self.assertEqual(send.call_args.args[1], '#aabbcc #ddeeff #001122')
+
     def test_status_reads_sink_and_monitors(self):
         def fake(arguments, **_kwargs):
             command = arguments[0]

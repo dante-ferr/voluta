@@ -2,6 +2,7 @@
 # Toggle the music salon through Quickshell IPC. SIGUSR1 is only a fallback.
 config=${XDG_CONFIG_HOME:-$HOME/.config}
 runtime=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+rice=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")/.." && pwd)
 renderer=$(readlink -f -- "$config/music/salon.qml")
 watcher="$config/music/watch.py"
 pidfile="$runtime/voluta-music.pid"
@@ -11,11 +12,25 @@ renderer_pid() {
     quickshell list -j -p "$renderer" 2>/dev/null | jq -r '.[].pid // empty' 2>/dev/null | awk 'NF && $1 ~ /^[0-9]+$/ { print; exit }'
 }
 
+menu_publication() {
+    PYTHONPATH="$rice${PYTHONPATH:+:$PYTHONPATH}" python3 "$rice/voluta/menus.py" "$1" 2>/dev/null
+}
+
 ipc_toggle() {
     pid=$1
     [ -n "$pid" ] || return 1
     kill -0 "$pid" 2>/dev/null || return 1
-    timeout 0.5s quickshell ipc --pid "$pid" call music toggle </dev/null >/dev/null 2>&1
+    colors=
+    assets=
+    version=
+    publication=$(menu_publication music) || publication=
+    if [ -n "$publication" ]; then
+        colors=$(printf '%s\n' "$publication" | sed -n '1p')
+        assets=$(printf '%s\n' "$publication" | sed -n '2p')
+        version=$(printf '%s\n' "$publication" | sed -n '3p')
+    fi
+    # Closing ignores these. Opening applies the same publication as the selector.
+    timeout 0.5s quickshell ipc --pid "$pid" call music toggle "$colors" "$assets" "$version" </dev/null >/dev/null 2>&1
 }
 
 signal_watcher() {

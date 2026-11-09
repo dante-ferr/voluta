@@ -123,6 +123,23 @@ PanelWindow {
         }
     }
 
+    // Same publication the selector applies in openSelector: accents plus the
+    // recolored frame and glass plate. An unchanged stamp leaves the images.
+    function applyPublication(colors: string, assets: string, version: string): void {
+        const refresh = version !== "" && (panel.artworkVersion !== version || panel.assets !== assets);
+        if (colors !== "")
+            panel.palette = colors.split(" ");
+        if (assets !== "")
+            panel.assets = assets;
+        if (version !== "")
+            panel.artworkVersion = version;
+        if (refresh) {
+            frameArtwork.source = "";
+            frameArtwork.source = Qt.resolvedUrl(panel.assets + "/session-frame.png");
+            glass.prepare(version);
+        }
+    }
+
     function refreshStatus(): void {
         const python = Quickshell.env("VOLUTA_PYTHON") || "python3";
         const status = Quickshell.env("VOLUTA_SESSION_STATUS");
@@ -237,16 +254,20 @@ PanelWindow {
     IpcHandler {
         target: "session"
         function status(): string { return glass.status(); }
-        function toggle(): void {
+        function toggle(colors: string, assets: string, version: string): void {
             if (glass.active) {
                 glass.close();
                 return;
             }
+            panel.applyPublication(colors, assets, version);
             panel.pending = "";
             panel.followFocus();
             panel.refreshStatus();
             glass.prepare(panel.artworkVersion);
             glass.open();
+        }
+        function recolor(colors: string, assets: string, version: string): void {
+            panel.applyPublication(colors, assets, version);
         }
         function dismiss(token: string): void {
             panel.pending = "";

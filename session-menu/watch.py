@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import signal
 import struct
@@ -19,6 +18,7 @@ DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from voluta.menus import artwork_version, compositor_environment, menu_colors, menu_paths
 from voluta.window_grid import gaps_from_option, grid_for_monitor
 
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
@@ -56,7 +56,9 @@ def renderer_pid():
     return None
 
 
-def renderer_environment(config=CONFIG):
+def renderer_environment(config=None):
+    if config is None:
+        config = CONFIG
     assets = config / 'wallust/assets/generated'
     aperture = assets / 'session-aperture.png'
     if not aperture.is_file() or not (assets / 'session-frame.png').is_file():
@@ -67,9 +69,7 @@ def renderer_environment(config=CONFIG):
         if len(header) != 24 or header[:8] != b'\x89PNG\r\n\x1a\n' or header[12:16] != b'IHDR':
             return None
         plate_width, plate_height = struct.unpack('>II', header[16:24])
-        palette_text = (config / 'hypr/wallust/colors-shell.sh').read_text()
-        colors = dict(re.findall(r"^(wc_(?:2|4|fg))='([0-9a-fA-F]{6})'$", palette_text, re.M))
-        palette = ' '.join('#' + colors[key] for key in ('wc_2', 'wc_4', 'wc_fg'))
+        palette = menu_colors(config / 'hypr/wallust/colors-shell.sh')
         monitors = json.loads(run(['hyprctl', '-j', 'monitors']) or 'null')
         if not isinstance(monitors, list):
             return None
@@ -85,8 +85,9 @@ def renderer_environment(config=CONFIG):
         edges = grid['insets']
         if scale <= 0 or width / scale < plate_width + edges['left'] or height / scale < plate_height:
             return None
-        version = '%s:%s' % (aperture.stat().st_mtime_ns, aperture.stat().st_size)
-        environment = dict(os.environ, VOLUTA_SESSION_ASSETS=str(assets), VOLUTA_SESSION_COLORS=palette,
+        version = artwork_version(menu_paths(config, 'session'))
+        environment = compositor_environment()
+        environment.update(VOLUTA_SESSION_ASSETS=str(assets), VOLUTA_SESSION_COLORS=palette,
                            VOLUTA_SESSION_MONITOR=monitor['name'], VOLUTA_SESSION_WIDTH=str(plate_width),
                            VOLUTA_SESSION_HEIGHT=str(plate_height), VOLUTA_SESSION_VERSION=version,
                            VOLUTA_GRID_LEFT=str(edges['left']), VOLUTA_GRID_TOP=str(edges['top']),
@@ -200,10 +201,12 @@ class Session:
         return self.process is not None and self.process.poll() is None
 
     def warm(self):
+        self.next_spawn = time.monotonic() + 2
         self.environment = renderer_environment()
         if self.environment is None:
             self._send('dismiss', '')
             return
+        self.theme_stamp = self.environment['VOLUTA_SESSION_VERSION']
         if not self.bind_renderer():
             try:
                 self.process = subprocess.Popen(
@@ -216,9 +219,44 @@ class Session:
                 if self.bind_renderer():
                     break
                 time.sleep(0.05)
+
     def toggle(self):
         self.warm()
-        self._send('toggle')
+        if not self.environment:
+            return
+        env = self.environment
+        self._send('toggle', env['VOLUTA_SESSION_COLORS'], env['VOLUTA_SESSION_ASSETS'],
+                   env['VOLUTA_SESSION_VERSION'])
+
+    def maintain(self):
+        """Respawn after a startup that ran before the Wayland socket existed."""
+        if self.process is not None and self.process.poll() is None:
+            return
+        now = time.monotonic()
+        if now < getattr(self, 'next_spawn', 0):
+            return
+        if not compositor_environment().get('WAYLAND_DISPLAY'):
+            self.next_spawn = now + 1
+            return
+        self.warm()
+
+    def sync_publication(self):
+        """Push a new Wallust publication without replaying the entrance."""
+        now = time.monotonic()
+        if now < getattr(self, 'next_theme', 0):
+            return
+        stamp = artwork_version(menu_paths(CONFIG, 'session'))
+        if stamp == getattr(self, 'theme_stamp', None):
+            return
+        self.next_theme = now + 0.5
+        environment = renderer_environment()
+        if environment is None:
+            self.next_theme = now + 2
+            return
+        self.environment = environment
+        self.theme_stamp = environment['VOLUTA_SESSION_VERSION']
+        self._send('recolor', environment['VOLUTA_SESSION_COLORS'],
+                   environment['VOLUTA_SESSION_ASSETS'], environment['VOLUTA_SESSION_VERSION'])
 
     def shutdown(self):
         with self.condition:
@@ -270,6 +308,8 @@ def main():
                 requested.clear()
                 if not stopped:
                     column.toggle()
+            column.maintain()
+            column.sync_publication()
     finally:
         column.shutdown()
         pidfile.unlink(missing_ok=True)

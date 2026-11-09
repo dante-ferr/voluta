@@ -167,6 +167,23 @@ PanelWindow {
         snapshot.running = true;
     }
 
+    // Same publication the selector applies in openSelector: accents plus the
+    // recolored frame and glass plate. An unchanged stamp leaves the images.
+    function applyPublication(colors: string, assets: string, version: string): void {
+        const refresh = version !== "" && (panel.artworkVersion !== version || panel.assets !== assets);
+        if (colors !== "")
+            panel.palette = colors.split(" ");
+        if (assets !== "")
+            panel.assets = assets;
+        if (version !== "")
+            panel.artworkVersion = version;
+        if (refresh) {
+            frameArtwork.source = "";
+            frameArtwork.source = Qt.resolvedUrl(panel.assets + "/music-frame.png");
+            glass.prepare(version);
+        }
+    }
+
     function issue(args): void {
         Quickshell.execDetached(["playerctl"].concat(args));
         followUp.restart();
@@ -279,26 +296,23 @@ PanelWindow {
     IpcHandler {
         target: "music"
         function status(): string { return glass.status(); }
-        function toggle(): void {
+        function toggle(colors: string, assets: string, version: string): void {
             if (glass.active) {
                 glass.close();
                 return;
             }
+            panel.applyPublication(colors, assets, version);
             panel.followFocus();
             panel.refreshPlayer();
             glass.prepare(panel.artworkVersion);
             glass.open();
         }
+        function recolor(colors: string, assets: string, version: string): void {
+            panel.applyPublication(colors, assets, version);
+        }
         function openSalon(output: string, colors: string, assets: string, request: string, version: string): void {
-            const refresh = panel.artworkVersion !== version || panel.assets !== assets;
             panel.output = output;
-            panel.palette = colors.split(" ");
-            panel.assets = assets;
-            panel.artworkVersion = version;
-            if (refresh) {
-                frameArtwork.source = "";
-                frameArtwork.source = Qt.resolvedUrl(assets + "/music-frame.png");
-            }
+            panel.applyPublication(colors, assets, version);
             panel.request = request;
             panel.followFocus();
             panel.refreshPlayer();

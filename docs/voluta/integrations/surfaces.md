@@ -188,12 +188,23 @@ Both menus use `wallust/effects/MenuGlass.qml` for the clear veil, masked glass,
 preloading, readiness, inner-rim ignition, and entrance/dismissal lifecycle.
 The component uses `StainedGlass.qml` for drifting palette bands and facets at
 25fps, and `RimIgnition.qml` for the 450ms palette trails that travel the inner
-opening. Selector, notification, and music salons do not keep private copies of
-those effects. Each consumer has a local `effects` link because Quickshell
-restricts imports to its entrypoint root; the installer links the same canonical
-source. Native SwayNC keeps its compositor-owned slide and input handling. The
+opening. Selector, notification, music, and session menus do not keep private
+copies of those effects. Each consumer has a local `effects` link because
+Quickshell restricts imports to its entrypoint root; the installer links the
+same canonical source.
+
+Accent colors and the artwork stamp come from `voluta/menus.py`. All four menus
+read `wc_2`, `wc_4`, and `wc_fg` there. The stamp covers the shell palette plus
+that menu's frame, glass plate, aperture, and veil. The selector passes this
+publication on every open. The notification watcher refreshes it while the panel
+is visible. Music and session do both: each toggle reads the publication before
+opening, and the resident watcher pushes `recolor` when those files change,
+including while the menu is open. That reload replaces the frame image and the
+glass plate. A renderer does not keep the palette captured at process start.
+Native SwayNC keeps its compositor-owned slide and input handling. The
 selector and music salon keep only their frame popups and content (Rofi buttons,
-album poster, CAVA bars) around that shared lifecycle.
+album poster, CAVA bars) around that shared lifecycle. The session column keeps
+its controls the same way.
 
 The notification backdrop stays mapped but fully transparent when closed,
 matching the selector's warm surface. The shared module preloads its veil at
@@ -252,11 +263,15 @@ Selector, notification, music, and session menus are mutually exclusive:
 `hypr/scripts/exclusive-framed.sh` closes the other three before one of them
 opens. Opening music does not toggle the notification panel.
 
-The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`.
+The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`, and
+it applies the shared publication from `voluta/menus.py` on open and while it
+is visible. A new Wallust palette recolors the frame, plate, trails, and labels.
 `MenuGlass` slides the selector on `y` and the music salon on `x`.
 `music/salon.qml` owns only the cherub frame popup, poster, bars, and labels.
 `music/watch.py` prewarms one renderer at compositor start/reload, with a
-per-session lock matching the notification watcher. A missing Quickshell, CAVA,
+per-session lock matching the notification watcher. Startup can leave
+`WAYLAND_DISPLAY` empty; the watcher uses the live `wayland-*` socket in the
+runtime directory and respawns once that socket exists. A missing Quickshell, CAVA,
 or player leaves the rest of the desktop unchanged.
 
 ## Session column
@@ -282,7 +297,10 @@ aperture glass, and blur cover the desktop instead of a tiny default window.
 `MenuGlass` loads `*-glass.png` beside the aperture when the menu does not
 pass its own plate. The notification panel sets `suppressPlate` because GTK
 already paints that glass.
-`session-menu/watch.py` prewarms one renderer. The directory is `session-menu`,
+The column applies the same `voluta/menus.py` publication as the salon, on open
+and while it is visible, so its frame and plate follow the current Wallust
+palette. `session-menu/watch.py` prewarms one renderer and uses the same live
+Wayland socket when startup leaves `WAYLAND_DISPLAY` empty. The directory is `session-menu`,
 not `session`, because `~/.config/session` already stores desktop-session files.
 A missing Quickshell or frame leaves the rest of the desktop unchanged.
 

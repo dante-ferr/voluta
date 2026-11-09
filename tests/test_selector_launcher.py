@@ -111,6 +111,7 @@ class SelectorLauncherTests(unittest.TestCase):
             show = next(call for call in calls if 'call selector openSelector' in call)
             dismiss = next(call for call in calls if 'call selector dismiss' in call)
             self.assertIn('TEST-1 #112233 #445566 #aabbcc', show)
+            self.assertIn('voluta/menus.py', (ROOT / 'rofi/run-selector.sh').read_text())
             self.assertIn(f'--pid {os.getpid()} call selector', show)
             self.assertIn(f'--pid {os.getpid()} call selector', dismiss)
             request = dismiss.rsplit(' ', 1)[1]

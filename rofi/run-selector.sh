@@ -68,20 +68,18 @@ monitor=$(hyprctl -j monitors 2>/dev/null | jq -r '
     .[] | select(.focused) | (.transform // 0) as $rotation |
     (if $rotation % 2 == 0 then [.width, .height] else [.height, .width] end) as $size |
     select($size[0] / .scale >= 1152 and $size[1] / .scale >= 1024) | .name' 2>/dev/null)
-colors=$(awk -F "'" '/^wc_(2|4|fg)=/ && length($2) == 6 && $2 ~ /^[[:xdigit:]]+$/ {
-    color[$1] = $2
-}
-END {
-    if (color["wc_2="] && color["wc_4="] && color["wc_fg="])
-        printf "#%s #%s #%s", color["wc_2="], color["wc_4="], color["wc_fg="]
-}' "$config/hypr/wallust/colors-shell.sh" 2>/dev/null)
+rice=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")/.." && pwd)
+publication=$(PYTHONPATH="$rice${PYTHONPATH:+:$PYTHONPATH}" python3 "$rice/voluta/menus.py" selector 2>/dev/null) || publication=
+colors=$(printf '%s\n' "$publication" | sed -n '1p')
+published_assets=$(printf '%s\n' "$publication" | sed -n '2p')
+version=$(printf '%s\n' "$publication" | sed -n '3p')
+[ -n "$published_assets" ] && assets=$published_assets
 if [ -z "$monitor" ] || [ -z "$colors" ]; then
     fallback "$@"
 fi
 
 # The resident renderer keeps Qt, decoded artwork, and graphics resources warm.
 # --no-duplicate scopes the singleton to this config and Wayland display.
-version=$(stat -c '%y:%s' "$assets/big-angel-box.png" "$assets/launcher-vignette.svg" "$assets/selector-aperture.png" "$assets/selector-glass.png" 2>/dev/null)
 start_renderer() {
     mkdir -p "$runtime"
     # Serialize startup/reconciliation, including autostart overlapping a menu.

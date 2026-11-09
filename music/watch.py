@@ -7,7 +7,6 @@ import json
 import math
 import os
 from pathlib import Path
-import re
 import shutil
 import signal
 import struct
@@ -23,6 +22,7 @@ DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from voluta.menus import artwork_version, compositor_environment, menu_colors, menu_paths
 from voluta.window_grid import gaps_from_option, grid_for_monitor
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
 RUNTIME = Path(os.environ.get('XDG_RUNTIME_DIR', Path.home() / '.cache/voluta'))
@@ -111,7 +111,9 @@ def snapshot_player():
     return parse_metadata(line.splitlines()[0])
 
 
-def renderer_environment(config=CONFIG):
+def renderer_environment(config=None):
+    if config is None:
+        config = CONFIG
     assets = config / 'wallust/assets/generated'
     aperture = assets / 'music-aperture.png'
     if not aperture.is_file() or not (assets / 'music-frame.png').is_file():
@@ -124,9 +126,7 @@ def renderer_environment(config=CONFIG):
         plate_width, plate_height = struct.unpack('>II', header[16:24])
         if not (0 < plate_width <= 16384 and 0 < plate_height <= 16384):
             return None
-        palette_text = (config / 'hypr/wallust/colors-shell.sh').read_text()
-        colors = dict(re.findall(r"^(wc_(?:2|4|fg))='([0-9a-fA-F]{6})'$", palette_text, re.M))
-        palette = ' '.join('#' + colors[key] for key in ('wc_2', 'wc_4', 'wc_fg'))
+        palette = menu_colors(config / 'hypr/wallust/colors-shell.sh')
         monitors = json.loads(run(['hyprctl', '-j', 'monitors']) or 'null')
         if not isinstance(monitors, list):
             return None
@@ -143,11 +143,9 @@ def renderer_environment(config=CONFIG):
         edges = grid['insets']
         if scale <= 0 or width / scale < plate_width + edges['right'] or height / scale < plate_height:
             return None
-        version = '%s:%s' % (aperture.stat().st_mtime_ns, aperture.stat().st_size)
-        veil = assets / 'launcher-vignette.svg'
-        if veil.is_file():
-            version += ':%s:%s' % (veil.stat().st_mtime_ns, veil.stat().st_size)
-        environment = dict(os.environ, VOLUTA_MUSIC_ASSETS=str(assets), VOLUTA_MUSIC_COLORS=palette,
+        version = artwork_version(menu_paths(config, 'music'))
+        environment = compositor_environment()
+        environment.update(VOLUTA_MUSIC_ASSETS=str(assets), VOLUTA_MUSIC_COLORS=palette,
                            VOLUTA_MUSIC_MONITOR=monitor['name'], VOLUTA_MUSIC_WIDTH=str(plate_width),
                            VOLUTA_MUSIC_HEIGHT=str(plate_height), VOLUTA_MUSIC_VERSION=version,
                            VOLUTA_GRID_LEFT=str(edges['left']), VOLUTA_GRID_TOP=str(edges['top']),
@@ -280,10 +278,12 @@ class Salon:
         return self.process is not None and self.process.poll() is None
 
     def warm(self):
+        self.next_spawn = time.monotonic() + 2
         self.environment = renderer_environment()
         if self.environment is None:
             self._send('dismiss', '')
             return
+        self.theme_stamp = self.environment['VOLUTA_MUSIC_VERSION']
         if not self.bind_renderer():
             try:
                 self.process = subprocess.Popen(
@@ -318,6 +318,36 @@ class Salon:
 
     def toggle(self):
         self.hide() if self.active else self.show()
+
+    def maintain(self):
+        """Respawn after a startup that ran before the Wayland socket existed."""
+        if self.process is not None and self.process.poll() is None:
+            return
+        now = time.monotonic()
+        if now < getattr(self, 'next_spawn', 0):
+            return
+        if not compositor_environment().get('WAYLAND_DISPLAY'):
+            self.next_spawn = now + 1
+            return
+        self.warm()
+
+    def sync_publication(self):
+        """Push a new Wallust publication without replaying the entrance."""
+        now = time.monotonic()
+        if now < getattr(self, 'next_theme', 0):
+            return
+        stamp = artwork_version(menu_paths(CONFIG, 'music'))
+        if stamp == getattr(self, 'theme_stamp', None):
+            return
+        self.next_theme = now + 0.5
+        environment = renderer_environment()
+        if environment is None:
+            self.next_theme = now + 2
+            return
+        self.environment = environment
+        self.theme_stamp = environment['VOLUTA_MUSIC_VERSION']
+        self._send('recolor', environment['VOLUTA_MUSIC_COLORS'],
+                   environment['VOLUTA_MUSIC_ASSETS'], environment['VOLUTA_MUSIC_VERSION'])
 
     def renderer_showing(self):
         if self.process is None or self.process.poll() is not None:
@@ -462,7 +492,9 @@ def main():
             if fired:
                 requested.clear()
                 salon.toggle()
+            salon.maintain()
             salon.reconcile()
+            salon.sync_publication()
     finally:
         salon.shutdown()
         pidfile.unlink(missing_ok=True)

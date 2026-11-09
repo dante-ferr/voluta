@@ -3,6 +3,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import socket
 import struct
 import tempfile
 import unittest
@@ -126,5 +127,60 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn("'--follow', 'metadata'", (ROOT / 'music/watch.py').read_text())
         self.assertNotIn("'-d'", (ROOT / 'music/watch.py').read_text())
         self.assertIn('playback', (ROOT / 'music/watch.py').read_text())
-        self.assertIn('function toggle()', (ROOT / 'music/salon.qml').read_text())
+        self.assertIn('function toggle(colors: string, assets: string, version: string)',
+                      (ROOT / 'music/salon.qml').read_text())
         self.assertIn('itemAxis', (ROOT / 'wallust/effects/MenuGlass.qml').read_text())
+
+    def test_publication_follows_recolored_frame_and_palette(self):
+        with patch.object(watch, 'CONFIG', self.root), patch.object(watch, 'run', side_effect=self.hypr):
+            first = watch.renderer_environment()
+            frame = self.root / 'wallust/assets/generated/music-frame.png'
+            frame.write_bytes(b'recolored-frame')
+            second = watch.renderer_environment()
+            self.assertNotEqual(first['VOLUTA_MUSIC_VERSION'], second['VOLUTA_MUSIC_VERSION'])
+            (self.root / 'hypr/wallust/colors-shell.sh').write_text(
+                "wc_2='aabbcc'\nwc_4='ddeeff'\nwc_fg='001122'\n")
+            third = watch.renderer_environment()
+        self.assertEqual(third['VOLUTA_MUSIC_COLORS'], '#aabbcc #ddeeff #001122')
+        self.assertNotEqual(second['VOLUTA_MUSIC_VERSION'], third['VOLUTA_MUSIC_VERSION'])
+        salon = (ROOT / 'music/salon.qml').read_text()
+        self.assertIn('function applyPublication', salon)
+        self.assertIn('function recolor', salon)
+        toggle = salon.split('function toggle', 1)[1].split('function recolor', 1)[0]
+        self.assertIn('applyPublication', toggle)
+        self.assertLess(toggle.index('applyPublication'), toggle.index('glass.open'))
+        script = (ROOT / 'music/toggle.sh').read_text()
+        self.assertIn('voluta/menus.py', script)
+        self.assertIn('call music toggle', script)
+
+    def test_sync_publication_recolors_without_reopening(self):
+        with patch.object(watch, 'RUNTIME', self.root):
+            salon = watch.Salon()
+        self.addCleanup(salon.shutdown)
+        with patch.object(watch, 'CONFIG', self.root), patch.object(watch, 'run', side_effect=self.hypr):
+            salon.theme_stamp = watch.renderer_environment()['VOLUTA_MUSIC_VERSION']
+            salon.process = type('Alive', (), {
+                'pid': 7, 'poll': lambda self: None, 'terminate': lambda self: None,
+                'kill': lambda self: None, 'wait': lambda self, timeout=None: None})()
+            with patch.object(watch, 'renderer_environment', side_effect=AssertionError('palette reread')):
+                salon.sync_publication()
+            (self.root / 'wallust/assets/generated/music-frame.png').write_bytes(b'recolored-frame')
+            with patch.object(salon, '_send') as send:
+                salon.sync_publication()
+        self.assertEqual(send.call_args.args[0], 'recolor')
+        self.assertEqual(send.call_args.args[1], '#112233 #445566 #aabbcc')
+
+    def test_empty_wayland_display_uses_the_live_socket(self):
+        runtime = self.root / 'runtime'
+        runtime.mkdir()
+        sock = socket.socket(socket.AF_UNIX)
+        self.addCleanup(sock.close)
+        sock.bind(str(runtime / 'wayland-1'))
+        (runtime / 'wayland-1-helper.sock').write_bytes(b'')
+        repaired = watch.compositor_environment({
+            'WAYLAND_DISPLAY': '', 'XDG_RUNTIME_DIR': str(runtime), 'HOME': str(self.root)})
+        self.assertEqual(repaired['WAYLAND_DISPLAY'], 'wayland-1')
+        with patch.dict(os.environ, repaired, clear=False), patch.object(watch, 'run', side_effect=self.hypr), \
+             patch.object(watch, 'CONFIG', self.root):
+            environment = watch.renderer_environment()
+        self.assertEqual(environment['WAYLAND_DISPLAY'], 'wayland-1')

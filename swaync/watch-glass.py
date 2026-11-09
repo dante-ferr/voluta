@@ -9,7 +9,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import selectors
 import shutil
 import signal
@@ -23,6 +22,7 @@ DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from voluta.menus import compositor_environment, menu_colors
 from voluta.window_grid import gaps_from_option, grid_for_monitor
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
 GLASS_QML = DIRECTORY / 'glass.qml'
@@ -48,9 +48,7 @@ def renderer_environment(config=CONFIG):
         plate_width, plate_height = struct.unpack('>II', header[16:24])
         if not (0 < plate_width <= 16384 and 0 < plate_height <= 16384):
             return None
-        palette_text = (config / 'hypr/wallust/colors-shell.sh').read_text()
-        colors = dict(re.findall(r"^(wc_(?:2|4|fg))='([0-9a-fA-F]{6})'$", palette_text, re.M))
-        palette = ' '.join('#' + colors[key] for key in ('wc_2', 'wc_4', 'wc_fg'))
+        palette = menu_colors(config / 'hypr/wallust/colors-shell.sh')
         monitors = json.loads(run(['hyprctl', '-j', 'monitors']) or 'null')
         if not isinstance(monitors, list):
             return None
@@ -73,7 +71,8 @@ def renderer_environment(config=CONFIG):
         edges = grid['insets']
         if scale <= 0 or width / scale < plate_width or height / scale < plate_height + edges['top']:
             return None
-        return dict(os.environ, VOLUTA_NOTIFICATION_ASSETS=str(assets),
+        environment = compositor_environment()
+        environment.update(VOLUTA_NOTIFICATION_ASSETS=str(assets),
                     VOLUTA_NOTIFICATION_COLORS=palette,
                     VOLUTA_NOTIFICATION_MONITOR=monitor['name'],
                     VOLUTA_NOTIFICATION_TOP=str(edges['top']),
@@ -83,6 +82,7 @@ def renderer_environment(config=CONFIG):
                     VOLUTA_NOTIFICATION_MARGIN_TOP=str(grid['gaps']['top']),
                     VOLUTA_GRID_LEFT=str(edges['left']), VOLUTA_GRID_TOP=str(edges['top']),
                     VOLUTA_GRID_RIGHT=str(edges['right']), VOLUTA_GRID_BOTTOM=str(edges['bottom']))
+        return environment
     except (OSError, ValueError, KeyError, TypeError, StopIteration, IndexError, ZeroDivisionError):
         return None
 
