@@ -58,6 +58,10 @@ window#waybar {
     color: @accent13;
     padding-left: 24px;
     background-repeat: no-repeat;
+    /* Round both ends: it sits after the window plate, whose rounded
+       ornament-facing edge is no longer outermost when this box appears. */
+    border-radius: 13px;
+    margin-left: 6px;
     background-position: -2px center;
     background-size: 28px 33px;
 }
