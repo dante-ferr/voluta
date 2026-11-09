@@ -34,9 +34,19 @@ using an older generated shell palette without `wc_source_bg`.
 
 Consumers are Dolphin/Qt/Kvantum and its embedded terminal, Brave's GTK toolbar
 and sidebar, Kitty and its tabs, Waybar, SwayNC, Rofi, wlogout, the generated
-Hyprland background token and Quickshell's window background. SDDM's existing
-optional palette bridge reads the resolved `wc_bg`. Foregrounds and accents
-retain their palette values; raised surfaces are derived from the shared base.
+Hyprland background token, Quickshell's window background, and Limusic.
+SDDM's existing optional palette bridge reads the resolved `wc_bg`. Foregrounds
+and accents retain their palette values; raised surfaces are derived from the
+shared base.
+
+Limusic reads `~/.config/limusic/matugen.css` while **Matugen** (named **Wallpaper
+palette** in newer builds) is on under Settings, Appearance. Wallust writes that
+file from `wallust/templates/colors-limusic.css` on every palette refresh, and
+Limusic applies the new file without a restart. The publisher then replaces the
+extracted background in that file with the resolved base. The window and sidebar
+use that base at 65% opacity, so the wallpaper shows through. Cards and
+text on buttons stay opaque. The accent and foreground stay on the Wallust
+palette, lifted the same way as Waybar and Kitty.
 Brave's **Ultra dark theme / Darker theme** override must be off for the GTK
 background lightness to match; ordinary Dark mode can remain enabled.
 Existing transparency settings remain application-specific, so wallpaper behind

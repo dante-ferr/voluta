@@ -66,6 +66,10 @@ swaync.target = '~/.config/swaync/wallust/colors-swaync.css'
 wlogout.template = 'colors-wlogout.css'
 wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
 
+# Limusic watches this path while its wallpaper-palette switch is on.
+limusic.template = 'colors-limusic.css'
+limusic.target = '~/.config/limusic/matugen.css'
+
 #macchina.template = 'colors-macchina.toml'
 #macchina.target = '~/.config/macchina/themes/wallust.toml'
 

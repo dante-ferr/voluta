@@ -15,14 +15,19 @@ def read_palette(path):
             for key, value in re.findall(r"^wc_(\w+)='([0-9a-fA-F]{6})'\s*$", path.read_text(), re.M)}
 
 
-def preferred_background(palette, directory=None, host=None):
+def background_policy(palette, directory=None, host=None):
     settings, _ = resolve(directory if directory is not None else config_home(), hostname(host))
     policy = settings["appearance"]["background"]
     token = policy["source"]
     key = "source_bg" if token == "background" and "source_bg" in palette else "bg" if token == "background" else token[5:]
     if key not in palette:
         raise ValueError(f"palette has no background source {token}")
-    return tuple(round(channel * (1 - policy["darken"])) for channel in palette[key])
+    return palette[key], policy["darken"]
+
+
+def preferred_background(palette, directory=None, host=None):
+    source, darken = background_policy(palette, directory, host)
+    return tuple(round(channel * (1 - darken)) for channel in source)
 
 
 def write_changed(path, text):
@@ -46,8 +51,10 @@ def publish(config=None, cache=None, directory=None, host=None):
     cache = cache or Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     shell = config / "hypr/wallust/colors-shell.sh"
     palette = read_palette(shell)
-    background = preferred_background(palette, directory or config / "voluta", host)
+    source, darken = background_policy(palette, directory or config / "voluta", host)
+    background = tuple(round(channel * (1 - darken)) for channel in source)
     color = "#" + "".join(f"{channel:02x}" for channel in background)
+    source_color = "#" + "".join(f"{channel:02x}" for channel in source)
     rgb = ",".join(map(str, background))
     changed = False
 
@@ -81,6 +88,9 @@ def publish(config=None, cache=None, directory=None, host=None):
         data["windowBackground"] = color
         return json.dumps(data, indent=4) + "\n"
     edit("quickshell/qml_color.json", quickshell)
+    # Wallust writes the extracted background. Replace that hex only, so the accent stays put
+    # and a later refresh cannot darken the resolved base a second time.
+    edit("limusic/matugen.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
 
     source = palette.get("source_bg", palette["bg"])
     generated = cache / "voluta"

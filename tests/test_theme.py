@@ -40,6 +40,7 @@ class ThemeTests(unittest.TestCase):
         css = self.write("waybar/wallust/colors-waybar.css", "@define-color background #0A1515;\n@define-color background-alt rgba(10,21,21,0.25);\n@define-color color0 #0A1515;\n")
         kitty = self.write("kitty/kitty-themes/01-Wallust.conf", "background #0a1515\nactive_tab_background #0a1515\nforeground #80baed\n")
         rofi = self.write("rofi/wallust/colors-rofi.rasi", "normal-background: #0a1515;\nbackground: rgba(10,21,21,0.7);\nselected-normal-background: #54222b;\n")
+        limusic = self.write("limusic/matugen.css", "html.matugen-theme {\n --background: #0A1515;\n --card: color-mix(in oklab, #80BAED 6%, #0A1515);\n --primary: #54222B;\n}\n")
         self.assertTrue(self.publish())
         self.assertEqual(theme.read_palette(self.shell)["bg"], (6, 14, 14))
         self.assertEqual(theme.read_palette(self.shell)["source_bg"], (10, 21, 21))
@@ -50,9 +51,24 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("active_tab_background #060e0e", kitty.read_text())
         self.assertIn("rgba(6,14,14,0.7)", rofi.read_text())
         self.assertIn("selected-normal-background: #54222b", rofi.read_text())
+        self.assertIn("--background: #060e0e;", limusic.read_text())
+        self.assertIn("6%, #060e0e)", limusic.read_text())
+        self.assertIn("--primary: #54222B;", limusic.read_text())
         exported = json.loads((self.cache / "voluta/theme.json").read_text())
         self.assertEqual(exported["background"], "#060e0e")
         self.assertFalse(self.publish(), "repeated publication must not darken twice or rewrite outputs")
+
+    def test_limusic_follows_the_recorded_source_background(self):
+        self.publish()
+        css = self.write("limusic/matugen.css", "--background: #0A1515e0;\n--sidebar: #0a1515e0;\n--primary-foreground: #0A1515;\n--primary: #54222B;\n")
+        self.assertTrue(self.publish())
+        text = css.read_text()
+        self.assertIn("--background: #060e0ee0;", text)
+        self.assertIn("--sidebar: #060e0ee0;", text)
+        self.assertIn("--primary-foreground: #060e0e;", text)
+        self.assertNotIn("#060e0ee0e", text)
+        self.assertIn("--primary: #54222B;", text)
+        self.assertFalse(self.publish())
 
     def test_host_override_uses_palette_token_and_preserves_shared_settings(self):
         shared = self.write("voluta/settings.json", json.dumps({"version": 1, "appearance": {"background": {"darken": 0.5}}}))

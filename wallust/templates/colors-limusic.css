@@ -1,0 +1,55 @@
+/* Limusic wallpaper palette. Wallust writes ~/.config/limusic/matugen.css.
+ *
+ * Token names follow Limusic's wallust template. `style` selects the accent:
+ * color12 on a dark palette, color4 on a light one. Those slots are lifted the
+ * same way Waybar and Kitty lift them, because contrast search is off.
+ * The shared background publisher then replaces the extracted background with the resolved base.
+ * The window and sidebar append a6 (65% opacity). The window is already transparent, so the
+ * wallpaper shows through. Button text keeps the opaque background.
+ */
+
+{% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
+{% set ink = foreground | lighten(0.30) %}
+
+html.matugen-theme,
+html.matugen-theme.dark {
+    --background: {{background}}a6;
+    --foreground: {{ink}};
+
+    --card: color-mix(in oklab, {{ink}} 6%, {{background}});
+    --card-foreground: {{ink}};
+
+    --popover: color-mix(in oklab, {{ink}} 9%, {{background}});
+    --popover-foreground: {{ink}};
+
+    --primary: {{accent}};
+    --primary-foreground: {{background}};
+    --accent: {{accent}};
+    --accent-foreground: {{background}};
+
+    --secondary: color-mix(in oklab, {{ink}} 10%, {{background}});
+    --secondary-foreground: {{ink}};
+
+    --muted: color-mix(in oklab, {{ink}} 8%, {{background}});
+    --muted-foreground: color-mix(in oklab, {{ink}} 70%, {{background}});
+
+    --border: color-mix(in oklab, {{ink}} 14%, {{background}});
+    --input: color-mix(in oklab, {{ink}} 18%, {{background}});
+    --outline: color-mix(in oklab, {{ink}} 40%, {{background}});
+    --ring: {{accent}};
+
+    --chart-1: {{accent}};
+    --chart-2: {{color5 | lighten(0.30)}};
+    --chart-3: {{color6 | lighten(0.30)}};
+    --chart-4: {{color1 | lighten(0.30)}};
+    --chart-5: {{color2 | lighten(0.30)}};
+
+    --sidebar: {{background}}a6;
+    --sidebar-foreground: {{ink}};
+    --sidebar-primary: {{accent}};
+    --sidebar-primary-foreground: {{background}};
+    --sidebar-accent: color-mix(in oklab, {{ink}} 8%, {{background}});
+    --sidebar-accent-foreground: {{ink}};
+    --sidebar-border: color-mix(in oklab, {{ink}} 14%, {{background}});
+    --sidebar-ring: {{accent}};
+}
