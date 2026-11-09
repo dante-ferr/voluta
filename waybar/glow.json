@@ -6,8 +6,8 @@
     "drift_px_per_s": 14,
     "animate": true,
     "pause_on_battery": true,
-    "full_below": 0.2,
-    "off_above": 0.4
+    "full_below": 0.08,
+    "off_above": 0.2
   },
   "boxes": {
     "blur_px": 3,
