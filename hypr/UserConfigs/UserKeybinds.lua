@@ -281,6 +281,14 @@ hl.window_rule({
     center = true,
 })
 
+hl.window_rule({
+    name = "waybar-bluetooth-menu",
+    match = { class = "^(blueman-manager|\\.blueman-manager-wrapped)$" },
+    float = true,
+    size = "700 500",
+    center = true,
+})
+
 -- New personal bindings are additive; matching chords replace defaults above.
 for chord, command in pairs(settings.keybindings) do
     if has_trigger(chord) and not seen[chord] and type(command) == "string" then

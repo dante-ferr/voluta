@@ -31,14 +31,14 @@ DISPLAY_HEIGHTS = {
     "angels-left.svg": 30, "angels.svg": 30,
     "ornaments-left.svg": 28, "ornaments-right.svg": 28,
     "volute-left.svg": 20, "note.svg": 17, "note-paused.svg": 17,
-    "patera.svg": 14,
+    "patera.svg": 15,
 }
 
 DISPLAY_WIDTHS = {
     "angels-left.svg": 97.5, "angels.svg": 97.5,
     "ornaments-left.svg": 75, "ornaments-right.svg": 75,
     "volute-left.svg": 12, "note.svg": 12, "note-paused.svg": 12,
-    "patera.svg": 14,
+    "patera.svg": 28,
 }
 
 

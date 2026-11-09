@@ -46,6 +46,9 @@ window#waybar {
 }
 
 #window {
+    /* Round the outer side, facing the ornaments. */
+    border-top-right-radius: 13px;
+    border-bottom-right-radius: 13px;
     color: @accent12;
     font-weight: 700;
     padding-left: 22px;
@@ -55,13 +58,13 @@ window#waybar {
 }
 
 #mpris {
-    color: @accent13;
-    padding-left: 24px;
-    background-repeat: no-repeat;
     /* Round both ends: it sits after the window plate, whose rounded
        ornament-facing edge is no longer outermost when this box appears. */
     border-radius: 13px;
     margin-left: 6px;
+    color: @accent13;
+    padding-left: 24px;
+    background-repeat: no-repeat;
     background-position: -2px center;
     background-size: 28px 33px;
 }
@@ -225,6 +228,7 @@ box.modules-right {
 #tray,
 #temperature,
 #network,
+#bluetooth,
 #pulseaudio,
 #battery,
 #custom-power {
@@ -246,6 +250,9 @@ box.modules-right {
     font-size: 13px;
     padding-left: 11px;
     margin-left: 4px;
+    /* Round the outer side, facing the ornaments. */
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
 }
 
 #custom-swaync:hover {
@@ -269,10 +276,30 @@ box.modules-right {
     color: @accent9;
 }
 
+/* Bluetooth (Icon Only). Waybar hides the module when no controller exists. */
+#bluetooth {
+    color: @accent13;
+    font-size: 13px;
+}
+
+#bluetooth:hover {
+    background-color: @plate-hover-bg;
+    color: @hover-text;
+}
+
+#bluetooth.connected {
+    color: @accent14;
+}
+
+#bluetooth.off,
+#bluetooth.disabled {
+    color: @accent9;
+}
+
 /* PulseAudio (Icon Only) - right outer edge of the first plate */
 #pulseaudio {
     border-right: 1px solid #2A2A38;
-    margin-right: 2px;
+    margin-right: 0px;
     color: @accent14;
     font-size: 13px;
     padding-right: 11px;
@@ -319,16 +346,17 @@ box.modules-right {
     padding: 2px 6px;
 }
 
-/* Carved rivet between the status plate and the power plate. */
+/* Medallion floating between the status plate and the power plate. */
 #custom-patera {
-    min-width: 16px;
+    min-width: 40px;
     min-height: 26px;
-    margin: 4px 3px;
+    margin: 4px 0px;
     padding: 0;
     background-color: transparent;
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 30px 30px;
+    /* 28x15 artwork plus 8px of transparent padding per side. */
+    background-size: 44px 31px;
     border: none;
     box-shadow: none;
     color: transparent;

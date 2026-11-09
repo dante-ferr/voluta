@@ -20,6 +20,7 @@
         "tray",
         "temperature",
         "network",
+        "bluetooth",
         "pulseaudio",
         "custom/patera",
         "battery",
@@ -169,6 +170,17 @@
         ],
         "on-click": "$HOME/.config/hypr/scripts/RofiWifi.sh",
         "on-click-right": "nm-connection-editor"
+    },
+    "bluetooth": {
+        "format": "󰂯",
+        "format-connected": "󰂱",
+        "format-off": "󰂲",
+        "format-disabled": "󰂲",
+        "format-no-controller": "",
+        "tooltip-format": "{controller_alias}\t{controller_address}",
+        "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{num_connections} connected\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+        "on-click": "blueman-manager"
     },
     "pulseaudio": {
         "format": "{icon}",
