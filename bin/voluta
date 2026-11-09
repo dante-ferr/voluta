@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(dirname -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")")
+# The copy under ~/.local/share is only a snapshot. After a pull, run the
+# recorded checkout so new commands exist before the next file deploy.
+state=${XDG_STATE_HOME:-$HOME/.local/state}/voluta
+if [[ -f $state/install.json ]]; then
+    source_root=$(/usr/bin/python3 -c 'import json,sys
+try:
+    print(json.load(open(sys.argv[1], encoding="utf-8")).get("source") or "")
+except Exception:
+    print("")
+' "$state/install.json" || true)
+    if [[ -n ${source_root} && -f ${source_root}/voluta/cli.py ]]; then
+        source_root=$(readlink -f -- "$source_root")
+        if [[ $source_root != "$(readlink -f -- "$root")" ]]; then
+            root=$source_root
+        fi
+    fi
+fi
 # Arch packages such as python-hidapi belong to the system interpreter.
 # A Homebrew/Conda Python earlier in PATH cannot import those device bindings.
 exec /usr/bin/python3 "$root/voluta/cli.py" "$@"

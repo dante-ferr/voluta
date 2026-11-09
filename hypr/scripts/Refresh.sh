@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 # Environment refresh tool for Hyprland, Waybar, and SwayNC
 
+# A pull updates the checkout, not the deployed copy Hyprland is reading.
+# Copy first, without package installation and without starting this script again.
+if [[ -z ${VOLUTA_REFRESH_SKIP_SYNC:-} ]]; then
+    voluta_bin=${XDG_DATA_HOME:-$HOME/.local/share}/voluta/current/bin/voluta
+    if [[ ! -x $voluta_bin ]]; then
+        voluta_bin=$(command -v voluta || true)
+    fi
+    if [[ -n ${voluta_bin} && -x $voluta_bin ]]; then
+        if ! "$voluta_bin" update --skip-deps --no-session-refresh; then
+            notify-send "Voluta update failed" "Run voluta update in a terminal for details."
+        fi
+    fi
+fi
+
 # 1. Reload Hyprland Window Manager
 hyprctl reload >/dev/null 2>&1 || true
 

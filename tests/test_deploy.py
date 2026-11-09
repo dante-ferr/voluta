@@ -3,8 +3,10 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -75,6 +77,11 @@ class DeploymentTests(unittest.TestCase):
                 self.assertTrue(effect.is_file(), f'{consumer} can resolve {module}')
                 self.assertEqual(effect.resolve(), self.home / '.local/share/voluta/current/wallust/effects' / module)
         self.assertFalse((self.home / '.local/bin/dolphin').exists())
+        for name in ('music', 'session-menu'):
+            deployed = self.home / '.config' / name
+            self.assertTrue(deployed.is_symlink(), name)
+            self.assertTrue((deployed / 'toggle.sh').is_file(), name)
+        self.assertIn('SUPER + ALT + R', (original / 'UserConfigs/UserKeybinds.lua').read_text())
         self.run_cli('update', '--skip-deps')
         self.assertEqual(settings_path.read_bytes(), before)
         self.run_cli('feature', 'enable', 'dolphin')
@@ -101,6 +108,47 @@ class DeploymentTests(unittest.TestCase):
         self.assertNotEqual(managed.read_text(), '-- local application edit\n')
         backups = self.home / '.local/state/voluta/backups'
         self.assertTrue(any(p.is_file() and not p.is_symlink() and p.read_bytes() == b'-- local application edit\n' for p in backups.iterdir()))
+
+    def test_installed_command_follows_the_recorded_checkout(self):
+        self.run_cli('init')
+        self.run_cli('install', '--skip-deps')
+        fake = self.home / 'fake-checkout'
+        (fake / 'voluta').mkdir(parents=True)
+        (fake / 'voluta/cli.py').write_text('print("from-checkout")\n')
+        manifest_path = self.home / '.local/state/voluta/install.json'
+        manifest = json.loads(manifest_path.read_text())
+        manifest['source'] = str(fake)
+        manifest_path.write_text(json.dumps(manifest))
+        installed = self.home / '.local/share/voluta/current/voluta/cli.py'
+        for command in ([str(self.home / '.local/bin/voluta')],
+                        ['/usr/bin/python3', str(installed)]):
+            result = subprocess.run(command, env=self.env, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), 'from-checkout')
+            self.assertNotIn('stale', result.stdout)
+
+    def test_dependency_failure_still_deploys_configuration(self):
+        self.run_cli('init')
+        sys.path.insert(0, str(ROOT / 'voluta'))
+        import deploy
+        env = {**self.env, 'HYPRLAND_INSTANCE_SIGNATURE': ''}
+        with patch.dict(os.environ, env):
+            with patch.object(deploy, 'dependencies', side_effect=ValueError('package failed')):
+                with self.assertRaises(ValueError) as caught:
+                    deploy.install(self.home / '.config/voluta', 'public-test-host')
+        self.assertIn('package failed', str(caught.exception))
+        keybinds = self.home / '.config/hypr/UserConfigs/UserKeybinds.lua'
+        self.assertIn('SUPER + ALT + R', keybinds.read_text())
+        self.assertTrue((self.home / '.config/music/salon.qml').is_file())
+        self.assertTrue((self.home / '.config/session-menu/panel.qml').is_file())
+
+    def test_refresh_deploys_without_reloading_twice(self):
+        script = (ROOT / 'hypr/scripts/Refresh.sh').read_text()
+        self.assertIn('VOLUTA_REFRESH_SKIP_SYNC', script)
+        self.assertIn('update --skip-deps --no-session-refresh', script)
+        self.run_cli('init')
+        help_text = self.run_cli('update', '-h').stdout
+        self.assertIn('--no-session-refresh', help_text)
 
     def test_installed_cli_updates_the_recorded_checkout(self):
         self.run_cli('init')

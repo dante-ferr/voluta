@@ -282,22 +282,19 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     if dry_run:
         print(json.dumps({'config': str(locations()[0]), 'packages': package_list(settings), 'features': settings['features']}, indent=2))
         return
-    if not skip_deps:
-        dependencies(settings)
     config, data, state = locations()
     if (state / "rice.json").exists():
         raise ValueError("return to Voluta with rice-switch before updating managed configuration")
     current = data / 'current'
     manifest = load_manifest(state)
-    # The deployed CLI can update config/modules without trying to copy over itself.
+    # Running inside the deployment must not copy that tree onto itself.
+    # The command entry point re-executes the recorded checkout before this.
     if ROOT.resolve() != current.resolve():
         sync_sources(current, manifest, state)
     # Quickshell confines local QML imports to each entrypoint's directory.
     # Both consumers link the one shared effect source into that import root.
     for consumer in ('rofi', 'swaync', 'music', 'session-menu'):
         link(current / consumer / 'effects', current / 'wallust/effects', manifest, state)
-    if not skip_deps:
-        subprocess.run(['make', '-C', str(current / 'waybar')], check=True)
     for local_name in ('monitors.conf', 'workspaces.conf'):
         previous = config / 'hypr' / local_name
         destination = current / 'hypr' / local_name
@@ -315,8 +312,6 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     launcher = json.dumps(str(current / 'swaync/launch.sh').replace('%', '%%'), ensure_ascii=False)
     service = '[Service]\nExecStart=\nExecStart=/bin/sh ' + launcher + '\n'
     write_managed(config / 'systemd/user/swaync.service.d/10-voluta.conf', service.encode(), manifest, state)
-    if not skip_deps:
-        subprocess.run(['systemctl', '--user', 'daemon-reload'], check=False)
     # Waypaper's GUI owns its preferences. Update only the integration hook.
     path = config / 'waypaper/config.ini'
     if (config / 'waypaper').is_symlink():
@@ -350,18 +345,33 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         manifest['source'] = str(ROOT)
     manifest['skip_deps'] = skip_deps
     atomic_write(state / 'install.json', manifest)
-    palette = config / 'hypr/wallust/colors-shell.sh'
-    if not skip_deps and not palette.exists():
-        wallust = wallust_binary()
-        if wallust is None:
-            raise ValueError('Voluta requires Wallust v4; install wallust-git before proceeding')
-        subprocess.run([wallust, '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
-    if palette.exists():
-        from theme import publish
-        publish(config=config, directory=directory, host=host)
-    activate_system_modules(settings, manifest, skip_deps)
-    atomic_write(state / 'install.json', manifest)
-    print('Voluta configuration deployed. Existing files are backed up under ' + str(state / 'backups'))
+    # Packages, the Waybar shim and privileged modules run after the copy.
+    # A failure here must not hide keybindings and modules already deployed.
+    runtime_error = None
+    try:
+        if not skip_deps:
+            dependencies(settings)
+            subprocess.run(['make', '-C', str(current / 'waybar')], check=True)
+            subprocess.run(['systemctl', '--user', 'daemon-reload'], check=False)
+        palette = config / 'hypr/wallust/colors-shell.sh'
+        if not skip_deps and not palette.exists():
+            wallust = wallust_binary()
+            if wallust is None:
+                raise ValueError('Voluta requires Wallust v4; install wallust-git before proceeding')
+            subprocess.run([wallust, '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
+        if palette.exists():
+            from theme import publish
+            publish(config=config, directory=directory, host=host)
+        activate_system_modules(settings, manifest, skip_deps)
+        atomic_write(state / 'install.json', manifest)
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        runtime_error = error
+        atomic_write(state / 'install.json', manifest)
+    if runtime_error is None:
+        print('Voluta configuration deployed. Existing files are backed up under ' + str(state / 'backups'))
+    else:
+        print('Voluta configuration deployed, but setup did not finish.', file=sys.stderr)
+    return runtime_error
 
 
 def _reconcile_if_installed(directory, host):
@@ -437,11 +447,30 @@ def deployment_lock():
         yield
 
 
-def install(directory, host, skip_deps=False, dry_run=False):
+def refresh_session():
+    if not os.environ.get('HYPRLAND_INSTANCE_SIGNATURE') or not shutil.which('hyprctl'):
+        return
+    script = locations()[0] / 'hypr/scripts/Refresh.sh'
+    env = {**os.environ, 'VOLUTA_REFRESH_SKIP_SYNC': '1'}
+    if script.is_file():
+        result = subprocess.run(['bash', str(script)], env=env, check=False)
+        if result.returncode != 0:
+            print('Voluta files are deployed, but the session refresh failed.', file=sys.stderr)
+    else:
+        subprocess.run(['hyprctl', 'reload'], check=False)
+
+
+def install(directory, host, skip_deps=False, dry_run=False, no_session_refresh=False):
     if dry_run:
         return _install(directory, host, skip_deps, True)
     with deployment_lock():
-        return _install(directory, host, skip_deps, False)
+        runtime_error = _install(directory, host, skip_deps, False)
+    # Refresh after the lock is released. Refresh.sh republishes frames, and
+    # that publisher takes the same lock.
+    if not no_session_refresh:
+        refresh_session()
+    if runtime_error:
+        raise runtime_error
 
 
 def reconcile_if_installed(directory, host):
@@ -508,9 +537,11 @@ def dispatch(args, directory, host):
                     command.append('--skip-deps')
                 if args.dry_run:
                     command.append('--dry-run')
+                if args.no_session_refresh:
+                    command.append('--no-session-refresh')
                 subprocess.run(command, check=True)
             else:
-                install(directory, host, args.skip_deps, args.dry_run)
+                install(directory, host, args.skip_deps, args.dry_run, args.no_session_refresh)
         elif args.command == 'uninstall':
             uninstall()
         elif args.command == 'rice-switch':

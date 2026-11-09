@@ -192,7 +192,7 @@ local dispatcher = {}
 setmetatable(dispatcher, {__index=function() return dispatcher end, __call=function() return {} end})
 local bindings, env, last = {}, {}, {}
 hl = {dsp=dispatcher, on=function() end, window_rule=function() end, monitor=function() end,
-      workspace_rule=function() end, env=function(k,v) env[k]=v end,
+      workspace_rule=function() end, env=function(k,v) env[k]=v end, exec_cmd=function() end,
       bind=function(k) bindings[k]=true end, config=function(c) last=c end}
 dofile(SOURCE)
 assert(env.PRIVATE_HOST_MARKER == "yes")

@@ -152,7 +152,34 @@ def lua(value):
     return "{" + ",".join(f"[{lua(key)}]={lua(item)}" for key, item in value.items()) + "}"
 
 
+def prefer_recorded_checkout():
+    """Run the checkout recorded at install time when this file is the deployed copy."""
+    if os.environ.get("VOLUTA_SKIP_CHECKOUT_REEXEC") == "1":
+        return
+    try:
+        data = Path(os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share"))) / "voluta"
+        state = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "voluta"
+        if ROOT.resolve() != (data / "current").resolve() or not (state / "install.json").is_file():
+            return
+        recorded = json.loads((state / "install.json").read_text(encoding="utf-8")).get("source") or ""
+        if not recorded:
+            return
+        source = Path(recorded)
+        target = source / "voluta" / "cli.py"
+        if not target.is_file() or source.resolve() == ROOT.resolve():
+            return
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return
+    env = {**os.environ, "VOLUTA_SKIP_CHECKOUT_REEXEC": "1"}
+    python = "/usr/bin/python3" if Path("/usr/bin/python3").is_file() else sys.executable
+    os.execve(python, [python, str(target), *sys.argv[1:]], env)
+
+
 def main(argv=None):
+    # Hyprland and Dolphin invoke this file from the deployment tree. Follow the
+    # checkout first so a pull is visible before argparse rejects new commands.
+    if argv is None:
+        prefer_recorded_checkout()
     parser = argparse.ArgumentParser(prog="voluta", description=__doc__)
     parser.add_argument("--config-dir", type=Path, default=config_home())
     parser.add_argument("--host", default=socket.gethostname())
@@ -168,6 +195,8 @@ def main(argv=None):
         install = commands.add_parser(name, help="deploy/update managed Arch configuration")
         install.add_argument("--skip-deps", action="store_true")
         install.add_argument("--dry-run", action="store_true")
+        install.add_argument("--no-session-refresh", action="store_true",
+                             help="deploy files without reloading Hyprland, Waybar, and SwayNC")
     commands.add_parser("uninstall", help="restore files replaced by the installer")
     system_setup = commands.add_parser("system-setup", help="install/remove privileged optional integration")
     system_setup.add_argument("module", choices=("sddm", "rgb"))

@@ -140,8 +140,13 @@ Package installation may prompt for sudo authentication and replacement of a
 conflicting third-party Quickshell provider.
 `--skip-deps` deploys configuration only and skips native/privileged setup; it is
 intended for provisioning environments and tests, not dependency verification.
-The installed CLI delegates updates to the recorded source checkout. Pull that
-checkout first; updates never discard uncommitted source changes or auto-pull.
+The installed `voluta` command and the Hyprland settings helper run the recorded
+source checkout when that checkout is present, so commands added after the last
+copy work immediately. Pull that checkout first; updates never discard
+uncommitted source changes or auto-pull. `voluta update` copies the checkout
+into the deployment before it installs packages, then reloads the live session.
+Super+Alt+R does that copy without package installation, then reloads Hyprland,
+Waybar, and SwayNC. A package failure still leaves the new files in place.
 
 Feature selection is distinct from activation. A dependency/setup failure leaves
 the explicit selection saved and reports that activation needs attention. Running
