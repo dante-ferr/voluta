@@ -15,13 +15,18 @@ Wallpaper changes run it through the existing Waypaper/Wallust refresh hook.
 `glow.qml` is a Quickshell surface on the Bottom layer of every display. It sits
 above the wallpaper and below all windows and Waybar. Light falls from the top edge
 like sun through chapel windows: a soft wash plus leaning beams in the Wallust
-palette, fading smoothly well below the bar. It lifts the backdrop so the dark
-artwork keeps its contrast.
+palette, fading smoothly well below the bar. The Waybar GTK helper measures the
+left, center, and right module boxes and writes `wallust/glow-clusters.json` when
+those rects change; the glow mask eases toward them with a wide soft feather so
+empty gaps stay quieter and ornament artwork stays covered. It lifts the backdrop
+so the dark artwork keeps its contrast.
 
 The beams are painted once per palette. Animation slides and slowly brightens that
 texture at `fps` frames per second, so the cost is small. It pauses on battery by
-default. `scripts/render-decorations.py` writes `wallust/glow-state.json` from the
-`heaven` section of `glow.json`, and the QML reloads it on change:
+default. Cluster writes are change-detected on the helper's existing 200 ms tick,
+so a static-on-battery glow does not keep rewriting. `scripts/render-decorations.py`
+writes `wallust/glow-state.json` from the `heaven` section of `glow.json`, and the
+QML reloads both state files on change:
 
 - `opacity` (0 to 1): peak brightness at the top edge.
 - `height_px`: how far the light reaches below the top edge.

@@ -162,12 +162,16 @@ static void attach_selection(GtkWidget *widget, gpointer unused) {
         gtk_container_foreach(GTK_CONTAINER(widget), attach_selection, NULL);
 }
 
+void voluta_glow_clusters_publish(void);
+
 static gboolean discover_workspaces(gpointer unused) {
     (void)unused;
     GList *windows = gtk_window_list_toplevels();
     for (GList *it = windows; it; it = it->next)
         attach_selection(it->data, NULL);
     g_list_free(windows);
+    /* Same tick publishes module cluster geometry for the top glow mask. */
+    voluta_glow_clusters_publish();
     return G_SOURCE_CONTINUE;
 }
 
