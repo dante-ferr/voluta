@@ -45,6 +45,14 @@ session. Check both `input:kb_layout` and `input:kb_options`, plus the resolved
 browser preference, after a migration reload. A successful configerrors query
 alone does not prove that the intended preferences were applied.
 
+## Desktop fullscreen HDR blank (2026-11-10)
+
+On `frank`, keep `render:cm_auto_hdr = 0` in `hosts/frank.lua`. The Hyprland
+default (`1`) switches the output toward HDR when a client enters fullscreen.
+On this NVIDIA desktop that modeset blanks the monitor for a noticeable delay
+before the fullscreen surface appears. SDR stays in force; turn auto-HDR back
+on only after validating the panel path.
+
 ## Desktop idle DPMS (2026-11-10)
 
 On `frank`, do not run idle DPMS off while the session is locked. The 15-minute
