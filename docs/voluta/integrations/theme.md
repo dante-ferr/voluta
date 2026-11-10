@@ -37,7 +37,9 @@ and sidebar, Kitty and its tabs, Waybar, SwayNC, Rofi, wlogout, the generated
 Hyprland background token, Quickshell's window background, and Limusic.
 SDDM's existing optional palette bridge reads the resolved `wc_bg`. Foregrounds
 and accents retain their palette values; raised surfaces are derived from the
-shared base.
+shared base. Hyprland window outlines use dedicated `active_border` /
+`inactive_border` tokens (`color1` and `color0` lifted like Kitty and Waybar
+accents) so dark wallpapers cannot leave borders near-black.
 
 Limusic reads `~/.config/limusic/matugen.css` while **Matugen** (named **Wallpaper
 palette** in newer builds) is on under Settings, Appearance. Wallust writes that

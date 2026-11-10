@@ -3,9 +3,11 @@
 
 local wallust = require("UserConfigs.wallust")
 
--- Fallbacks are Imperial Gold & Obsidian Slate.
-local active_color = wallust.get("color1", "rgb(D4AF37)")
-local inactive_color = wallust.get("color0", "rgb(16161D)")
+-- Lifted border tokens from colors-hyprland.conf. Raw color1/color0 follow the
+-- wallpaper and can sit near-black; active_border / inactive_border keep the
+-- same contrast lift Kitty and Waybar apply to accents.
+local active_color = wallust.get("active_border", "rgb(E0C46A)")
+local inactive_color = wallust.get("inactive_border", "rgb(3A3A48)")
 
 --- Hyprland wants shadows as rgba(RRGGBBAA), but wallust emits rgb(RRGGBB).
 ---@param color string

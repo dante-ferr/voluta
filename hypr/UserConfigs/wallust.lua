@@ -15,6 +15,9 @@ local defaults = {
     foreground = "rgb(E6E6F0)",
     color0 = "rgb(16161D)",
     color1 = "rgb(D4AF37)",
+    -- color1/color0 lightened 0.30 / 0.22 (matches colors-hyprland.conf).
+    active_border = "rgb(E0C46A)",
+    inactive_border = "rgb(3A3A48)",
 }
 
 local function read_palette()
@@ -25,7 +28,8 @@ local function read_palette()
     local f = io.open(colors_path, "r")
     if f then
         for line in f:lines() do
-            local key, value = line:match("^%$(%w+)%s*=%s*(.-)%s*$")
+            -- [%w_] keeps tokens like active_border; %w alone drops the underscore.
+            local key, value = line:match("^%$([%w_]+)%s*=%s*(.-)%s*$")
             if key and value ~= "" then
                 palette[key] = value
             end
