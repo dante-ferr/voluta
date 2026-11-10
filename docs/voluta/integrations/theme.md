@@ -44,7 +44,10 @@ palette** in newer builds) is on under Settings, Appearance. Wallust writes that
 file from `wallust/templates/colors-limusic.css` on every palette refresh, and
 Limusic applies the new file without a restart. The publisher then replaces the
 extracted background in that file with the resolved base. The window and sidebar
-use that base at 65% opacity, so the wallpaper shows through. Cards and
+use that base at 65% opacity, so the wallpaper shows through. Now playing covers
+the current page. The palette hides that page and leaves the song layer clear,
+so the wallpaper shows through the song. Theater mode keeps the fill and hides
+the window under it. A music video still punches a hole through both. Cards and
 text on buttons stay opaque. The accent and foreground stay on the Wallust
 palette, lifted the same way as Waybar and Kitty.
 Brave's **Ultra dark theme / Darker theme** override must be off for the GTK

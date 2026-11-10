@@ -58,6 +58,14 @@ class ThemeTests(unittest.TestCase):
         self.assertEqual(exported["background"], "#060e0e")
         self.assertFalse(self.publish(), "repeated publication must not darken twice or rewrite outputs")
 
+    def test_limusic_song_layer_does_not_show_the_page_under_it(self):
+        text = (ROOT / "wallust/templates/colors-limusic.css").read_text()
+        self.assertIn("--background: {{background}}a6;", text)
+        self.assertIn("html.matugen-theme:has([data-np-view]) main", text)
+        self.assertIn("html.matugen-theme [data-np-view]", text)
+        self.assertIn("background-color: transparent;", text)
+        self.assertIn("section.fixed.inset-0.z-40.bg-background) div.relative.flex.h-screen.flex-col", text)
+
     def test_limusic_follows_the_recorded_source_background(self):
         self.publish()
         css = self.write("limusic/matugen.css", "--background: #0A1515e0;\n--sidebar: #0a1515e0;\n--primary-foreground: #0A1515;\n--primary: #54222B;\n")

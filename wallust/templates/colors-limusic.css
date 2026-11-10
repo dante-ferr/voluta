@@ -6,6 +6,10 @@
  * The shared background publisher then replaces the extracted background with the resolved base.
  * The window and sidebar append a6 (65% opacity). The window is already transparent, so the
  * wallpaper shows through. Button text keeps the opaque background.
+ * Now playing covers the page. That layer stays clear, and the page under it is hidden,
+ * so the wallpaper shows through the song. Theater mode sits above the window: it keeps
+ * the fill, and the window under it is hidden. A music video punches a hole through both
+ * (no bg-background); that path stays as it is.
  */
 
 {% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
@@ -52,4 +56,19 @@ html.matugen-theme.dark {
     --sidebar-accent-foreground: {{ink}};
     --sidebar-border: color-mix(in oklab, {{ink}} 14%, {{background}});
     --sidebar-ring: {{accent}};
+}
+
+/* Beat the app's bg-background utility: this sheet is the wallpaper palette, and these
+   views must composite against the window, not against the page they cover. */
+html.matugen-theme:has([data-np-view]) main,
+html.matugen-theme:has([data-np-view]) main * {
+    visibility: hidden;
+}
+
+html.matugen-theme [data-np-view] {
+    background-color: transparent;
+}
+
+html.matugen-theme:has(section.fixed.inset-0.z-40.bg-background) div.relative.flex.h-screen.flex-col {
+    visibility: hidden;
 }
