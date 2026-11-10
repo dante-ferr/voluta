@@ -117,7 +117,8 @@ the sum of those two, on every side:
 to every side; two values are vertical then horizontal; three values are top,
 horizontal, then bottom. Hyprland reports each monitor's reserved area as
 left, top, right, bottom. Waybar's exclusive zone is the top entry on this
-desktop, so a 34px bar and an 8px top gap put the grid's top edge at 42px.
+desktop, so a 4px Waybar top margin, a 34px bar, and a 6px top gap put
+the grid's top edge at 44px.
 
 | Anchor | Screen position |
 | --- | --- |

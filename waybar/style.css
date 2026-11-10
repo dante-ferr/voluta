@@ -39,7 +39,8 @@ window#waybar {
 #window,
 #custom-mpris {
     padding: 3px 12px;
-    margin: 4px 3px 4px 6px;
+    /* Layer margins already match gaps_out; keep only the inter-plate gap. */
+    margin: 4px 3px 4px 0;
     background-color: @box-background; /* Shared Wallust ink with dark decorations */
     color: @foreground;
     border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
@@ -376,7 +377,7 @@ box.modules-right {
    unless a battery module sits in front and takes that facing edge instead. */
 #custom-power {
     border-right: 1px solid #2A2A38;
-    margin-right: 6px;
+    margin-right: 0;
     color: @accent9;
     font-size: 13px;
     padding-left: 10px;

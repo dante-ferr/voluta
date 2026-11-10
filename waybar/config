@@ -5,6 +5,9 @@
     "passthrough": false,
     "gtk-layer-shell": true,
     "height": 34,
+    "margin-top": 4,
+    "margin-left": 16,
+    "margin-right": 16,
     "modules-left": [
         "hyprland/window",
         "custom/mpris"

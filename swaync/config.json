@@ -7,7 +7,7 @@
   "control-center-exclusive-zone": true,
   "layer-shell": true,
   "cssPriority": "user",
-  "control-center-margin-top": 8,
+  "control-center-margin-top": 6,
   "control-center-margin-bottom": 12,
   "control-center-margin-right": 0,
   "control-center-margin-left": 0,
