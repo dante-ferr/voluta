@@ -4,7 +4,10 @@ Wallpaper-facing decorations (angels, ornaments, and the Voluta logo in
 `../wallust/assets/patera.svg`) always use the dark Wallust ink: half-brightness
 `color0`, shared with the box backgrounds. The window title and music icons sit
 inside opaque boxes and use the muted bright ink. `#custom-patera` shows the logo
-between the status plate and the power plate.
+between the status plate and the power plate. The plate ends that face the
+medallion use the same 13px outer rounding as the ornament-facing plate ends.
+`#custom-mpris` only appears while `playerctl` reports Playing or Paused; the
+built-in mpris module leaves a plate up for stopped browser endpoints.
 
 `scripts/render-decorations.py` rasterizes these into
 `../wallust/assets/generated/waybar/` and writes `wallust/angel-paths.css`.

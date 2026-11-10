@@ -7,7 +7,7 @@
     "height": 34,
     "modules-left": [
         "hyprland/window",
-        "mpris"
+        "custom/mpris"
     ],
     "modules-center": [
         "custom/angel-left",
@@ -34,9 +34,11 @@
             "^$": ""
         }
     },
-    "mpris": {
-        "format": "{title}",
-        "format-paused": "<i>{title}</i>",
+    "custom/mpris": {
+        "exec": "$HOME/.config/waybar/scripts/mpris-status.sh",
+        "interval": 1,
+        "return-type": "json",
+        "format": "{}",
         "on-click": "playerctl play-pause",
         "on-click-right": "playerctl next",
         "on-click-middle": "playerctl previous",

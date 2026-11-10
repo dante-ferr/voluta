@@ -37,7 +37,7 @@ window#waybar {
    ==================================================== */
 
 #window,
-#mpris {
+#custom-mpris {
     padding: 3px 12px;
     margin: 4px 3px 4px 6px;
     background-color: @box-background; /* Shared Wallust ink with dark decorations */
@@ -57,7 +57,7 @@ window#waybar {
     background-size: 28px 36px;
 }
 
-#mpris {
+#custom-mpris {
     /* Round both ends: it sits after the window plate, whose rounded
        ornament-facing edge is no longer outermost when this box appears. */
     border-radius: 13px;
@@ -67,6 +67,10 @@ window#waybar {
     background-repeat: no-repeat;
     background-position: -2px center;
     background-size: 28px 33px;
+}
+
+#custom-mpris.paused {
+    font-style: italic;
 }
 
 /* Waybar tags the bar with .empty when no window is focused */
@@ -221,7 +225,8 @@ box.modules-right {
    Reading outward: notifications, tray, temperature and volume share the
    first plate; battery and power sit on their own. Each plate is built from
    the shared rule below, with the module at either end overriding its outer
-   border back to the perimeter colour.
+   border back to the perimeter colour. Edges that face the Voluta medallion
+   use the same 13px outer rounding as the ornament-facing plate ends.
    ==================================================== */
 
 #custom-swaync,
@@ -296,13 +301,15 @@ box.modules-right {
     color: @accent9;
 }
 
-/* PulseAudio (Icon Only) - right outer edge of the first plate */
+/* PulseAudio (Icon Only) — right outer edge of the status plate, facing the medallion. */
 #pulseaudio {
     border-right: 1px solid #2A2A38;
     margin-right: 0px;
     color: @accent14;
     font-size: 13px;
     padding-right: 11px;
+    border-top-right-radius: 13px;
+    border-bottom-right-radius: 13px;
 }
 
 #pulseaudio:hover {
@@ -320,11 +327,13 @@ box.modules-right {
     color: #FFFFFF;
 }
 
-/* Battery (Always Visible) - left outer edge of the power plate */
+/* Battery — left outer edge of the power plate, facing the medallion. */
 #battery {
     border-left: 1px solid #2A2A38;
     padding-left: 11px;
     color: @accent10;
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
 }
 
 #battery.charging,
@@ -363,7 +372,8 @@ box.modules-right {
     font-size: 1px;
 }
 
-/* Right outer edge of the power plate. */
+/* Right outer edge of the power plate. Left end is rounded toward the medallion
+   unless a battery module sits in front and takes that facing edge instead. */
 #custom-power {
     border-right: 1px solid #2A2A38;
     margin-right: 6px;
@@ -371,9 +381,16 @@ box.modules-right {
     font-size: 13px;
     padding-left: 10px;
     padding-right: 12px;
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
 }
 
 #custom-power:hover {
     background-color: #7A0016;
     color: #FFFFFF;
+}
+
+#battery + #custom-power {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
 }

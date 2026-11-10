@@ -26,11 +26,11 @@ box.modules-right {
     background-image: url("../wallust/assets/volute-left.svg");
 }
 
-#mpris {
+#custom-mpris {
     background-image: url("../wallust/assets/note.svg");
 }
 
-#mpris.paused {
+#custom-mpris.paused {
     background-image: url("../wallust/assets/note-paused.svg");
 }
 

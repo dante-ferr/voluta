@@ -23,8 +23,8 @@ DECORATIONS = (
     (".modules-left,\nbox.modules-left", "ornaments-left.svg"),
     (".modules-right,\nbox.modules-right", "ornaments-right.svg"),
     ("#window", "volute-left.svg"),
-    ("#mpris", "note.svg"),
-    ("#mpris.paused", "note-paused.svg"),
+    ("#custom-mpris", "note.svg"),
+    ("#custom-mpris.paused", "note-paused.svg"),
     ("#custom-patera", "patera.svg"),
 )
 DISPLAY_HEIGHTS = {
@@ -40,7 +40,6 @@ DISPLAY_WIDTHS = {
     "volute-left.svg": 12, "note.svg": 12, "note-paused.svg": 12,
     "patera.svg": 28,
 }
-
 
 def render(source, target, paint):
     root = ET.parse(source).getroot()
@@ -59,10 +58,10 @@ def render(source, target, paint):
     # Change only explicit paint colors; filled shapes otherwise default black.
     root.set("fill", paint)
     for element in root.iter():
-        for paint in ("fill", "stroke"):
-            value = element.get(paint)
+        for attr in ("fill", "stroke"):
+            value = element.get(attr)
             if value and value.lower() not in ("none", "transparent"):
-                element.set(paint, root.get("fill"))
+                element.set(attr, paint)
     # Rasterize the authored SVG at 3x display resolution. GTK then only loads
     # a small PNG.
     x, y, width, view_height = map(float, root.get("viewBox").split())
@@ -200,7 +199,7 @@ def main():
     (ROOT / "wallust/glow-state.json").write_text(json.dumps(state, indent=2) + "\n")
     boxes = settings["boxes"]
     rules.append(
-        "#window, #mpris, #workspaces, #clock,\n"
+        "#window, #custom-mpris, #workspaces, #clock,\n"
         "#custom-swaync, #tray, #temperature, #network,\n"
         "#pulseaudio, #battery, #custom-power {\n"
         f'    box-shadow: 0 0 {boxes["blur_px"]}px '
