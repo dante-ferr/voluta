@@ -45,6 +45,17 @@ session. Check both `input:kb_layout` and `input:kb_options`, plus the resolved
 browser preference, after a migration reload. A successful configerrors query
 alone does not prove that the intended preferences were applied.
 
+## Desktop idle DPMS (2026-11-10)
+
+On `frank`, do not run idle DPMS off while the session is locked. The 15-minute
+`hl.dsp.dpms({action = "off"})` listener in the old desktop idle profile dropped
+the Wayland socket; hyprlock aborted with `Disconnected from pollfd`, and UWSM
+restarted Hyprland uncleanly. The same sequence is in
+`~/.local/state/voluta/lock/hypridle.log` on 2026-11-07, 2026-11-08, and
+2026-11-10. `idle/frank.conf` now matches the notebook policy: lock at 10
+minutes, suspend at 30 minutes, no DPMS listener. Resume still uses
+`resume/frank.sh` after real suspend.
+
 ## Notebook wake recovery (2026-11-03)
 
 Read `/etc/hostname` when selecting host resume policy, consistently with
