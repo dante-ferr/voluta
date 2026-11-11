@@ -224,7 +224,8 @@ box.modules-right {
    RIGHT: TWO MERGED STATUS PLATES (1PX PERIMETER)
 
    Reading outward: notifications, tray, temperature and volume share the
-   first plate; battery and power sit on their own. Each plate is built from
+   first plate; battery and power share group/powerplate so they stay one box
+   whether the battery module is visible or hidden. Each plate is built from
    the shared rule below, with the module at either end overriding its outer
    border back to the perimeter colour. Edges that face the Voluta medallion
    use the same 13px outer rounding as the ornament-facing plate ends.
@@ -235,9 +236,7 @@ box.modules-right {
 #temperature,
 #network,
 #bluetooth,
-#pulseaudio,
-#battery,
-#custom-power {
+#pulseaudio {
     padding: 3px 10px;
     margin: 4px 0px;
     background-color: @box-background;
@@ -328,29 +327,6 @@ box.modules-right {
     color: #FFFFFF;
 }
 
-/* Battery — left outer edge of the power plate, facing the medallion. */
-#battery {
-    border-left: 1px solid #2A2A38;
-    padding-left: 11px;
-    color: @accent10;
-    border-top-left-radius: 13px;
-    border-bottom-left-radius: 13px;
-}
-
-#battery.charging,
-#battery.plugged {
-    color: @accent14;
-}
-
-#battery.warning:not(.charging) {
-    color: @accent11;
-}
-
-#battery.critical:not(.charging) {
-    background-color: #7A0016;
-    color: #FFFFFF;
-}
-
 /* Tray */
 #tray {
     padding: 2px 6px;
@@ -373,25 +349,59 @@ box.modules-right {
     font-size: 1px;
 }
 
-/* Right outer edge of the power plate. Left end is rounded toward the medallion
-   unless a battery module sits in front and takes that facing edge instead. */
-#custom-power {
+/* Power plate: one rounded box for battery+power. Chrome lives on the group so
+   a hidden battery cannot leave a second left radius on #custom-power. Waybar
+   module IDs are nested under eventbox widgets, so #battery + #custom-power
+   never matches. */
+#powerplate {
+    margin: 4px 0;
+    background-color: @box-background;
+    border-top: 1px solid #2A2A38;
+    border-bottom: 1px solid #2A2A38;
+    border-left: 1px solid #2A2A38;
     border-right: 1px solid #2A2A38;
-    margin-right: 0;
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
+}
+
+#powerplate > widget > #battery,
+#powerplate > widget > #custom-power {
+    padding: 3px 10px;
+    margin: 0;
+    background-color: transparent;
+    color: @foreground;
+    border: none;
+    border-radius: 0;
+    transition: all 0.15s ease-in-out;
+}
+
+#battery {
+    padding-left: 11px;
+    color: @accent10;
+}
+
+#battery.charging,
+#battery.plugged {
+    color: @accent14;
+}
+
+#battery.warning:not(.charging) {
+    color: @accent11;
+}
+
+#battery.critical:not(.charging) {
+    background-color: #7A0016;
+    color: #FFFFFF;
+}
+
+#custom-power {
     color: @accent9;
     font-size: 13px;
     padding-left: 10px;
     padding-right: 12px;
-    border-top-left-radius: 13px;
-    border-bottom-left-radius: 13px;
 }
 
 #custom-power:hover {
     background-color: #7A0016;
     color: #FFFFFF;
-}
-
-#battery + #custom-power {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
 }

@@ -26,9 +26,15 @@
         "bluetooth",
         "pulseaudio",
         "custom/patera",
-        "battery",
-        "custom/power"
+        "group/powerplate"
     ],
+    "group/powerplate": {
+        "orientation": "horizontal",
+        "modules": [
+            "battery",
+            "custom/power"
+        ]
+    },
     "hyprland/window": {
         "format": "{title}",
         "max-length": 32,

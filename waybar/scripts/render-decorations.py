@@ -201,7 +201,7 @@ def main():
     rules.append(
         "#window, #custom-mpris, #workspaces, #clock,\n"
         "#custom-swaync, #tray, #temperature, #network,\n"
-        "#pulseaudio, #battery, #custom-power {\n"
+        "#pulseaudio, #powerplate {\n"
         f'    box-shadow: 0 0 {boxes["blur_px"]}px '
         f'alpha(@foreground, {boxes["opacity"]});\n'
         "}\n"
