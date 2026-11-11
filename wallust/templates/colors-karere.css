@@ -1,0 +1,85 @@
+/* Karere WhatsApp Web palette. Wallust writes ~/.config/karere/custom.css.
+ *
+ * karere-custom-css injects this file and reloads it while the app is open.
+ * WhatsApp paints from --WDS-* variables on .color-refresh / .dark, so those
+ * names are set with !important. The chat wallpaper and the app wash use the
+ * shared background at 65% opacity, the same fraction Limusic uses for its
+ * window. Text, bubbles, the composer, headers, and controls stay opaque.
+ * This sheet never sets a fractional opacity on those nodes.
+ *
+ * The shared background publisher then replaces the extracted background with
+ * the resolved base. The a6 suffix and the accent stay put.
+ */
+
+{% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
+{% set ink = foreground | lighten(0.30) %}
+
+:root,
+:root .color-refresh,
+.color-refresh,
+.dark,
+.dark.color-refresh,
+.app-wrapper-web.app-wrapper-web {
+    color-scheme: dark;
+
+    --voluta-canvas: {{background}}a6;
+    --voluta-ink: {{ink}};
+    --voluta-muted: color-mix(in oklab, {{ink}} 70%, {{background}});
+    --voluta-accent: {{accent}};
+    --voluta-raised: color-mix(in oklab, {{ink}} 8%, {{background}});
+    --voluta-line: color-mix(in oklab, {{ink}} 14%, {{background}});
+    --voluta-in: color-mix(in oklab, {{ink}} 9%, {{background}});
+    --voluta-out: color-mix(in oklab, {{accent}} 28%, {{background}});
+
+    /* Large canvases only. These are the translucent backgrounds. */
+    --WDS-systems-chat-background-wallpaper: var(--voluta-canvas) !important;
+    --WDS-systems-chat-background-wallpaper-RGB: {{background | rgb}} !important;
+    --WDS-systems-chat-foreground-wallpaper: transparent !important;
+    --WDS-background-wash-plain: var(--voluta-canvas) !important;
+    --WDS-background-wash-plain-RGB: {{background | rgb}} !important;
+    --WDS-background-wash-inset: var(--voluta-canvas) !important;
+    --WDS-background-wash-inset-RGB: {{background | rgb}} !important;
+    --WDS-app-wash: var(--voluta-canvas) !important;
+    --WDS-app-wash-RGB: {{background | rgb}} !important;
+
+    /* Opaque surfaces, type, and controls. */
+    --WDS-surface-default: var(--voluta-raised) !important;
+    --WDS-surface-emphasized: var(--voluta-raised) !important;
+    --WDS-surface-elevated-default: var(--voluta-raised) !important;
+    --WDS-surface-elevated-emphasized: var(--voluta-raised) !important;
+    --WDS-surface-highlight: color-mix(in oklab, {{accent}} 18%, {{background}}) !important;
+    --WDS-systems-chat-surface-composer: var(--voluta-raised) !important;
+    --WDS-systems-chat-surface-tray: var(--voluta-raised) !important;
+    --WDS-systems-bubble-surface-incoming: var(--voluta-in) !important;
+    --WDS-systems-bubble-surface-outgoing: var(--voluta-out) !important;
+    --WDS-systems-bubble-surface-overlay: var(--voluta-raised) !important;
+    --WDS-systems-bubble-surface-system: var(--voluta-raised) !important;
+    --WDS-components-surface-nav-bar: var(--voluta-raised) !important;
+    --WDS-lines-divider: var(--voluta-line) !important;
+    --WDS-lines-outline-default: var(--voluta-line) !important;
+
+    --WDS-content-default: var(--voluta-ink) !important;
+    --WDS-content-default-RGB: {{ink | rgb}} !important;
+    --WDS-content-deemphasized: var(--voluta-muted) !important;
+    --WDS-content-action-default: var(--voluta-accent) !important;
+    --WDS-accent: var(--voluta-accent) !important;
+    --WDS-accent-RGB: {{accent | rgb}} !important;
+    --WDS-persistent-always-branded: var(--voluta-accent) !important;
+
+    --background-default: var(--voluta-raised) !important;
+    --search-container-background: var(--voluta-raised) !important;
+    --primary: var(--voluta-ink) !important;
+    --primary-strong: var(--voluta-ink) !important;
+    --secondary: var(--voluta-muted) !important;
+    --icon: var(--voluta-ink) !important;
+    color: {{ink}};
+}
+
+html,
+body,
+#app,
+.app-wrapper-web {
+    background-color: {{background}}a6 !important;
+    background-image: none !important;
+    color: {{ink}};
+}

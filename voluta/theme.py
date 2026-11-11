@@ -91,6 +91,8 @@ def publish(config=None, cache=None, directory=None, host=None):
     # Wallust writes the extracted background. Replace that hex only, so the accent stays put
     # and a later refresh cannot darken the resolved base a second time.
     edit("limusic/matugen.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
+    edit("karere/custom.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
+    edit("gtk-4.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
 
     source = palette.get("source_bg", palette["bg"])
     generated = cache / "voluta"

@@ -34,7 +34,7 @@ using an older generated shell palette without `wc_source_bg`.
 
 Consumers are Dolphin/Qt/Kvantum and its embedded terminal, Brave's GTK toolbar
 and sidebar, Kitty and its tabs, Waybar, SwayNC, Rofi, wlogout, the generated
-Hyprland background token, Quickshell's window background, and Limusic.
+Hyprland background token, Quickshell's window background, Limusic, and Karere.
 SDDM's existing optional palette bridge reads the resolved `wc_bg`. Foregrounds
 and accents retain their palette values; raised surfaces are derived from the
 shared base. Hyprland window outlines use dedicated `active_border` /
@@ -52,6 +52,25 @@ so the wallpaper shows through the song. Theater mode keeps the fill and hides
 the window under it. A music video still punches a hole through both. Cards and
 text on buttons stay opaque. The accent and foreground stay on the Wallust
 palette, lifted the same way as Waybar and Kitty.
+
+Karere, installed as the `karere-custom-css` package, reads
+`~/.config/karere/custom.css` and injects it into WhatsApp Web. Wallust writes
+that file from `wallust/templates/colors-karere.css` on every palette refresh.
+The package reloads the file while Karere is open. The chat list and the
+conversation canvas use the shared background at 65% opacity. Message bubbles,
+the composer, headers, menus, icons, and text stay opaque: the sheet sets their
+colors without a fractional `opacity`. Stock Karere does not load this file;
+the downstream package is what watches it. A window-wide fade is not used,
+because that would also fade the type. Chromium paints the page into Karere's
+surface, so the canvas alpha shows the wallpaper only when that surface is
+itself transparent.
+
+Karere also reloads `~/.config/gtk-4.0/gtk.css`, written from
+`wallust/templates/colors-karere-gtk.css`. That sheet recolors the header bar,
+menus, and preferences dialog with the same background, ink, and accent. Every
+rule is under the `.voluta` class, which the packaged Karere adds to its window
+and preferences dialog, so other GTK applications keep their own theme. Text
+and controls stay opaque.
 Brave's **Ultra dark theme / Darker theme** override must be off for the GTK
 background lightness to match; ordinary Dark mode can remain enabled.
 Existing transparency settings remain application-specific, so wallpaper behind
