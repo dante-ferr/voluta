@@ -38,7 +38,6 @@ DECORATIONS = (
     ("#custom-angel-right", "angels.svg"),
     (".modules-left,\nbox.modules-left", "ornaments-left.svg"),
     (".modules-right,\nbox.modules-right", "ornaments-right.svg"),
-    ("#window", "volute-left.svg"),
     ("#custom-mpris", "note.svg"),
     ("#custom-mpris.paused", "note-paused.svg"),
     ("#custom-patera", "patera.svg"),
@@ -46,14 +45,14 @@ DECORATIONS = (
 DISPLAY_HEIGHTS = {
     "angels-left.svg": 30, "angels.svg": 30,
     "ornaments-left.svg": 28, "ornaments-right.svg": 28,
-    "volute-left.svg": 20, "note.svg": 17, "note-paused.svg": 17,
+    "note.svg": 17, "note-paused.svg": 17,
     "patera.svg": 15,
 }
 
 DISPLAY_WIDTHS = {
     "angels-left.svg": 97.5, "angels.svg": 97.5,
     "ornaments-left.svg": 75, "ornaments-right.svg": 75,
-    "volute-left.svg": 12, "note.svg": 12, "note-paused.svg": 12,
+    "note.svg": 12, "note-paused.svg": 12,
     "patera.svg": 28,
 }
 
@@ -339,7 +338,7 @@ def main():
     for selector, filename in DECORATIONS:
         source = ROOT.parent / "wallust/assets" / filename
         # Icons on opaque plates stay in the bright ink; the rest use dark ink.
-        boxed_icon = filename in ("volute-left.svg", "note.svg", "note-paused.svg")
+        boxed_icon = filename in ("note.svg", "note-paused.svg")
         variant, paint = ("bright", bright) if boxed_icon else ("dark", dark)
         target = output / f"{Path(filename).stem}-{variant}.png"
         render(source, target, paint)

@@ -2,8 +2,8 @@
 
 Wallpaper-facing decorations (angels, ornaments, and the Voluta logo in
 `../wallust/assets/patera.svg`) always use the dark Wallust ink: half-brightness
-`color0`, shared with the box backgrounds. The window title and music icons sit
-inside opaque boxes and use the muted bright ink. `#custom-patera` shows the logo
+`color0`, shared with the box backgrounds. The music note icons sit inside the
+opaque MPRIS plate and use the muted bright ink. `#custom-patera` shows the logo
 between the status plate and the power plate. Battery and power share
 `group/powerplate` so they stay one medallion-facing box when the battery
 module is present, and the group keeps the left radius when it is hidden. The

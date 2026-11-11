@@ -37,10 +37,10 @@
     },
     "hyprland/window": {
         "format": "{title}",
-        "max-length": 32,
+        "max-length": 48,
         "separate-outputs": false,
         "rewrite": {
-            "^$": ""
+            "^$": "󰋜  voluta"
         }
     },
     "custom/mpris": {

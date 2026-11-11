@@ -63,10 +63,7 @@ window#waybar {
     border-bottom-right-radius: 13px;
     color: @accent12;
     font-weight: 700;
-    padding-left: 22px;
-    background-repeat: no-repeat;
-    background-position: -4px center;
-    background-size: 28px 36px;
+    background-image: none;
 }
 
 #custom-mpris {
@@ -85,7 +82,7 @@ window#waybar {
     font-style: italic;
 }
 
-/* Empty focus: keep the volute plate and show the home rewrite
+/* Empty focus: keep the window plate and show the home rewrite
    (host · user from voluta/runtime.py). Warm accent reads as "at home"
    against the cooler focused-title color on #window. */
 window#waybar.empty #window,
@@ -163,8 +160,6 @@ box.modules-right {
     border-radius: 0px;
     border-right: 1px solid #22222E;
     font-weight: 700;
-    /* Widen the thin window-icon separator by ~2px. */
-    word-spacing: 2px;
     box-shadow: none;
     transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
                 color 0.25s ease-in-out;

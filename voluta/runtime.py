@@ -1,8 +1,10 @@
 """Runtime consumers of companion settings; polling avoids coupling to generators."""
 import fcntl
+import getpass
 import json
 import os
 from pathlib import Path
+import socket
 import subprocess
 import sys
 import time
@@ -68,14 +70,23 @@ def main():
     if sys.argv[1] == 'watch':
         watch()
     elif sys.argv[1] == 'waybar':
-        settings, _ = resolve(config_home(), hostname())
-        if not settings['waybar_output']:
-            return 1
+        from cli import atomic_write
+
         data = json.loads(Path(sys.argv[2]).read_text())
-        data['output'] = settings['waybar_output']
+        settings, _ = resolve(config_home(), hostname())
+        if settings.get('waybar_output'):
+            data['output'] = settings['waybar_output']
+
+        # Empty focus plate: home icon, machine name, user (portable per host).
+        host = socket.gethostname().strip() or 'voluta'
+        user = getpass.getuser().strip() or 'user'
+        window = data.setdefault('hyprland/window', {})
+        rewrite = dict(window.get('rewrite') or {})
+        rewrite['^$'] = f'󰋜  {host}  ·  {user}'
+        window['rewrite'] = rewrite
+
         target = Path(sys.argv[3])
         target.parent.mkdir(parents=True, exist_ok=True)
-        from cli import atomic_write
         atomic_write(target, data)
     return 0
 
