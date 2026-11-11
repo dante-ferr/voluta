@@ -5,6 +5,7 @@ Source SVG geometry stays unchanged. Generated SVGs and absolute CSS URLs live
 under wallust/assets/generated/waybar; rebuilt on wallpaper refresh and startup.
 """
 from pathlib import Path
+import colorsys
 import json
 import math
 import subprocess
@@ -62,6 +63,17 @@ def mix_hex(foreground, background, toward_background):
         f"{round(int(foreground[i:i + 2], 16) * (1 - toward_background)
                  + int(background[i:i + 2], 16) * toward_background):02x}"
         for i in (1, 3, 5)
+    )
+
+
+def vivid_hex(paint, boost=0.25):
+    """Raise HSV saturation of #RRGGBB; boost is the fraction of unused saturation to take."""
+    red, green, blue = (int(paint[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    hue, saturation, value = colorsys.rgb_to_hsv(red, green, blue)
+    saturation = min(1.0, saturation + (1.0 - saturation) * boost)
+    return "#" + "".join(
+        f"{round(channel * 255):02x}"
+        for channel in colorsys.hsv_to_rgb(hue, saturation, value)
     )
 
 
@@ -346,10 +358,15 @@ def main():
             paint_side_contours(
                 target, outline, outline_cfg["svgs"], outline_cfg["width_px"])
         rules.append(f'{selector} {{\n    background-image: url("{target.as_uri()}");\n}}\n')
-    # glow.qml reads this file and repaints when it changes. Colors are the muted
-    # bright ink plus two palette accents already lightened by the template.
-    # Flip heaven.enabled in glow.json to restore the top light without retuning
-    # opacity or animation.
+    # glow.qml reads this file and repaints when it changes. Colors are the
+    # unmuted bright ink plus two palette accents, each saturation-boosted so
+    # the wash and beams stay vivid against the wallpaper. Flip heaven.enabled
+    # in glow.json to restore the top light without retuning opacity or animation.
+    glow_warm = colors[bright_name]
+    glow_accents = (
+        colors.get("color12", glow_warm),
+        colors.get("color13", glow_warm),
+    )
     state = {
         "enabled": heaven["enabled"],
         "opacity": heaven["opacity"] if heaven["enabled"] else 0,
@@ -357,7 +374,7 @@ def main():
         "drift": heaven["drift_px_per_s"], "animate": heaven["animate"],
         "pause_on_battery": heaven["pause_on_battery"],
         "outputs": top_light_factors(heaven) if heaven["enabled"] else {},
-        "colors": [bright, colors.get("color12", bright), colors.get("color13", bright)],
+        "colors": [vivid_hex(glow_warm), *(vivid_hex(paint) for paint in glow_accents)],
     }
     (ROOT / "wallust/glow-state.json").write_text(json.dumps(state, indent=2) + "\n")
     boxes = settings["boxes"]
