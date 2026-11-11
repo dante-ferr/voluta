@@ -15,7 +15,7 @@
     "modules-center": [
         "custom/angel-left",
         "hyprland/workspaces",
-        "clock",
+        "group/timedate",
         "custom/angel-right"
     ],
     "modules-right": [
@@ -133,9 +133,21 @@
         },
         "tooltip": false
     },
-    "clock": {
-        "format": "󰅐  {:%H:%M:%S  ·  %a, %b %d}",
+    "group/timedate": {
+        "orientation": "horizontal",
+        "modules": [
+            "clock#time",
+            "clock#date"
+        ]
+    },
+    "clock#time": {
+        "format": "󰅐  {:%H:%M:%S}",
         "interval": 1,
+        "tooltip": false
+    },
+    "clock#date": {
+        "format": "{:%a, %b %d}",
+        "interval": 60,
         "tooltip": false
     },
     "custom/swaync": {

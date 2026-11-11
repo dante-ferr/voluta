@@ -3,7 +3,7 @@ CFLAGS ?= -O2 -fPIC -Wall -Wextra
 LDFLAGS ?= -shared -ldl
 
 TARGET = lib/libwaybar_hyprland_shim.so
-SRC = src/hyprland_dispatch_shim.c src/workspace_slide.c src/glow_clusters.c
+SRC = src/hyprland_dispatch_shim.c src/workspace_slide.c src/glow_clusters.c src/clock_swap.c
 GTK_CFLAGS = $(shell pkg-config --cflags gtk+-3.0 json-glib-1.0)
 GTK_LIBS = $(shell pkg-config --libs gtk+-3.0 json-glib-1.0) -lm
 

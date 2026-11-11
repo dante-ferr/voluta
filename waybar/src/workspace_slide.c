@@ -163,6 +163,7 @@ static void attach_selection(GtkWidget *widget, gpointer unused) {
 }
 
 void voluta_glow_clusters_publish(void);
+void voluta_clock_swap_scan(void);
 
 static gboolean discover_workspaces(gpointer unused) {
     (void)unused;
@@ -172,6 +173,7 @@ static gboolean discover_workspaces(gpointer unused) {
     g_list_free(windows);
     /* Same tick publishes module cluster geometry for the top glow mask. */
     voluta_glow_clusters_publish();
+    voluta_clock_swap_scan();
     return G_SOURCE_CONTINUE;
 }
 

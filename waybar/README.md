@@ -63,4 +63,5 @@ QML reloads both state files on change:
 `hypr/scripts/StartTopGlow.sh` starts it at login and on Refresh.
 
 Rebuild the native helper with `make -C waybar` from the repository root. The
-helper only animates the workspace selection.
+helper animates the workspace selection and stacks the clock time and date in
+one cell, sliding the date down from the top of that cell on hover.

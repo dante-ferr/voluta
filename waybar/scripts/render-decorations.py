@@ -28,7 +28,7 @@ CHROME_DEFAULTS = {
 }
 
 PLATE_OUTLINE_SELECTORS = (
-    "#window, #custom-mpris, #workspaces, #clock,\n"
+    "#window, #custom-mpris, #workspaces, #timedate,\n"
     "#custom-swaync, #tray, #temperature, #network,\n"
     "#bluetooth, #pulseaudio, #powerplate"
 )
@@ -158,7 +158,7 @@ def write_style_chrome_outline(plates, width_px):
         ))
     if plates["right"]:
         chunks.append(plate_side_rule(
-            "#window, #custom-mpris, #clock, #pulseaudio, #powerplate",
+            "#window, #custom-mpris, #timedate, #pulseaudio, #powerplate",
             "right",
             width_px,
         ))
@@ -362,7 +362,7 @@ def main():
     (ROOT / "wallust/glow-state.json").write_text(json.dumps(state, indent=2) + "\n")
     boxes = settings["boxes"]
     rules.append(
-        "#window, #custom-mpris, #workspaces, #clock,\n"
+        "#window, #custom-mpris, #workspaces, #timedate,\n"
         "#custom-swaync, #tray, #temperature, #network,\n"
         "#pulseaudio, #powerplate {\n"
         f'    box-shadow: 0 0 {boxes["blur_px"]}px '

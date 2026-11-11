@@ -29,7 +29,7 @@
 
 /* @@chrome-outline:start */
 /* Generated from waybar/chrome.json — edit that file, not this block. */
-#window, #custom-mpris, #workspaces, #clock,
+#window, #custom-mpris, #workspaces, #timedate,
 #custom-swaync, #tray, #temperature, #network,
 #bluetooth, #pulseaudio, #powerplate {
     border-bottom: 1px solid @bar-outline;
@@ -144,7 +144,7 @@ box.modules-right {
     background-size: 91px 44px;
 }
 
-/* Workspaces and clock share one uninterrupted slab so the angels read as
+/* Workspaces and timedate share one uninterrupted slab so the angels read as
    holding a single tablet rather than two loose plates. */
 #workspaces {
     padding: 0px;
@@ -190,7 +190,7 @@ box.modules-right {
     box-shadow: none;
 }
 
-/* The clock supplies the seam on this side of the slab */
+/* The timedate plate supplies the seam on this side of the slab */
 #workspaces button:last-child {
     border-right: none;
 }
@@ -207,21 +207,39 @@ box.modules-right {
 
 /* Monumental Clock Plate.
 
+   The native helper stacks time and date in one overlay (class clock-stack)
+   and slides the date down from the top of that cell on hover. Until the
+   helper attaches, the date stays collapsed so it cannot open a second box.
    Cinzel's figures are proportional, so a 1 is narrower than an 8 and the
    plate changed width on almost every tick, dragging the workspaces, both
-   standing angels, the outer putti and the whole centre cluster sideways with it. The clock is the one
-   module whose text changes every second, so it takes the monospaced face and
-   keeps a fixed advance per digit; the rest of the bar stays on Cinzel. */
-#clock {
-    padding: 3px 14px;
+   standing angels, the outer putti and the whole centre cluster sideways
+   with it. The clock is the one module whose text changes every second, so
+   it takes the monospaced face and keeps a fixed advance per digit; the
+   rest of the bar stays on Cinzel. */
+#timedate {
     margin: 4px 0px;
     background-color: @box-background;
-    color: @accent11;
     /* Internal slab seam; chrome.json controls the outer outline sides. */
     border-left: 1px solid #22222E;
+}
+
+#timedate #clock {
+    padding: 3px 14px;
+    margin: 0;
+    background-color: transparent;
+    color: @accent11;
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
     letter-spacing: 0.4px;
+}
+
+/* Collapse the date until the overlay exists. Keep a 1px font so GTK does not
+   allocate a negative content box. */
+#timedate:not(.clock-stack) #clock.date {
+    font-size: 1px;
+    padding: 0;
+    min-width: 0;
+    opacity: 0;
 }
 
 /* ====================================================
