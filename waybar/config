@@ -67,7 +67,7 @@
         "all-outputs": true,
         "disable-scroll": false,
         "format": "{icon} {windows}",
-        "format-window-separator": " ",
+        "format-window-separator": "  ",
         "window-rewrite-default": "",
         "window-rewrite": {
             "title<.*youtube.*>": "󰗃",

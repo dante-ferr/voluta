@@ -3,13 +3,13 @@
     "width_px": 2,
     "color1_mix": 0.6,
     "plates": {
-      "top": true,
+      "top": false,
       "right": false,
       "bottom": false,
       "left": false
     },
     "svgs": {
-      "top": true,
+      "top": false,
       "right": false,
       "bottom": false,
       "left": false
