@@ -10,11 +10,28 @@ module is present, and the group keeps the left radius when it is hidden. The
 plate ends that face the medallion use the same 13px outer rounding as the
 ornament-facing plate ends.
 `#custom-mpris` only appears while `playerctl` reports Playing or Paused; the
-built-in mpris module leaves a plate up for stopped browser endpoints.
+built-in mpris module leaves a plate up for stopped browser endpoints. When no
+window is focused, `hyprland/window` keeps its plate and shows a home icon with
+the machine and user names (`voluta/runtime.py` fills the empty-title rewrite).
 
 `scripts/render-decorations.py` rasterizes these into
 `../wallust/assets/generated/waybar/` and writes `wallust/angel-paths.css`.
 Wallpaper changes run it through the existing Waypaper/Wallust refresh hook.
+
+## Chrome outlines
+
+Edit `chrome.json` (then refresh decorations) to tune plate and SVG outlines:
+
+- `outline.width_px`: border thickness for plates and SVG side contours.
+- `outline.color1_mix`: how far `@color1` mixes toward `@background` for
+  `@bar-outline` (0 = full accent, 1 = background).
+- `outline.plates.{top,right,bottom,left}`: rectangular plate sides.
+- `outline.svgs.{top,right,bottom,left}`: shape-following contours on
+  wallpaper-facing artwork (angels, ornaments, patera).
+
+`render-decorations.py` writes plate borders into the `@@chrome-outline`
+block in `style.css` (it must sit after `* { border: none }`) and paints SVG
+side contours into the generated PNGs.
 
 ## Top glow
 

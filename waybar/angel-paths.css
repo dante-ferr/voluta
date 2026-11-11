@@ -4,6 +4,9 @@
    glowing images and file:// URLs after combined_wallust.sh runs. Keep both @imports at the
    top of style.css — later @import is ignored by the CSS spec. */
 
+/* Fallback until render-decorations.py writes chrome.json values. */
+@define-color bar-outline mix(@color1, @background, 0.40);
+
 #custom-angel-left {
     background-image: url("../wallust/assets/angels-left.svg");
 }

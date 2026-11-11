@@ -3,7 +3,8 @@
 
 @import "wallust/colors-waybar.css";
 @import "angel-paths.css";
-/* Generated decoration images and plate glow settings from glow.json. */
+/* Generated decoration images, plate outlines, and glow settings from
+   glow.json / chrome.json. */
 @import "wallust/angel-paths.css";
 
 /* Bright palette accents stay readable even with a dark wallpaper palette. */
@@ -14,6 +15,7 @@
 @define-color accent13 mix(@color13, #FFFFFF, 0.25);
 @define-color accent14 mix(@color14, #FFFFFF, 0.25);
 @define-color workspace-accent @accent12;
+/* @bar-outline comes from wallust/angel-paths.css (chrome.json color1_mix). */
 
 * {
     border: none;
@@ -25,6 +27,15 @@
     min-height: 0;
 }
 
+/* @@chrome-outline:start */
+/* Generated from waybar/chrome.json — edit that file, not this block. */
+#window, #custom-mpris, #workspaces, #clock,
+#custom-swaync, #tray, #temperature, #network,
+#bluetooth, #pulseaudio, #powerplate {
+    border-bottom: 1px solid @bar-outline;
+}
+/* @@chrome-outline:end */
+
 /* Transparent bar; plates and decorations share a soft Wallust glow. */
 window#waybar {
     background-color: transparent;
@@ -33,7 +44,8 @@ window#waybar {
 }
 
 /* ====================================================
-   LEFT: WINDOW TITLE & MPRIS (CONSISTENT 1PX BORDER)
+   LEFT: WINDOW TITLE & MPRIS
+   Plate outline sides come from waybar/chrome.json via angel-paths.css.
    ==================================================== */
 
 #window,
@@ -43,7 +55,6 @@ window#waybar {
     margin: 4px 3px 4px 0;
     background-color: @box-background; /* Shared Wallust ink with dark decorations */
     color: @foreground;
-    border: 1px solid #2A2A38; /* Subtle darker consistent 1px outline */
 }
 
 #window {
@@ -74,23 +85,21 @@ window#waybar {
     font-style: italic;
 }
 
-/* Waybar tags the bar with .empty when no window is focused */
+/* Empty focus: keep the volute plate and show the home rewrite
+   (host · user from voluta/runtime.py). Warm accent reads as "at home"
+   against the cooler focused-title color on #window. */
 window#waybar.empty #window,
 #window.empty {
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    opacity: 0;
+    color: @accent11;
+    letter-spacing: 1.4px;
 }
 
 /* ====================================================
    CENTER: FLANKING ANGELS, ANIMATED WORKSPACES & CLOCK
    ==================================================== */
 
-/* The wide angel artwork is mirrored on the left. */
+/* The wide angel artwork is mirrored on the left.
+   Underside contour is baked into the generated PNG (not a CSS box border). */
 #custom-angel-left,
 #custom-angel-right {
     padding: 0px;
@@ -144,8 +153,6 @@ box.modules-right {
     padding: 0px;
     margin: 4px 0px;
     background-color: @box-background;
-    border: 1px solid #2A2A38;
-    border-right: none;
 }
 
 #workspaces button {
@@ -156,6 +163,8 @@ box.modules-right {
     border-radius: 0px;
     border-right: 1px solid #22222E;
     font-weight: 700;
+    /* Widen the thin window-icon separator by ~2px. */
+    word-spacing: 2px;
     box-shadow: none;
     transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
                 color 0.25s ease-in-out;
@@ -213,7 +222,7 @@ box.modules-right {
     margin: 4px 0px;
     background-color: @box-background;
     color: @accent11;
-    border: 1px solid #2A2A38;
+    /* Internal slab seam; chrome.json controls the outer outline sides. */
     border-left: 1px solid #22222E;
     font-family: "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
@@ -221,14 +230,13 @@ box.modules-right {
 }
 
 /* ====================================================
-   RIGHT: TWO MERGED STATUS PLATES (1PX PERIMETER)
+   RIGHT: TWO MERGED STATUS PLATES
 
    Reading outward: notifications, tray, temperature and volume share the
    first plate; battery and power share group/powerplate so they stay one box
-   whether the battery module is visible or hidden. Each plate is built from
-   the shared rule below, with the module at either end overriding its outer
-   border back to the perimeter colour. Edges that face the Voluta medallion
-   use the same 13px outer rounding as the ornament-facing plate ends.
+   whether the battery module is visible or hidden. Outer outline sides come
+   from waybar/chrome.json. Edges that face the Voluta medallion use the same
+   13px outer rounding as the ornament-facing plate ends.
    ==================================================== */
 
 #custom-swaync,
@@ -241,16 +249,20 @@ box.modules-right {
     margin: 4px 0px;
     background-color: @box-background;
     color: @foreground;
-    border-top: 1px solid #2A2A38;
-    border-bottom: 1px solid #2A2A38;
-    border-left: 1px solid #1C1C26;
-    border-right: none;
     transition: all 0.15s ease-in-out;
+}
+
+/* Internal seams between status modules (not the outer chrome outline). */
+#tray,
+#temperature,
+#network,
+#bluetooth,
+#pulseaudio {
+    border-left: 1px solid #1C1C26;
 }
 
 /* Left outer edge of the first plate. */
 #custom-swaync {
-    border-left: 1px solid #2A2A38;
     color: @accent13;
     font-size: 13px;
     padding-left: 11px;
@@ -303,7 +315,6 @@ box.modules-right {
 
 /* PulseAudio (Icon Only) — right outer edge of the status plate, facing the medallion. */
 #pulseaudio {
-    border-right: 1px solid #2A2A38;
     margin-right: 0px;
     color: @accent14;
     font-size: 13px;
@@ -356,10 +367,6 @@ box.modules-right {
 #powerplate {
     margin: 4px 0;
     background-color: @box-background;
-    border-top: 1px solid #2A2A38;
-    border-bottom: 1px solid #2A2A38;
-    border-left: 1px solid #2A2A38;
-    border-right: 1px solid #2A2A38;
     border-top-left-radius: 13px;
     border-bottom-left-radius: 13px;
 }

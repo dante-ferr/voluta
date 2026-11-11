@@ -15,6 +15,7 @@ import Quickshell.Wayland
 ShellRoot {
     id: root
 
+    property bool enabled: true
     property real opacityPeak: 0.55
     property int glowHeight: 220
     property int fps: 10
@@ -24,7 +25,7 @@ ShellRoot {
     property var outputs: ({})
     property var colors: ["#aba3a7", "#c8858d", "#a17490"]
     property var bars: []
-    readonly property bool moving: animate && !(pauseOnBattery && UPower.onBattery)
+    readonly property bool moving: enabled && animate && !(pauseOnBattery && UPower.onBattery)
 
     readonly property int period: 640
     property real phase: 0
@@ -33,7 +34,8 @@ ShellRoot {
     function apply(text: string): void {
         let data;
         try { data = JSON.parse(text); } catch (error) { return; }
-        opacityPeak = data.opacity ?? opacityPeak;
+        enabled = data.enabled ?? enabled;
+        opacityPeak = enabled ? (data.opacity ?? opacityPeak) : 0;
         glowHeight = data.height ?? glowHeight;
         fps = Math.max(1, data.fps ?? fps);
         drift = data.drift ?? drift;
@@ -101,7 +103,7 @@ ShellRoot {
             // Light wallpapers need no extra light; fade out by their top-band luminance.
             readonly property real strength: root.outputs[modelData.name] ?? 1
             readonly property var liveClusters: root.clustersFor(modelData)
-            visible: strength > 0
+            visible: root.enabled && strength > 0
             anchors { top: true; left: true; right: true }
             implicitHeight: root.glowHeight
             color: "transparent"

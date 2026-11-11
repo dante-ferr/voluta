@@ -1,7 +1,8 @@
 {
   "heaven": {
-    "opacity": 0.68,
-    "height_px": 220,
+    "enabled": true,
+    "opacity": 0.6,
+    "height_px": 205,
     "fps": 10,
     "drift_px_per_s": 14,
     "animate": true,
