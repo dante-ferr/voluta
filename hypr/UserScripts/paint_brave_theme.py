@@ -74,6 +74,32 @@ def dolphin_background(css):
     return re.sub(r"(@define-color imperium_bg )#[0-9a-fA-F]{6};", rf"\g<1>{color};", css)
 
 
+def darker_mode_enabled():
+    """Brave Ultra/Darker theme remaps GTK lightness away from the shared ink."""
+    preferences = CONFIG / "BraveSoftware/Brave-Browser/Default/Preferences"
+    if not preferences.is_file():
+        return False
+    try:
+        return bool(json.loads(preferences.read_text()).get("brave", {}).get("darker_mode"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return False
+
+
+def warn_darker_mode():
+    message = (
+        "Brave Ultra dark / Darker theme is on; turn it off under "
+        "brave://settings/appearance so the toolbar matches Dolphin"
+    )
+    print(f"Brave theme: {message}", file=sys.stderr)
+    if shutil.which("notify-send"):
+        subprocess.run(
+            ["notify-send", "Voluta Brave theme", message],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render-only", action="store_true", help="write themes without changing settings or contacting the session")
@@ -85,6 +111,8 @@ def main():
     if "{{" in css or not re.search(r"@define-color imperium_bg #[0-9a-fA-F]{6};", css):
         raise SystemExit("Brave theme: refusing an unrendered or invalid palette")
     css = dolphin_background(css)
+    if not args.render_only and darker_mode_enabled():
+        warn_darker_mode()
 
     # Use the distro's GSettings alongside the distro's GTK/portal libraries.
     gsettings = "/usr/bin/gsettings" if Path("/usr/bin/gsettings").exists() else shutil.which("gsettings")
