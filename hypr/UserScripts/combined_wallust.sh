@@ -289,7 +289,8 @@ do_refresh() {
     local rice_root
     rice_root=$(imperium_rice_root 2>/dev/null)
     if [[ -r $rice_root/voluta/theme.py ]]; then
-        python3 "$rice_root/voluta/theme.py" || {
+        # Arch python-pillow. Homebrew/Conda python3 on PATH often lacks PIL.
+        /usr/bin/python3 "$rice_root/voluta/theme.py" || {
             echo "combined_wallust: shared background publication failed" >&2
             return 1
         }
@@ -299,7 +300,7 @@ do_refresh() {
     brave_paint="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/UserScripts/paint_brave_theme.py"
     [[ -r $brave_paint ]] || brave_paint="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/paint_brave_theme.py"
     if [[ -r $brave_paint ]]; then
-        python3 "$brave_paint" || echo "combined_wallust: Brave GTK refresh failed" >&2
+        /usr/bin/python3 "$brave_paint" || echo "combined_wallust: Brave GTK refresh failed" >&2
     fi
 
     write_waybar_angel_css

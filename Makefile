@@ -1,7 +1,7 @@
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VOLUTA := $(ROOT)/bin/voluta
 
-.PHONY: help init dry-run install update deps doctor apply browser theme docs-serve
+.PHONY: help init dry-run install update deps doctor apply browser karere theme docs-serve
 
 help:
 	@printf '%s\n' \
@@ -13,6 +13,7 @@ help:
 		'make doctor      Check the installation' \
 		'make apply       Activate enabled integrations' \
 		'make browser     Enable Brave/Prismwing/Gallery publishing' \
+		'make karere      Install karere-custom-css for WhatsApp Web palette injection' \
 		'make theme       Refresh Wallust consumers' \
 		'make docs-serve  Preview docs at http://localhost:3000'
 
@@ -45,6 +46,14 @@ browser:
 		'then Load unpacked:' \
 		'  Prismwing  ~/Code/projects/prismwing/extension' \
 		'  Gallery    ~/.local/share/voluta/gallery'
+
+karere:
+	$(VOLUTA) feature enable karere
+	$(VOLUTA) deps
+	@$(MAKE) --no-print-directory theme
+	@printf '%s\n' \
+		'karere-custom-css replaces stock karere and loads ~/.config/karere/custom.css.' \
+		'Reopen Karere if it was already running.'
 
 theme:
 	@$(ROOT)/tools/refresh-theme.sh

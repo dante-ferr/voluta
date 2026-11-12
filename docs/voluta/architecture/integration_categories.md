@@ -64,15 +64,16 @@ install the app through `MODULE_PACKAGES`.
 | Consumer | Written path | Who consumes it |
 | --- | --- | --- |
 | Limusic | `~/.config/limusic/matugen.css` | Limusic when its wallpaper-palette / Matugen setting is on |
-| Karere | `~/.config/karere/custom.css` | `karere-custom-css` injects into WhatsApp Web; stock Karere ignores the file |
+| Karere CSS | `~/.config/karere/custom.css` | Only `karere-custom-css` injects into WhatsApp Web; stock `karere` ignores the file |
 
-If the app is absent, the files are inert. Prefer this category for public
-rice-coded apps whose only Voluta contract is palette files.
+If the app is absent, the files are inert. Limusic stays user-installed.
+Karere’s **palette files** are always written; installing the rice-aware client
+is the optional `karere` feature (`make karere` / `voluta feature enable karere`),
+which installs `karere-custom-css` and replaces stock `karere`.
 
-`voluta doctor` (and `make doctor`) reports each consumer as `inactive`,
-`ready`, `theme_missing`, or `incomplete`. Those notes are advisory: they do
-not fail the doctor exit code. Missing selected core/feature packages still do.
-Voluta does not install these apps; install them yourself when you want them.
+`voluta doctor` reports each consumer as `inactive`, `ready`, `theme_missing`,
+or `incomplete`. Those notes are advisory unless the `karere` feature is enabled
+and `karere-custom-css` is missing (then it is a selected package failure).
 
 ## Global GTK user stylesheet
 
@@ -98,6 +99,7 @@ extra packages in `MODULE_PACKAGES`. Enable or disable with
 | `session_restore` | `false` | Login restore supervisor and related session tooling |
 | `rgb` | `false` | OpenRGB / HID deps; host-scoped device records; privileged Mars setup when selected |
 | `browser` | `false` | gsettings/xsettingsd deps; Brave GTK + Prismwing host + Gallery publish on theme refresh |
+| `karere` | `false` | Installs `karere-custom-css` (conflicts with/replaces stock `karere`) so WhatsApp Web loads Wallust CSS |
 | `developer_shell` | `false` | Shell helper packages; interactive companion shell hooks |
 | `obs` | `false` | `obs-cmd`; OBS-related keybindings when the session is live |
 | `sddm` | `false` | SDDM package; privileged theme/palette drop-in setup |

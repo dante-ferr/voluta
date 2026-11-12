@@ -13,10 +13,11 @@ from cli import ROOT, atomic_write, resolve, read
 
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
 # Theme sources and runtime support must remain siblings in the installed tree.
-SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
+SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave', 'packaging')
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
-MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
-# External theme-only apps: Wallust writes files; Voluta never installs these.
+MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'karere': ['karere-custom-css'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
+# External theme consumers: Wallust always writes files. Limusic stays user-installed;
+# Karere theming of WhatsApp Web needs the karere feature (karere-custom-css).
 THEME_ONLY_CONSUMERS = (
     {
         'name': 'limusic',
@@ -33,10 +34,10 @@ THEME_ONLY_CONSUMERS = (
         'packages': ('karere-custom-css', 'karere'),
         'binaries': ('karere',),
         'injector_packages': ('karere-custom-css',),
-        'inactive_note': 'Theme file present; install karere-custom-css so WhatsApp Web receives the palette. Stock Karere ignores this file. Voluta does not install this app.',
+        'inactive_note': 'Theme file present; stock Karere ignores it. Run: voluta feature enable karere (installs karere-custom-css).',
         'theme_missing_note': 'Karere is installed but ~/.config/karere/custom.css is missing; run make theme or change the wallpaper.',
-        'incomplete_note': 'Karere is installed without karere-custom-css; stock Karere does not load ~/.config/karere/custom.css.',
-        'ready_note': 'karere-custom-css can inject ~/.config/karere/custom.css while Karere is open.',
+        'incomplete_note': 'Stock Karere is installed; it does not load custom.css. Run: voluta feature enable karere (replaces it with karere-custom-css).',
+        'ready_note': 'karere-custom-css injects ~/.config/karere/custom.css while Karere is open.',
     },
 )
 
@@ -112,7 +113,7 @@ def any_binary_present(names):
     return any(shutil.which(name) for name in names)
 
 
-def theme_only_consumer_status(spec, config):
+def theme_only_consumer_status(spec, config, *, feature_enabled=False):
     theme_path = config / spec['theme']
     theme_present = theme_path.is_file()
     packages = spec['packages']
@@ -130,7 +131,10 @@ def theme_only_consumer_status(spec, config):
         note = spec['theme_missing_note']
     elif not injector_installed:
         status = 'incomplete'
-        note = spec['incomplete_note']
+        note = (
+            f"features.{spec['name']} is enabled but {'/'.join(injector_names)} is missing; run: voluta deps"
+            if feature_enabled and injector_names else spec['incomplete_note']
+        )
     else:
         status = 'ready'
         note = spec.get('ready_note')
@@ -151,7 +155,11 @@ def theme_only_consumer_status(spec, config):
 def doctor_report(settings, host, config=None):
     config = config or locations()[0]
     missing = missing_packages(settings) if shutil.which('pacman') else []
-    consumers = [theme_only_consumer_status(spec, config) for spec in THEME_ONLY_CONSUMERS]
+    features = settings.get('features') or {}
+    consumers = [
+        theme_only_consumer_status(spec, config, feature_enabled=bool(features.get(spec['name'])))
+        for spec in THEME_ONLY_CONSUMERS
+    ]
     notes = [item['note'] for item in consumers if item.get('note') and item['status'] != 'ready']
     if missing:
         notes.insert(0, 'Missing selected packages: ' + ', '.join(missing))
@@ -200,7 +208,7 @@ def format_doctor_report(report):
             lines.append(f"    - {name}")
     else:
         lines.append('  packages          ok (selected deps present)')
-    lines.extend(['', 'Theme-only apps (advisory; Voluta does not install these)'])
+    lines.extend(['', 'Optional themed apps'])
     for item in report['theme_only_consumers']:
         label = status_labels.get(item['status'], item['status'])
         lines.append(f"  {item['name']:<16} {label}")
@@ -240,6 +248,13 @@ def _run_visible(command):
 def _install_packages(packages, *, force_quickshell=False, overwrite=False):
     if not packages:
         return
+    # The AUR package fails to compile on rustc 1.94. Build the repo overlay,
+    # which applies that fix, and install only after the package file exists.
+    if packages == ['karere-custom-css']:
+        script = ROOT / 'packaging/karere/install.sh'
+        if not script.is_file():
+            raise ValueError('missing Karere package script: ' + str(script))
+        return _run_visible(['bash', str(script)])
     aur = [pkg for pkg in packages
            if subprocess.run(['pacman', '-Si', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode]
     helper = shutil.which('paru') or shutil.which('yay')

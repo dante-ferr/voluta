@@ -1,5 +1,6 @@
 """Doctor reports theme-only consumers without treating them as hard failures."""
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -26,6 +27,7 @@ class DoctorTests(unittest.TestCase):
         self.assertTrue(report['theme_present'])
         self.assertFalse(report['app_installed'])
         self.assertIn('karere-custom-css', report['note'])
+        self.assertIn('voluta feature enable karere', report['note'])
         self.assertFalse(report['injector_installed'])
 
     def test_limusic_ready_when_installed_and_themed(self):
@@ -48,7 +50,7 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(report['status'], 'incomplete')
         self.assertTrue(report['app_installed'])
         self.assertFalse(report['injector_installed'])
-        self.assertIn('karere-custom-css', report['note'])
+        self.assertIn('voluta feature enable karere', report['note'])
 
     def test_theme_missing_when_app_present(self):
         with patch.object(deploy, 'package_installed', side_effect=lambda name: name == 'limusic-bin'), \
@@ -93,6 +95,18 @@ class DoctorTests(unittest.TestCase):
             report = deploy.doctor_report({'features': {}}, 'frank', config=self.config)
         self.assertEqual(report['missing_packages'], ['waybar'])
         self.assertTrue(any('waybar' in note for note in report['notes']))
+
+    def test_karere_custom_css_builds_repo_overlay(self):
+        calls = []
+
+        def visible(command):
+            calls.append(command)
+            return subprocess.CompletedProcess(command, 0, '', '')
+
+        with patch.object(deploy, '_run_visible', side_effect=visible):
+            deploy._install_packages(['karere-custom-css'])
+        self.assertEqual(calls, [['bash', str(deploy.ROOT / 'packaging/karere/install.sh')]])
+        self.assertNotIn('pacman', calls[0])
 
     def test_format_doctor_report_is_readable_text(self):
         text = deploy.format_doctor_report({

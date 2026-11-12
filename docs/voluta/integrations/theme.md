@@ -41,10 +41,10 @@ shared base. Hyprland window outlines use dedicated `active_border` /
 `inactive_border` tokens (`color1` and `color0` lifted like Kitty and Waybar
 accents) so dark wallpapers cannot leave borders near-black.
 
-Limusic and Karere are [external theme-only consumers](../architecture/integration_categories.md):
-Voluta writes palette files; it does not install those apps through a feature
-flag. `voluta doctor` reports whether each app is installed relative to its
-theme file.
+Limusic is an [external theme-only consumer](../architecture/integration_categories.md).
+Karere’s CSS is always written the same way, but WhatsApp Web injection needs the
+optional `karere` feature. `voluta doctor` reports each app relative to its theme
+file.
 
 Limusic reads `~/.config/limusic/matugen.css` while **Matugen** (named **Wallpaper
 palette** in newer builds) is on under Settings, Appearance. Wallust writes that
@@ -58,17 +58,18 @@ the window under it. A music video still punches a hole through both. Cards and
 text on buttons stay opaque. The accent and foreground stay on the Wallust
 palette, lifted the same way as Waybar and Kitty.
 
-Karere, installed as the `karere-custom-css` package, reads
-`~/.config/karere/custom.css` and injects it into WhatsApp Web. Wallust writes
-that file from `wallust/templates/colors-karere.css` on every palette refresh.
-The package reloads the file while Karere is open. The chat list and the
-conversation canvas use the shared background at 65% opacity. Message bubbles,
-the composer, headers, menus, icons, and text stay opaque: the sheet sets their
-colors without a fractional `opacity`. Stock Karere does not load this file;
-the downstream package is what watches it. A window-wide fade is not used,
-because that would also fade the type. Chromium paints the page into Karere's
-surface, so the canvas alpha shows the wallpaper only when that surface is
-itself transparent.
+Karere needs `karere-custom-css` to read `~/.config/karere/custom.css` and inject
+it into WhatsApp Web. `make karere` enables that feature. If stock `karere` is
+already installed, the installer removes that conflicting package first and
+keeps files in your home directory. Wallust writes the file
+from `wallust/templates/colors-karere.css` on every palette refresh. The package
+reloads the file while Karere is open. The chat list and the conversation canvas
+use the shared background at 65% opacity. Message bubbles, the composer, headers,
+menus, icons, and text stay opaque: the sheet sets their colors without a
+fractional `opacity`. Upstream Karere does not load this file (it avoids WhatsApp
+Web injection). A window-wide fade is not used, because that would also fade the
+type. Chromium paints the page into Karere's surface, so the canvas alpha shows
+the wallpaper only when that surface is itself transparent.
 
 Wallust also writes `wallust/templates/colors-karere-gtk.css` to
 `~/.config/gtk-4.0/gtk.css` and `~/.config/gtk-3.0/gtk.css`. That sheet is the

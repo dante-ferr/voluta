@@ -1,0 +1,11 @@
+--- a/build.rs
++++ b/build.rs
+@@ -10,7 +10,7 @@
+     let out_ui = format!("{out_dir}/ui");
+ 
+     glib_build_tools::compile_resources(
+-        &[&out_ui, "data/ui", "data"],
++        &[out_ui.as_str(), "data/ui", "data"],
+         "data/karere.gresource.xml",
+         "karere.gresource",
+     );

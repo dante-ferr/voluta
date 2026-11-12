@@ -39,12 +39,17 @@ make deps
 make doctor
 make apply
 make browser
+make karere
 make theme
 make docs-serve
 ```
 
-`make browser` enables the browser feature and refreshes themes. `make theme`
-runs `tools/refresh-theme.sh`, which prefers the deployed Wallust refresh script.
+`make browser` enables the browser feature and refreshes themes. `make karere`
+enables the Karere feature and builds `packaging/karere` (the custom-css client
+plus the rustc 1.94 compile fix). An existing stock `karere` package is replaced
+only after that build succeeds. Home config stays. `make update` does not enable features; it installs
+packages for features that are already on. `make theme` runs
+`tools/refresh-theme.sh`, which prefers the deployed Wallust refresh script.
 
 CLI forms for everything else:
 
@@ -76,7 +81,7 @@ existing Dolphin/session behavior, but a fresh `init` defaults restoration off.
 
 | Section | Purpose |
 | --- | --- |
-| `features` | Boolean selections: dolphin, session_restore, rgb, browser, developer_shell, obs, sddm, rice_switch. |
+| `features` | Boolean selections: dolphin, session_restore, rgb, browser, karere, developer_shell, obs, sddm, rice_switch. |
 | `hyprland` | Options passed to `hl.config`. |
 | `apps` | terminal, browser and file_manager launch commands. |
 | `environment` | Login-time exports; null means unset. Unsafe known GPU backends are rejected. Run update/apply to regenerate the login script. |

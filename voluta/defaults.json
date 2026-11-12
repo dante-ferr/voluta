@@ -5,6 +5,7 @@
     "session_restore": false,
     "rgb": false,
     "browser": false,
+    "karere": false,
     "developer_shell": false,
     "obs": false,
     "sddm": false,

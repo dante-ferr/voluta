@@ -18,6 +18,7 @@ FEATURES = {
     "session_restore": "Window restore on login and background session saving",
     "rgb": "Wallust lighting for explicitly selected compatible peripherals",
     "browser": "Browser-specific palette integration",
+    "karere": "Install karere-custom-css so WhatsApp Web loads the Wallust palette",
     "developer_shell": "Personal developer shell hooks",
     "obs": "OBS recording keybindings",
     "sddm": "System-wide Voluta login theme (explicit privileged setup)",
