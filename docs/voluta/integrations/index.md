@@ -6,6 +6,7 @@ prevent the core desktop from starting when unavailable.
 
 | Document | Purpose |
 | --- | --- |
+| [Integration categories](../architecture/integration_categories.md) | Theme-only apps vs feature modules vs soft presence checks. |
 | [Shared background](theme.md) | One persistent palette policy for application backgrounds and generated theme exports. |
 | [Brave with Prismwing and Gallery](brave.md) | User setup for Brave GTK theming, Prismwing favicons, and the Gallery New Tab page. |
 | [Architectural surfaces and Gallery](surfaces.md) | Stepped launcher, notification, and music frames, the shared window-grid insets, plus Gallery geometry, motion, and storage. |

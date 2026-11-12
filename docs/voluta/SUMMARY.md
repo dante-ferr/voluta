@@ -5,6 +5,7 @@
   - [Decisions and scope](architecture/decisions.md)
   - [Settings ownership and updates](architecture/settings.md)
   - [Core and optional features](architecture/features.md)
+  - [Integration categories](architecture/integration_categories.md)
 - [Integrations](integrations/index.md)
   - [Shared background](integrations/theme.md)
   - [Brave with Prismwing and Gallery](integrations/brave.md)

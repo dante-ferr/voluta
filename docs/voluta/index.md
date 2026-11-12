@@ -20,6 +20,7 @@ specifications belong here rather than in the root agent instructions.
 | Understand approved direction and remaining decisions | [Decisions and scope](architecture/decisions.md) |
 | Design loaders, companion settings, or update behavior | [Settings ownership and updates](architecture/settings.md) |
 | Classify or introduce an optional module | [Core and optional features](architecture/features.md) |
+| Decide if an app is theme-only or a feature | [Integration categories](architecture/integration_categories.md) |
 | Extract personal or machine-specific configuration | [Configuration separation audit](engineering/configuration_audit.md) |
 | Change login, GPU, locking, or suspend behavior | [Runtime and hardware constraints](engineering/runtime_constraints.md) |
 | Plan installation validation in a VM | [Installation testing](engineering/installation_testing.md) |

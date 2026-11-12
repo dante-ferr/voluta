@@ -16,6 +16,29 @@ CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
+# External theme-only apps: Wallust writes files; Voluta never installs these.
+THEME_ONLY_CONSUMERS = (
+    {
+        'name': 'limusic',
+        'theme': 'limusic/matugen.css',
+        'packages': ('limusic-bin', 'limusic'),
+        'binaries': ('limusic-app', 'limusic'),
+        'inactive_note': 'Theme file present; install Limusic (AUR: limusic-bin) and enable Matugen / Wallpaper palette. Voluta does not install this app.',
+        'theme_missing_note': 'Limusic is installed but ~/.config/limusic/matugen.css is missing; run make theme or change the wallpaper.',
+        'ready_note': 'Limusic is installed; enable Matugen / Wallpaper palette in the app if colors do not follow Wallust.',
+    },
+    {
+        'name': 'karere',
+        'theme': 'karere/custom.css',
+        'packages': ('karere-custom-css', 'karere'),
+        'binaries': ('karere',),
+        'injector_packages': ('karere-custom-css',),
+        'inactive_note': 'Theme file present; install karere-custom-css so WhatsApp Web receives the palette. Stock Karere ignores this file. Voluta does not install this app.',
+        'theme_missing_note': 'Karere is installed but ~/.config/karere/custom.css is missing; run make theme or change the wallpaper.',
+        'incomplete_note': 'Karere is installed without karere-custom-css; stock Karere does not load ~/.config/karere/custom.css.',
+        'ready_note': 'karere-custom-css can inject ~/.config/karere/custom.css while Karere is open.',
+    },
+)
 
 
 def locations():
@@ -73,6 +96,130 @@ def missing_packages(settings):
             if (not wallust if pkg == 'wallust-git' else
                 not quickshell_works() if pkg == 'quickshell' else
                 subprocess.run(['pacman', '-T', pkg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode)]
+
+
+def package_installed(name):
+    if not shutil.which('pacman'):
+        return False
+    return subprocess.run(['pacman', '-Q', name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+
+
+def any_package_installed(names):
+    return any(package_installed(name) for name in names)
+
+
+def any_binary_present(names):
+    return any(shutil.which(name) for name in names)
+
+
+def theme_only_consumer_status(spec, config):
+    theme_path = config / spec['theme']
+    theme_present = theme_path.is_file()
+    packages = spec['packages']
+    binaries = spec['binaries']
+    app_installed = any_package_installed(packages) or any_binary_present(binaries)
+    injector_names = spec.get('injector_packages') or ()
+    injector_installed = True if not injector_names else any_package_installed(injector_names)
+    if not app_installed:
+        status = 'inactive'
+        note = spec['inactive_note'] if theme_present else (
+            f"{spec['name']}: optional theme-only consumer; install the app yourself if you want it themed."
+        )
+    elif not theme_present:
+        status = 'theme_missing'
+        note = spec['theme_missing_note']
+    elif not injector_installed:
+        status = 'incomplete'
+        note = spec['incomplete_note']
+    else:
+        status = 'ready'
+        note = spec.get('ready_note')
+    report = {
+        'name': spec['name'],
+        'theme': str(theme_path),
+        'theme_present': theme_present,
+        'app_installed': app_installed,
+        'status': status,
+        'note': note,
+    }
+    if injector_names:
+        report['injector_installed'] = injector_installed
+        report['injector_packages'] = list(injector_names)
+    return report
+
+
+def doctor_report(settings, host, config=None):
+    config = config or locations()[0]
+    missing = missing_packages(settings) if shutil.which('pacman') else []
+    consumers = [theme_only_consumer_status(spec, config) for spec in THEME_ONLY_CONSUMERS]
+    notes = [item['note'] for item in consumers if item.get('note') and item['status'] != 'ready']
+    if missing:
+        notes.insert(0, 'Missing selected packages: ' + ', '.join(missing))
+    quickshell_ok = quickshell_works()
+    wallust = wallust_binary()
+    if not quickshell_ok and 'quickshell' not in missing:
+        notes.insert(0, 'Quickshell is missing or cannot start; selector effects need a working quickshell.')
+    if wallust is None and 'wallust-git' not in missing:
+        notes.insert(0, 'Wallust v4 is missing; install wallust-git or put a v4 wallust on PATH.')
+    return {
+        'host': host,
+        'settings_valid': True,
+        'missing_packages': missing,
+        'wallust_v4': wallust is not None,
+        'quickshell_ok': quickshell_ok,
+        'kvm': os.access('/dev/kvm', os.R_OK | os.W_OK),
+        'theme_only_consumers': consumers,
+        'notes': notes,
+    }
+
+
+def _doctor_mark(ok):
+    return 'ok' if ok else 'FAIL'
+
+
+def format_doctor_report(report):
+    status_labels = {
+        'ready': 'ready',
+        'inactive': 'inactive (optional)',
+        'theme_missing': 'theme file missing',
+        'incomplete': 'incomplete',
+    }
+    lines = [
+        f"Voluta doctor — host {report['host']}",
+        '',
+        'Core',
+        f"  settings          {_doctor_mark(report['settings_valid'])}",
+        f"  Wallust v4        {_doctor_mark(report['wallust_v4'])}",
+        f"  Quickshell        {_doctor_mark(report['quickshell_ok'])}",
+        f"  KVM (/dev/kvm)    {'yes' if report['kvm'] else 'no'}",
+    ]
+    missing = report['missing_packages']
+    if missing:
+        lines.append(f"  packages          FAIL ({len(missing)} missing)")
+        for name in missing:
+            lines.append(f"    - {name}")
+    else:
+        lines.append('  packages          ok (selected deps present)')
+    lines.extend(['', 'Theme-only apps (advisory; Voluta does not install these)'])
+    for item in report['theme_only_consumers']:
+        label = status_labels.get(item['status'], item['status'])
+        lines.append(f"  {item['name']:<16} {label}")
+        lines.append(f"    theme file      {'present' if item['theme_present'] else 'missing'} ({item['theme']})")
+        lines.append(f"    app             {'installed' if item['app_installed'] else 'not installed'}")
+        if 'injector_installed' in item:
+            needed = ', '.join(item.get('injector_packages') or [])
+            state = 'installed' if item['injector_installed'] else f'not installed ({needed})'
+            lines.append(f"    CSS injector    {state}")
+        if item.get('note') and item['status'] != 'ready':
+            lines.append(f"    note            {item['note']}")
+    notes = [note for note in report.get('notes', []) if note]
+    if notes:
+        lines.extend(['', 'Notes'])
+        for note in notes:
+            lines.append(f"  - {note}")
+    healthy = not report['missing_packages'] and report['quickshell_ok'] and report['wallust_v4']
+    lines.extend(['', 'Result: ' + ('healthy' if healthy else 'needs attention')])
+    return '\n'.join(lines) + '\n'
 
 
 def _run_visible(command):
@@ -565,11 +712,10 @@ def dispatch(args, directory, host):
             print('Voluta dependencies are ready.')
         elif args.command == 'doctor':
             settings, _ = resolve(directory, host)
-            missing = []
-            if shutil.which('pacman'):
-                missing = missing_packages(settings)
-            print(json.dumps({'host': host, 'settings_valid': True, 'missing_packages': missing, 'kvm': os.access('/dev/kvm', os.R_OK | os.W_OK)}, indent=2))
-            return int(bool(missing))
+            report = doctor_report(settings, host)
+            sys.stdout.write(format_doctor_report(report))
+            # Theme-only consumer notes are advisory; only selected deps fail the check.
+            return int(bool(report['missing_packages']) or not report['quickshell_ok'] or not report['wallust_v4'])
         elif args.command == 'rgb':
             from rgb import apply
             results = apply(directory, host, args.dry_run, args.force)

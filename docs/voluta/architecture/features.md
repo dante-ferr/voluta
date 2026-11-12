@@ -15,6 +15,11 @@ personal values; reusable integration implementations belong in the public core.
 | Optional integrations | SDDM theme installation; browser-specific theming/extensions (Brave/Floorp — see [Brave with Prismwing and Gallery](../integrations/brave.md)); developer shell tooling (conda, Android SDK, Linuxbrew, etc.); OBS controls; RGB device support; session save/restore; switching to a second rice; advanced Dolphin injection/build tooling. |
 | Personal/host values | Preferred apps, keyboard layouts, bindings, paths, idle timings, module enablement, monitor profiles, device IDs, Bluetooth targets, and machine-specific GPU/power workarounds. These are settings rather than separately shipped features. |
 
+Theme-only third-party apps (Karere, Limusic), always-on Wallust consumers, soft
+`PATH` checks, and feature modules are different kinds of integration. See
+[Integration categories](integration_categories.md) before adding a new app or
+flag.
+
 Accepted default preset: enable Dolphin, including the advanced customization
 integration, by default. Keep it independently disableable. Session restoration
 is optional and disabled unless selected. Existing personal session-restore

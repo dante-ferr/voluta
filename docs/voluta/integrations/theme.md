@@ -41,6 +41,11 @@ shared base. Hyprland window outlines use dedicated `active_border` /
 `inactive_border` tokens (`color1` and `color0` lifted like Kitty and Waybar
 accents) so dark wallpapers cannot leave borders near-black.
 
+Limusic and Karere are [external theme-only consumers](../architecture/integration_categories.md):
+Voluta writes palette files; it does not install those apps through a feature
+flag. `voluta doctor` reports whether each app is installed relative to its
+theme file.
+
 Limusic reads `~/.config/limusic/matugen.css` while **Matugen** (named **Wallpaper
 palette** in newer builds) is on under Settings, Appearance. Wallust writes that
 file from `wallust/templates/colors-limusic.css` on every palette refresh, and

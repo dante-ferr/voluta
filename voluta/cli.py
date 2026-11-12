@@ -202,7 +202,7 @@ def main(argv=None):
     system_setup.add_argument("module", choices=("sddm", "rgb"))
     system_setup.add_argument("--disable", action="store_true")
     commands.add_parser("rice-switch", help="toggle a configured external rice without deleting config")
-    commands.add_parser("doctor", help="check configuration, dependencies and device access")
+    commands.add_parser("doctor", help="check dependencies, renderer/Wallust health, and theme-only apps")
     commands.add_parser("deps", help="install or repair dependencies without deploying configuration")
     commands.add_parser("apply", help="activate enabled integrations and refresh managed config")
     rgb = commands.add_parser("rgb", help="apply Wallust lighting to selected devices")

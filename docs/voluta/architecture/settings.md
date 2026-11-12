@@ -134,7 +134,11 @@ Waybar support builds locally. Initial Wallust colors are seeded when missing.
 `make install` and `make update` include Quickshell for the selector effects and
 check that its binary starts, even when a package already provides it. Broken
 Quickshell installations are replaced/reinstalled and checked again; failure
-stops setup. `make doctor` reports a broken renderer as a missing dependency.
+stops setup. `make doctor` / `voluta doctor` prints a readable report: missing
+selected packages, Wallust v4 and Quickshell health, KVM access, and advisory
+status for external theme-only consumers (Limusic, Karere). A non-zero exit
+means selected deps or the renderer/Wallust check failed; theme-only notes do
+not. See [Integration categories](integration_categories.md).
 `make deps` runs dependency setup alone without deploying configuration.
 Package installation may prompt for sudo authentication and replacement of a
 conflicting third-party Quickshell provider.
