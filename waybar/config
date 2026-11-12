@@ -66,8 +66,8 @@
         "active-only": false,
         "all-outputs": true,
         "disable-scroll": false,
-        "format": "{icon} {windows}",
-        "format-window-separator": "  ",
+        "format": "{icon} <span font_family='JetBrainsMono Nerd Font Mono' size='10000' letter_spacing='0'>{windows}</span>",
+        "format-window-separator": " ",
         "window-rewrite-default": "",
         "window-rewrite": {
             "title<.*youtube.*>": "󰗃",
