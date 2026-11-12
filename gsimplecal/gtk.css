@@ -1,0 +1,86 @@
+/* Loaded only for gsimplecal. Tokens come from the active Voluta GTK theme. */
+
+window {
+    background-color: @imperium_bg;
+    color: @imperium_fg;
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+calendar {
+    background-color: @imperium_bg;
+    color: @imperium_fg;
+    font-family: "JetBrainsMono Nerd Font", monospace;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 28px 36px 30px;
+    border: none;
+    border-width: 0;
+    box-shadow: none;
+    outline: none;
+}
+
+/* GtkCalendar paints gtk_render_frame for both .header and .view. */
+calendar.header,
+calendar.view {
+    background-color: @imperium_bg;
+    border: none;
+    border-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+    outline: none;
+}
+
+calendar.header {
+    color: @imperium_fg;
+    font-size: 17px;
+    font-weight: 700;
+    padding: 6px 4px 18px;
+}
+
+calendar.button {
+    background-color: transparent;
+    color: @imperium_accent;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 14px;
+    margin: 0 4px;
+}
+
+calendar.button:hover {
+    background-color: @imperium_hover;
+    color: @imperium_fg;
+}
+
+calendar.view {
+    padding: 10px 0 0;
+}
+
+/* Horizontal padding sets the column pitch (GtkCalendar ignores min-width).
+   Vertical padding grows the cell; center_days.so shifts the digit into the
+   middle (GtkCalendar otherwise pins it to the top). */
+calendar.day-number {
+    padding: 14px 18px;
+}
+
+calendar.day-name {
+    padding: 10px 18px 16px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+calendar:selected {
+    background-color: @imperium_accent;
+    color: @imperium_bg;
+    border-radius: 14px;
+}
+
+calendar.highlight {
+    color: @imperium_accent;
+    font-weight: 700;
+}
+
+calendar:indeterminate {
+    color: @imperium_muted;
+}

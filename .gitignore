@@ -29,6 +29,7 @@ wallust/assets/generated/
 
 # Machine-local build products and secrets are never public configuration.
 waybar/lib/*.so
+gsimplecal/lib/*.so
 .env
 .env.*
 !.env.example

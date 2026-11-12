@@ -289,6 +289,15 @@ hl.window_rule({
     center = true,
 })
 
+hl.window_rule({
+    name = "waybar-calendar",
+    match = { class = "^gsimplecal$" },
+    float = true,
+    center = true,
+    border_size = 0,
+    no_shadow = true,
+})
+
 -- New personal bindings are additive; matching chords replace defaults above.
 for chord, command in pairs(settings.keybindings) do
     if has_trigger(chord) and not seen[chord] and type(command) == "string" then

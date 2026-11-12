@@ -64,4 +64,9 @@ QML reloads both state files on change:
 
 Rebuild the native helper with `make -C waybar` from the repository root. The
 helper animates the workspace selection and stacks the clock time and date in
-one cell, sliding the date down from the top of that cell on hover.
+one cell, sliding the date down from the top of that cell on hover. Clicking
+the clock toggles gsimplecal, centered and floating. `gsimplecal/gtk.css`
+paints that window from the Voluta palette and gives the month grid room to
+breathe. `gsimplecal/lib/libgsimplecal_center.so` (build with
+`make -C gsimplecal`) recenters day digits that GtkCalendar would otherwise
+pin to the top of each cell.

@@ -11,10 +11,10 @@ import time
 
 from cli import ROOT, atomic_write, resolve, read
 
-CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal')
+CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave')
-BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
+BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 
 
@@ -352,6 +352,7 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         if not skip_deps:
             dependencies(settings)
             subprocess.run(['make', '-C', str(current / 'waybar')], check=True)
+            subprocess.run(['make', '-C', str(current / 'gsimplecal')], check=True)
             subprocess.run(['systemctl', '--user', 'daemon-reload'], check=False)
         palette = config / 'hypr/wallust/colors-shell.sh'
         if not skip_deps and not palette.exists():
