@@ -151,7 +151,12 @@ box.modules-right {
 /* Window glyphs use JetBrainsMono Nerd Font Mono (see the workspaces format).
    The proportional cut draws past its advance, and each icon by a different
    amount, so the gap on one side of an icon was larger than on the other.
-   letter-spacing stays 0 here so the 1px hair-space separators stay 1px. */
+   letter-spacing stays 0 here so the 1px hair-space separators stay 1px.
+   rise='-4096' keeps the icon run on the line. rise='-1024' on the
+   numeral cancels the helper's 1px downward shift, so the icons drop
+   onto the button center and the numerals stay there. The helper also
+   clamps this label, and
+   the window-title label, to the bar font's line so neither can grow the bar. */
 #workspaces button {
     padding: 3px 10px;
     margin: 0;

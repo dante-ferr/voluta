@@ -164,6 +164,8 @@ static void attach_selection(GtkWidget *widget, gpointer unused) {
 
 void voluta_glow_clusters_publish(void);
 void voluta_clock_swap_scan(void);
+void voluta_label_cap_install(void);
+void voluta_label_cap_scan(void);
 
 static gboolean discover_workspaces(gpointer unused) {
     (void)unused;
@@ -174,6 +176,7 @@ static gboolean discover_workspaces(gpointer unused) {
     /* Same tick publishes module cluster geometry for the top glow mask. */
     voluta_glow_clusters_publish();
     voluta_clock_swap_scan();
+    voluta_label_cap_scan();
     return G_SOURCE_CONTINUE;
 }
 
@@ -184,6 +187,9 @@ int g_application_run(GApplication *application, int argc, char **argv) {
         dlsym(RTLD_NEXT, "g_application_run");
     if (!GTK_IS_APPLICATION(application))
         return real_run(application, argc, argv);
+    /* Before any module measures itself, or the first layout already
+     * locks in the taller line from an icon or an emoji. */
+    voluta_label_cap_install();
     guint scan = g_timeout_add(200, discover_workspaces, NULL);
     int status = real_run(application, argc, argv);
     g_source_remove(scan);
