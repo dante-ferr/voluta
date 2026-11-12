@@ -151,7 +151,8 @@ write_waybar_angel_css() {
     local waybar_dir
     waybar_dir=$(imperium_waybar_dir)
     [[ -d $waybar_dir ]] || return
-    python3 "$waybar_dir/scripts/render-decorations.py"
+    # Arch python-pillow; Homebrew/Conda python3 on PATH often lacks PIL.
+    /usr/bin/python3 "$waybar_dir/scripts/render-decorations.py"
 }
 
 # Restart the bar. SIGUSR2 does not reload GTK @import of wallust/colors-waybar.css,

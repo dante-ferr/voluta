@@ -59,7 +59,8 @@ if [[ -f "${waybar_dir}/Makefile" ]]; then
     fi
 fi
 if [[ -f "${waybar_dir}/scripts/render-decorations.py" ]]; then
-    python3 "$waybar_dir/scripts/render-decorations.py" ||
+    # Arch python-pillow; Homebrew/Conda python3 on PATH often lacks PIL.
+    /usr/bin/python3 "$waybar_dir/scripts/render-decorations.py" ||
         notify-send "Waybar decorations failed" "Check glow.json and the Wallust palette, then run Refresh again."
 fi
 shim="${waybar_dir}/lib/libwaybar_hyprland_shim.so"

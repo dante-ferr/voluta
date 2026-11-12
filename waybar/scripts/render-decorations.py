@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Render Wallust-colored decorations and the top glow state.
 
 Source SVG geometry stays unchanged. Generated SVGs and absolute CSS URLs live

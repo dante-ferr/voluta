@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 """Generate waybar plate ornaments: cairo draw → contour → SVG.
 
 Not part of the runtime bar. The incised volute uses a contour so it reads

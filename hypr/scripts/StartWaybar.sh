@@ -16,7 +16,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/waybar-config.sh"
 waybar_prepare_config "${waybar_dir:+$waybar_dir/config}"
 
 if [[ -d ${waybar_dir:-} ]]; then
-    python3 "$waybar_dir/scripts/render-decorations.py"
+    # Arch python-pillow; Homebrew/Conda python3 on PATH often lacks PIL.
+    /usr/bin/python3 "$waybar_dir/scripts/render-decorations.py"
     (cd "$waybar_dir" && exec waybar "${waybar_config_args[@]}")
 else
     exec waybar "${waybar_config_args[@]}"

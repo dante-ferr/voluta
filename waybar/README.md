@@ -17,6 +17,8 @@ the machine and user names (`voluta/runtime.py` fills the empty-title rewrite).
 `scripts/render-decorations.py` rasterizes these into
 `../wallust/assets/generated/waybar/` and writes `wallust/angel-paths.css`.
 Wallpaper changes run it through the existing Waypaper/Wallust refresh hook.
+Callers use `/usr/bin/python3` so Arch's `python-pillow` is available when
+Homebrew or Conda put another `python3` earlier on `PATH`.
 
 ## Chrome outlines
 
