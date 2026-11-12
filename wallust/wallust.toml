@@ -74,9 +74,13 @@ limusic.target = '~/.config/limusic/matugen.css'
 karere.template = 'colors-karere.css'
 karere.target = '~/.config/karere/custom.css'
 
-# Karere reloads ~/.config/gtk-4.0/gtk.css. Rules are scoped to .voluta.
+# Global GTK user stylesheet (header bars, menus, preferences). Karere also
+# reloads the GTK4 path while it is open.
 karere_gtk.template = 'colors-karere-gtk.css'
 karere_gtk.target = '~/.config/gtk-4.0/gtk.css'
+
+gtk3_user.template = 'colors-karere-gtk.css'
+gtk3_user.target = '~/.config/gtk-3.0/gtk.css'
 
 #macchina.template = 'colors-macchina.toml'
 #macchina.target = '~/.config/macchina/themes/wallust.toml'

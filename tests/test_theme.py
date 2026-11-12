@@ -74,9 +74,10 @@ class ThemeTests(unittest.TestCase):
         self.assertNotIn("{{ink}}a", text)
         self.assertNotIn("{{accent}}a", text)
         gtk = (ROOT / "wallust/templates/colors-karere-gtk.css").read_text()
-        self.assertIn(".voluta headerbar", gtk)
+        self.assertIn("headerbar,", gtk)
         self.assertIn("@define-color voluta_bg {{background}};", gtk)
         self.assertIn("@define-color voluta_fg {{ink}};", gtk)
+        self.assertNotIn(".voluta headerbar", gtk)
         self.assertNotIn("opacity:", gtk)
 
     def test_limusic_song_layer_does_not_show_the_page_under_it(self):

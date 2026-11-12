@@ -1,11 +1,9 @@
-/* Karere's libadwaita chrome. Wallust writes ~/.config/gtk-4.0/gtk.css.
+/* Global GTK user stylesheet. Wallust writes ~/.config/gtk-4.0/gtk.css
+ * (and the GTK3 copy). Every GTK app loads this on top of the active theme.
  *
- * Rules are scoped to the .voluta class that the packaged Karere adds to its
- * window and preferences dialog. Other GTK applications do not carry that
- * class, so this sheet does not recolor them.
- *
- * Surfaces use the shared background. Text and controls stay opaque. The
- * shared background publisher replaces the extracted background afterwards.
+ * Flat header bars, menus, preferences, and controls follow the shared
+ * background, ink, and accent. Text and controls stay opaque. The shared
+ * background publisher replaces the extracted background afterwards.
  */
 
 {% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
@@ -19,114 +17,144 @@
 @define-color voluta_line mix(@voluta_bg, @voluta_fg, 0.16);
 @define-color voluta_hover mix(@voluta_bg, @voluta_accent, 0.22);
 
-.voluta {
+window,
+window.background,
+.background {
     background-color: @voluta_bg;
     color: @voluta_fg;
 }
 
-.voluta headerbar {
+headerbar,
+.titlebar,
+headerbar.default-decoration {
     background-color: @voluta_bg;
+    background-image: none;
     color: @voluta_fg;
     box-shadow: none;
+    border: none;
     border-bottom: 1px solid @voluta_line;
     min-height: 0;
     padding: 2px 8px;
 }
 
-.voluta headerbar .title {
+headerbar:backdrop,
+.titlebar:backdrop {
+    background-color: @voluta_bg;
+    color: @voluta_muted;
+}
+
+headerbar .title,
+headerbar label.title {
     color: @voluta_fg;
     font-weight: 600;
 }
 
-.voluta headerbar .subtitle {
+headerbar .subtitle,
+headerbar label.subtitle {
     color: @voluta_muted;
 }
 
-.voluta headerbar button,
-.voluta headerbar menubutton,
-.voluta button {
+headerbar button,
+headerbar menubutton,
+headerbar button.flat,
+headerbar button.image-button,
+button.flat {
     background-color: transparent;
+    background-image: none;
     color: @voluta_fg;
     border-color: transparent;
+    box-shadow: none;
 }
 
-.voluta headerbar button:hover,
-.voluta headerbar menubutton:hover,
-.voluta button:hover,
-.voluta row:hover,
-.voluta row:selected {
+headerbar button:hover,
+headerbar menubutton:hover,
+button.flat:hover,
+button:hover,
+row:hover,
+row:selected {
     background-color: @voluta_hover;
+    background-image: none;
     color: @voluta_fg;
 }
 
-.voluta windowcontrols button.close:hover {
+windowcontrols button.close:hover,
+headerbar button.close:hover {
     background-color: @voluta_accent;
     color: @voluta_bg;
 }
 
-.voluta preferencespage,
-.voluta preferencesgroup,
-.voluta list,
-.voluta listview,
-.voluta row,
-.voluta toolbarview,
-.voluta navigation-sidebar {
+preferencespage,
+preferencesgroup,
+list,
+listview,
+row,
+toolbarview,
+navigation-sidebar,
+.sidebar,
+stack,
+viewport {
     background-color: @voluta_bg;
     color: @voluta_fg;
 }
 
-.voluta row label,
-.voluta preferencesgroup label.title,
-.voluta preferencesgroup label.subtitle {
+row label,
+preferencesgroup label.title,
+preferencesgroup label.subtitle {
     color: @voluta_fg;
 }
 
-.voluta label.dim-label,
-.voluta label.subtitle,
-.voluta preferencesgroup label.subtitle {
+label.dim-label,
+label.subtitle,
+preferencesgroup label.subtitle {
     color: @voluta_muted;
 }
 
-.voluta entry,
-.voluta textview,
-.voluta textview text {
+entry,
+textview,
+textview text {
     background-color: @voluta_raised;
+    background-image: none;
     color: @voluta_fg;
     caret-color: @voluta_accent;
 }
 
-.voluta entry:focus,
-.voluta row:selected {
+entry:focus,
+entry:focus-within,
+row:selected {
     border-color: @voluta_accent;
 }
 
-.voluta switch {
+switch {
     background-color: @voluta_line;
     color: @voluta_fg;
 }
 
-.voluta switch:checked,
-.voluta switch:checked slider {
+switch:checked,
+switch:checked slider {
     background-color: @voluta_accent;
     color: @voluta_bg;
 }
 
-.voluta popover,
-.voluta popover contents,
-.voluta menu,
-.voluta popover modelbutton,
-.voluta popover button {
+popover,
+popover contents,
+popover.background,
+menu,
+popover modelbutton,
+popover button,
+menuitem {
     background-color: @voluta_raised;
+    background-image: none;
     color: @voluta_fg;
 }
 
-.voluta popover modelbutton:hover,
-.voluta menu menuitem:hover {
+popover modelbutton:hover,
+menu menuitem:hover,
+menuitem:hover {
     background-color: @voluta_hover;
     color: @voluta_fg;
 }
 
-.voluta separator,
-.voluta scrollbar trough {
+separator,
+scrollbar trough {
     background-color: @voluta_line;
 }

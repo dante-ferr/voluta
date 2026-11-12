@@ -65,12 +65,13 @@ because that would also fade the type. Chromium paints the page into Karere's
 surface, so the canvas alpha shows the wallpaper only when that surface is
 itself transparent.
 
-Karere also reloads `~/.config/gtk-4.0/gtk.css`, written from
-`wallust/templates/colors-karere-gtk.css`. That sheet recolors the header bar,
-menus, and preferences dialog with the same background, ink, and accent. Every
-rule is under the `.voluta` class, which the packaged Karere adds to its window
-and preferences dialog, so other GTK applications keep their own theme. Text
-and controls stay opaque.
+Wallust also writes `wallust/templates/colors-karere-gtk.css` to
+`~/.config/gtk-4.0/gtk.css` and `~/.config/gtk-3.0/gtk.css`. That sheet is the
+global GTK user stylesheet: flat header bars, menus, preferences, and controls
+use the shared background, ink, and accent. GTK loads it for every app on top
+of the active theme. Karere reloads the GTK4 path while it is open. Text and
+controls stay opaque. Brave's published Imperium GTK theme stays separate for
+Chromium chrome.
 Brave's **Ultra dark theme / Darker theme** override must be off for the GTK
 background lightness to match; ordinary Dark mode can remain enabled.
 Existing transparency settings remain application-specific, so wallpaper behind

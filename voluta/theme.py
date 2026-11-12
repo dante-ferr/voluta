@@ -93,6 +93,7 @@ def publish(config=None, cache=None, directory=None, host=None):
     edit("limusic/matugen.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("karere/custom.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("gtk-4.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
+    edit("gtk-3.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
 
     source = palette.get("source_bg", palette["bg"])
     generated = cache / "voluta"
