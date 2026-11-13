@@ -174,6 +174,25 @@ class SettingsTests(unittest.TestCase):
         self.assertTrue(shared.is_file())
         self.assertEqual(cli.read(shared)["hyprland"]["input"]["kb_layout"], "toml-write")
 
+    def test_toml_migrates_keybinding_chords_with_spaces(self):
+        alone = self.root / "chord-migrate"
+        alone.mkdir()
+        (alone / "settings.json").write_text(json.dumps({
+            "version": 1,
+            "keybindings": {
+                "SUPER + F1": "nwg-displays-apply -p Horizontal",
+                "SUPER + ALT + R": False,
+            },
+        }))
+        migrated = cli.migrate_directory(alone)
+        self.assertEqual(len(migrated), 1)
+        text = (alone / "settings.toml").read_text()
+        self.assertIn('"SUPER + F1"', text)
+        self.assertIn('"SUPER + ALT + R"', text)
+        data = cli.read(alone / "settings.toml")
+        self.assertEqual(data["keybindings"]["SUPER + F1"], "nwg-displays-apply -p Horizontal")
+        self.assertIs(data["keybindings"]["SUPER + ALT + R"], False)
+
     def test_lua_roundtrip_and_no_injection(self):
         payload = 'br"; error("injected") --\nç\\'
         self.write("settings.json", {"hyprland": {"input": {"kb_layout": payload}}})

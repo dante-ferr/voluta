@@ -109,18 +109,43 @@ def _restore_nulls(value):
 def _prepare_toml_nulls(text):
     """Accept Voluta's `null` extension (JSON-compatible) before stdlib tomllib."""
     lines = []
+    # Bare keys or basic quoted keys, then = null (optional comment).
+    null_line = re.compile(
+        r'^(\s*(?:[A-Za-z0-9_.-]+|"[^"\\]*(?:\\.[^"\\]*)*")\s*=\s*)null(\s*(?:#.*)?)(\r?\n)?$'
+    )
     for line in text.splitlines(keepends=True):
         stripped = line.lstrip()
         if not stripped or stripped.startswith("#"):
             lines.append(line)
             continue
-        match = re.match(r"^(\s*[A-Za-z0-9_.-]+\s*=\s*)null(\s*(?:#.*)?)(\r?\n)?$", line)
+        match = null_line.match(line)
         if match:
             ending = match.group(3) or ""
             lines.append(f'{match.group(1)}"{_NULL_TOKEN}"{match.group(2)}{ending}')
         else:
             lines.append(line)
     return "".join(lines)
+
+
+def _toml_escape_basic(text):
+    return (
+        text.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\b", "\\b")
+        .replace("\f", "\\f")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
+
+
+def _toml_key(key):
+    """Emit a bare key when legal; otherwise a basic quoted key (chords, spaces)."""
+    if not isinstance(key, str) or not key:
+        raise ValueError("TOML keys must be nonempty strings")
+    if re.fullmatch(r"[A-Za-z0-9_-]+", key):
+        return key
+    return f'"{_toml_escape_basic(key)}"'
 
 
 def _toml_escape(value):
@@ -135,16 +160,7 @@ def _toml_escape(value):
             raise ValueError("non-finite numbers are not supported")
         return format(value, ".15g")
     if isinstance(value, str):
-        escaped = (
-            value.replace("\\", "\\\\")
-            .replace('"', '\\"')
-            .replace("\b", "\\b")
-            .replace("\f", "\\f")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t")
-        )
-        return f'"{escaped}"'
+        return f'"{_toml_escape_basic(value)}"'
     if isinstance(value, list):
         if any(isinstance(item, dict) for item in value):
             raise TypeError("array of tables cannot be inlined")
@@ -161,7 +177,7 @@ def dumps_toml(data):
     def split_table(table):
         scalars, nested, arrays = [], [], []
         for key, value in table.items():
-            if not isinstance(key, str) or not key or not re.fullmatch(r"[A-Za-z0-9_-]+", key):
+            if not isinstance(key, str) or not key:
                 raise ValueError(f"unsupported TOML key: {key!r}")
             if isinstance(value, dict):
                 nested.append((key, value))
@@ -179,16 +195,18 @@ def dumps_toml(data):
             # Skip empty intermediate parents; write truly empty tables explicitly.
             lines.append(f"[{header}]")
         for key, value in scalars:
-            lines.append(f"{key} = {_toml_escape(value)}")
+            lines.append(f"{_toml_key(key)} = {_toml_escape(value)}")
         if scalars and (nested or arrays):
             lines.append("")
         base = array_header if array_header is not None else header
         for key, value in nested:
-            child = f"{base}.{key}" if base else key
+            segment = _toml_key(key)
+            child = f"{base}.{segment}" if base else segment
             emit_table(child, value)
             lines.append("")
         for key, value in arrays:
-            child = f"{base}.{key}" if base else key
+            segment = _toml_key(key)
+            child = f"{base}.{segment}" if base else segment
             for item in value:
                 if not isinstance(item, dict):
                     raise TypeError("array of tables entries must be tables")
