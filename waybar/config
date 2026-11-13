@@ -66,7 +66,7 @@
         "active-only": false,
         "all-outputs": true,
         "disable-scroll": false,
-        "format": "<span rise='-1024'>{icon}</span> <span font_family='JetBrainsMono Nerd Font Mono' size='15000' letter_spacing='0' rise='-4096'>{windows}</span>",
+        "format": "<span rise='-1024'>{icon}</span> <span font_family='JetBrainsMono Nerd Font Mono' size='14000' letter_spacing='0' rise='-4096'>{windows}</span>",
         "format-window-separator": " ",
         "window-rewrite-default": "",
         "window-rewrite": {
