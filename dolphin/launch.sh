@@ -24,6 +24,8 @@ fi
 export LD_PRELOAD="${lib}${LD_PRELOAD:+:$LD_PRELOAD}"
 export QT_QPA_PLATFORMTHEME=qt6ct
 export FONTCONFIG_FILE="$here/fonts.conf"
+# The shared Imperium Kvantum theme stays opaque for other Qt apps.
+export KVANTUM_THEME=dolphin
 
 platform_args=()
 rhi=$(python3 "$here/../voluta/cli.py" get dolphin_rhi 2>/dev/null || echo false)

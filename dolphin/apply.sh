@@ -9,12 +9,23 @@ python3 "$root/voluta/cli.py" enabled dolphin --legacy || exit 0
 source "$root/deps/packages.sh"
 ensure_arch_packages "$root/deps/dolphin.txt" Dolphin
 
+need_cache=false
+if ! fc-match -f '%{family}' 'Oxanium' | grep -q 'Oxanium'; then
+    need_cache=true
+fi
 if ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
+    need_cache=true
+fi
+if $need_cache; then
     fc-cache -f
-    if ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
-        echo 'otf-monaspace is installed, but fontconfig cannot resolve Monaspace Argon.' >&2
-        exit 1
-    fi
+fi
+if ! fc-match -f '%{family}' 'Oxanium' | grep -q 'Oxanium'; then
+    echo 'ttf-oxanium is installed, but fontconfig cannot resolve Oxanium.' >&2
+    exit 1
+fi
+if ! fc-match -f '%{family}' 'Monaspace Argon' | grep -q 'Monaspace Argon'; then
+    echo 'otf-monaspace is installed, but fontconfig cannot resolve Monaspace Argon.' >&2
+    exit 1
 fi
 
 python3 "$here/apply-config.py"

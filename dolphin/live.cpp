@@ -5,10 +5,11 @@
 // PaletteChange. Wallpaper changes rewrite the scheme file under a new path
 // and this library points the running process at it.
 //
-// Backgrounds use 94% opacity, which is less transparent than Kitty (75%).
-// A fully clear color is what turned some panels black: an opaque widget
-// flattens alpha 0 against black. Text, selection, buttons, and tooltips
-// stay fully opaque.
+// The file body uses 60% opacity. Toolbar and sidebar stay opaque in QSS.
+// Toolbar and sidebar chrome are painted opaque and darker in QSS so areas
+// read as distinct plates. A fully clear color is what turned some panels
+// black: an opaque widget flattens alpha 0 against black. Text, selection,
+// buttons, and tooltips stay fully opaque.
 
 #include <QAbstractScrollArea>
 #include <QAbstractItemDelegate>
@@ -53,11 +54,11 @@
 
 namespace {
 
-constexpr int kBackgroundAlpha = 240; // 0.94. Kitty uses 0.75.
-constexpr int kPlacesSpacing = 1;
-constexpr int kPlacesIconSize = 24;
-constexpr int kPlacesExtraIconGap = 8;
-constexpr int kSidebarDefaultWidth = 240;
+constexpr int kBackgroundAlpha = 153; // 0.60. Chrome stays opaque in QSS.
+constexpr int kPlacesSpacing = 0;
+constexpr int kPlacesIconSize = 22;
+constexpr int kPlacesExtraIconGap = 6;
+constexpr int kSidebarDefaultWidth = 220;
 
 QString homeConfig(const char *leaf);
 
@@ -92,7 +93,8 @@ QRect headingOrnamentRect(const QRect &heading, int textWidth)
 
 QFont imperiumFont()
 {
-    QFont font(QStringLiteral("Monaspace Argon"), 10, QFont::Normal);
+    // Proportional UI sans (Limusic default). The embedded terminal keeps Monaspace.
+    QFont font(QStringLiteral("Oxanium"), 11, QFont::Normal);
     font.setStyleName(QStringLiteral("Regular"));
     return font;
 }
@@ -669,6 +671,16 @@ public:
 
     bool eventFilter(QObject *watched, QEvent *event) override
     {
+        if (event->type() == QEvent::Polish || event->type() == QEvent::Show) {
+            if (auto *window = qobject_cast<QMainWindow *>(watched);
+                window && window->inherits("DolphinMainWindow")) {
+                // The alpha buffer has to exist before the Wayland surface
+                // is shown, or the file body is flattened to an opaque fill.
+                window->setAttribute(Qt::WA_TranslucentBackground, true);
+                window->setAttribute(Qt::WA_NoSystemBackground, true);
+                window->setAutoFillBackground(false);
+            }
+        }
         if (event->type() == QEvent::Show && (watched->inherits("KFilePlacesView") || watched->inherits("TerminalPanel")
                                             || qobject_cast<QMainWindow *>(watched))) {
             QTimer::singleShot(0, this, [this] { apply(); });
@@ -676,10 +688,18 @@ public:
         if (watched->property("imperiumGlass").toBool()
             && (event->type() == QEvent::PaletteChange || event->type() == QEvent::Show)) {
             if (auto *widget = qobject_cast<QWidget *>(watched)) {
-                // Dolphin resets the viewport color on focus. Keep that fill
-                // translucent so it cannot flatten to black.
-                widget->setAttribute(Qt::WA_TranslucentBackground, true);
-                widget->setAutoFillBackground(false);
+                // Dolphin resets the viewport color on focus and paints the
+                // opaque scheme color over the window. Put the clear fill back
+                // after that handler.
+                const auto clearFill = [widget = QPointer<QWidget>(widget)] {
+                    if (!widget) {
+                        return;
+                    }
+                    widget->setAttribute(Qt::WA_TranslucentBackground, true);
+                    widget->setAutoFillBackground(false);
+                };
+                clearFill();
+                QTimer::singleShot(0, widget, clearFill);
             }
         }
         return QObject::eventFilter(watched, event);
@@ -761,14 +781,39 @@ private:
         if (!sameColor(qApp->palette(), palette)) {
             qApp->setPalette(palette);
         }
+        QPalette chromePalette = palette;
+        const QColor chrome = solid(colors.viewBg);
+        chromePalette.setColor(QPalette::Window, chrome);
+        chromePalette.setColor(QPalette::Base, chrome);
+        chromePalette.setColor(QPalette::Button, chrome);
+        const auto paintChrome = [&chromePalette, chrome](QWidget *widget) {
+            widget->setAttribute(Qt::WA_TranslucentBackground, false);
+            widget->setAutoFillBackground(true);
+            if (!sameColor(widget->palette(), chromePalette)) {
+                widget->setPalette(chromePalette);
+            }
+            const QString chromeCss = QStringLiteral("background-color: %1;")
+                                          .arg(chrome.name(QColor::HexRgb));
+            if (widget->property("imperiumChrome").toString() != chromeCss) {
+                widget->setStyleSheet(chromeCss);
+                widget->setProperty("imperiumChrome", chromeCss);
+            }
+        };
 
         const auto widgets = QApplication::allWidgets();
         for (QWidget *widget : widgets) {
             if (auto *window = qobject_cast<QMainWindow *>(widget); window && window->inherits("DolphinMainWindow")) {
                 applyInitialPanelLayout(window);
-                auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly);
-                auto *corners = frame ? static_cast<CornerFrame *>(frame) : new CornerFrame(window);
-                corners->refresh();
+                // The file body is the window fill. It has to be a real
+                // translucent surface or Qt flattens that alpha to black.
+                window->setAttribute(Qt::WA_TranslucentBackground, true);
+                window->setAttribute(Qt::WA_NoSystemBackground, true);
+                window->setAutoFillBackground(false);
+                // Compact chrome has no spare margin for the 60px corner marks.
+                if (auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly)) {
+                    frame->hide();
+                    frame->deleteLater();
+                }
             }
         }
         for (QWidget *widget : widgets) {
@@ -783,13 +828,16 @@ private:
                 }
             }
             if (auto *toolbar = qobject_cast<QToolBar *>(widget)) {
-                toolbar->setContentsMargins(16, 10, 16, 6);
+                toolbar->setContentsMargins(8, 4, 8, 3);
+                paintChrome(toolbar);
             }
             if (auto *status = qobject_cast<QStatusBar *>(widget)) {
-                status->setContentsMargins(18, 8, 18, 12);
+                status->setContentsMargins(10, 3, 10, 4);
+                paintChrome(status);
             }
             if (auto *dock = qobject_cast<QDockWidget *>(widget)) {
-                dock->setContentsMargins(8, 8, dock->objectName() == QLatin1String("placesDock") ? 2 : 10, 8);
+                dock->setContentsMargins(4, 2, dock->objectName() == QLatin1String("placesDock") ? 0 : 4, 4);
+                paintChrome(dock);
             }
 
             auto *view = qobject_cast<QGraphicsView *>(widget);
@@ -810,30 +858,79 @@ private:
                 }
                 setInitialSidebarWidth(widget);
             }
-            if (!sameColor(widget->palette(), palette)) {
+            if (places) {
+                paintChrome(widget);
+            } else if (!sameColor(widget->palette(), palette)) {
                 widget->setPalette(palette);
             }
-            widget->setAttribute(Qt::WA_TranslucentBackground, true);
-            widget->setAutoFillBackground(false);
+            widget->setAttribute(Qt::WA_TranslucentBackground, !places);
+            widget->setAutoFillBackground(places);
             if (auto *area = qobject_cast<QAbstractScrollArea *>(widget)) {
                 if (QWidget *viewport = area->viewport()) {
-                    viewport->setAttribute(Qt::WA_TranslucentBackground, true);
-                    viewport->setAutoFillBackground(false);
-                    if (!viewport->property("imperiumGlass").toBool()) {
-                        viewport->setProperty("imperiumGlass", true);
-                    }
-                    if (!sameColor(viewport->palette(), palette)) {
-                        viewport->setPalette(palette);
+                    if (places) {
+                        viewport->setAttribute(Qt::WA_TranslucentBackground, false);
+                        viewport->setAutoFillBackground(true);
+                        if (!sameColor(viewport->palette(), chromePalette)) {
+                            viewport->setPalette(chromePalette);
+                        }
+                        const QString chromeCss = QStringLiteral("background-color: %1;")
+                                                      .arg(chrome.name(QColor::HexRgb));
+                        if (viewport->property("imperiumChrome").toString() != chromeCss) {
+                            viewport->setStyleSheet(chromeCss);
+                            viewport->setProperty("imperiumChrome", chromeCss);
+                        }
+                    } else {
+                        viewport->setAttribute(Qt::WA_TranslucentBackground, true);
+                        viewport->setAutoFillBackground(false);
+                        if (!viewport->property("imperiumGlass").toBool()) {
+                            viewport->setProperty("imperiumGlass", true);
+                        }
+                        if (!sameColor(viewport->palette(), palette)) {
+                            viewport->setPalette(palette);
+                        }
                     }
                 }
                 if (places) {
-                    ViewportMargins::set(area, 14, 6, 0, 8);
+                    ViewportMargins::set(area, 6, 2, 0, 4);
                 } else if (view) {
-                    ViewportMargins::set(area, 10, 8, 10, 8);
+                    ViewportMargins::set(area, 4, 2, 4, 4);
                 }
             }
             if (!view || !view->scene()) {
                 continue;
+            }
+            if (!places) {
+                // The window fill is the 60% body. Dolphin's own palette
+                // update paints an opaque view color unless this stays clear.
+                const QString bodyCss = QStringLiteral("background-color: rgba(%1,%2,%3,%4);")
+                                            .arg(colors.windowBg.red())
+                                            .arg(colors.windowBg.green())
+                                            .arg(colors.windowBg.blue())
+                                            .arg(kBackgroundAlpha);
+                view->setProperty("imperiumGlass", true);
+                view->setAttribute(Qt::WA_TranslucentBackground, true);
+                view->setAutoFillBackground(false);
+                if (view->property("imperiumBody").toString() != bodyCss) {
+                    view->setStyleSheet(bodyCss);
+                    view->setProperty("imperiumBody", bodyCss);
+                }
+                if (!view->property("imperiumGlassFilter").toBool()) {
+                    view->installEventFilter(this);
+                    view->setProperty("imperiumGlassFilter", true);
+                }
+                if (QWidget *inner = view->viewport()) {
+                    inner->setProperty("imperiumGlass", true);
+                    inner->setAttribute(Qt::WA_TranslucentBackground, true);
+                    inner->setAutoFillBackground(false);
+                    if (inner->property("imperiumBody").toString() != bodyCss) {
+                        inner->setStyleSheet(bodyCss);
+                        inner->setProperty("imperiumBody", bodyCss);
+                    }
+                    if (!inner->property("imperiumGlassFilter").toBool()) {
+                        inner->installEventFilter(this);
+                        inner->setProperty("imperiumGlassFilter", true);
+                    }
+                }
             }
             view->setBackgroundBrush(Qt::NoBrush);
             const auto items = view->scene()->items();
@@ -850,7 +947,16 @@ private:
                     auto *branches = static_cast<FolderBranchStyle *>(view->scene()->style());
                     branches->refreshTheme(schemePath);
                 }
-                if (graphics && !sameColor(graphics->palette(), palette)) {
+                if (graphics && graphics->inherits("DolphinItemListView")) {
+                    QPalette body = palette;
+                    const QColor fill = glass(colors.windowBg);
+                    body.setColor(QPalette::Base, fill);
+                    body.setColor(QPalette::Window, fill);
+                    body.setColor(QPalette::AlternateBase, fill);
+                    if (!sameColor(graphics->palette(), body)) {
+                        graphics->setPalette(body);
+                    }
+                } else if (graphics && !sameColor(graphics->palette(), palette)) {
                     graphics->setPalette(palette);
                 } else if (graphics && graphics->inherits("DolphinItemListView") && schemeChanged) {
                     // Inherited palettes may already match. Dolphin still

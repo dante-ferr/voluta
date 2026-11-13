@@ -203,9 +203,14 @@ def verify_colors(home: Path, expected_bg: str, label: str) -> None:
         for key in ("BackgroundNormal", "BackgroundAlternate"):
             value = groups.get(group_name, {}).get(key)
             check(value is not None, f"{label}: missing {group_name} {key}")
-            check(value[:3] == target, f"{label}: {group_name} {key} differs from Dolphin background")
-            expected_alpha = 0 if group_name == "Colors:View" else 240
-            check(value[3] == expected_alpha, f"{label}: {group_name} {key} opacity is wrong")
+            check(value[:3] == target or group_name != "Colors:View",
+                  f"{label}: {group_name} {key} differs from Dolphin background")
+            if group_name == "Colors:View":
+                check(value[3] == 0, f"{label}: {group_name} {key} opacity is wrong")
+            else:
+                check(value[3] == 153, f"{label}: {group_name} {key} opacity is wrong")
+                check(sum(value[:3]) > sum(target),
+                      f"{label}: {group_name} {key} is not lighter than the chrome base")
     selection = groups.get("Colors:Selection", {})
     check("BackgroundNormal" in selection and "ForegroundNormal" in selection, f"{label}: missing selection colors")
     check(contrast(selection["ForegroundNormal"], selection["BackgroundNormal"]) >= 4.5,

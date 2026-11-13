@@ -134,9 +134,11 @@ static void verifyLiveSelection(const QString &home)
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    const QFont expected = imperiumFont();
-    check(expected.weight() == QFont::Normal && expected.pointSize() == 10,
-          "hook font must be Normal at 10 points");
+    const QFont expectedUi = imperiumFont();
+    QFont expectedMono(QStringLiteral("Monaspace Argon"), 10, QFont::Normal);
+    expectedMono.setStyleName(QStringLiteral("Regular"));
+    check(expectedUi.weight() == QFont::Normal && expectedUi.pointSize() == 11,
+          "hook font must be Normal at 11 points");
     // Pass an isolated generated home as the first remaining argument.
     check(argc > 1, "expected generated home argument");
     const QString home = QString::fromLocal8Bit(argv[1]);
@@ -144,8 +146,8 @@ int main(int argc, char **argv)
     check(stylesheet.open(QIODevice::ReadOnly), "cannot read generated stylesheet");
     app.setStyleSheet(QString::fromUtf8(stylesheet.readAll()));
     KItemListRoleEditor renameEditor;
-    app.setFont(expected);
-    renameEditor.setFont(expected);
+    app.setFont(expectedUi);
+    renameEditor.setFont(expectedUi);
     renameEditor.document()->setDocumentMargin(0);
     renameEditor.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     renameEditor.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -161,17 +163,23 @@ int main(int argc, char **argv)
     renameEditor.hide();
     app.setStyleSheet({});
     for (const auto &entry : {
-             qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"), QStringLiteral("Fonts/general")),
-             qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"), QStringLiteral("Fonts/fixed")),
-             qMakePair(QStringLiteral("/.config/kdeglobals"), QStringLiteral("General/font")),
-             qMakePair(QStringLiteral("/.config/kdeglobals"), QStringLiteral("General/toolBarFont")),
-             qMakePair(QStringLiteral("/.local/share/konsole/Imperium.profile"), QStringLiteral("Appearance/Font")),
+             qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"),
+                       qMakePair(QStringLiteral("Fonts/general"), expectedUi)),
+             qMakePair(QStringLiteral("/.config/qt6ct/qt6ct.conf"),
+                       qMakePair(QStringLiteral("Fonts/fixed"), expectedMono)),
+             qMakePair(QStringLiteral("/.config/kdeglobals"),
+                       qMakePair(QStringLiteral("General/font"), expectedUi)),
+             qMakePair(QStringLiteral("/.config/kdeglobals"),
+                       qMakePair(QStringLiteral("General/toolBarFont"), expectedUi)),
+             qMakePair(QStringLiteral("/.local/share/konsole/Imperium.profile"),
+                       qMakePair(QStringLiteral("Appearance/Font"), expectedMono)),
          }) {
         QSettings settings(home + entry.first, QSettings::IniFormat);
         // QSettings reserves [General] for root keys; KConfig uses it as a
         // named group. Account for that when reading the KDE font settings.
-        const QString key = entry.second.startsWith(QLatin1String("General/"))
-            ? entry.second.mid(8) : entry.second;
+        const QString key = entry.second.first.startsWith(QLatin1String("General/"))
+            ? entry.second.first.mid(8) : entry.second.first;
+        const QFont &expected = entry.second.second;
         const QVariant value = settings.value(key);
         // KConfig stores fonts as unquoted comma-separated strings. QSettings
         // interprets those as lists; rejoin to test what KConfig passes to Qt.
@@ -181,7 +189,7 @@ int main(int argc, char **argv)
         check(decoded.fromString(serialized), "generated font string is invalid");
         check(decoded.family() == expected.family() && decoded.styleName() == expected.styleName()
                   && decoded.weight() == expected.weight() && decoded.pointSize() == expected.pointSize(),
-              "generated font differs from the hook's font");
+              "generated font differs from the expected UI or mono font");
     }
 
     QMainWindow window;

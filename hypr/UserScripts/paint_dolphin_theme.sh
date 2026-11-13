@@ -3,7 +3,8 @@
 #
 # Dolphin follows qt6ct + Kvantum + the KDE color scheme. This writes those
 # three from the current wallpaper colors and points Kvantum at the Imperium
-# theme. Sharp corners are already baked into the theme template.
+# theme. Soft corners and the Oxanium UI font are applied in the QSS layer;
+# the embedded terminal keeps Monaspace Argon.
 set +m
 
 _rice_paths="$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
@@ -206,17 +207,18 @@ filled_kv = fill(kv_in)
 with open(os.path.join(theme_dir, "imperium.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(filled_kv)
 
-# Dolphin gets a roomier copy of the same theme. Other Qt apps keep the
-# tighter Imperium margins.
+# Dolphin keeps a compact translucent body. Other Qt apps keep the shared
+# Imperium margins.
 dolphin_theme = os.path.join(home, ".config", "Kvantum", "dolphin")
 os.makedirs(dolphin_theme, exist_ok=True)
 # Translucency and the Kitty-like background are Dolphin-only.
 dolphin_tokens = {"@@BASE@@": hx(dolphin_bg), "@@MANTLE@@": hx(dolphin_bg)}
-dolphin_kv = fill(kv_in, dolphin_tokens).replace("layout_margin=4", "layout_margin=12", 1)
+dolphin_kv = fill(kv_in, dolphin_tokens).replace("layout_margin=4", "layout_margin=6", 1)
 dolphin_kv = dolphin_kv.replace("translucent_windows=false", "translucent_windows=true", 1)
-# 94% opacity keeps the wallpaper subtle; Kitty remains at 75%.
-dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=6", 1)
-dolphin_kv = dolphin_kv.replace("splitter_width=7", "splitter_width=2", 1)
+# Percent of opacity removed from the window fill. 40 leaves the file body
+# at 60%. Toolbar and sidebar paint their own opaque plates on top.
+dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=40", 1)
+dolphin_kv = dolphin_kv.replace("splitter_width=7", "splitter_width=0", 1)
 with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(dolphin_kv)
 svg_path = os.path.join(dolphin_theme, "dolphin.svg")
@@ -228,11 +230,11 @@ if os.path.lexists(svg_path):
 os.symlink(shared_dolphin_svg, svg_path)
 
 # The portal file dialog is a separate process, so it never loads Dolphin's
-# hook. Give it the same translucent palette with tighter margins than the
-# main window's 12px Kvantum layout and its extra stylesheet padding.
+# hook. Give it the same translucent palette with slightly tighter margins
+# than the main window's 6px Kvantum layout.
 picker_theme = os.path.join(home, ".config", "Kvantum", "dolphin-picker")
 os.makedirs(picker_theme, exist_ok=True)
-picker_kv = dolphin_kv.replace("layout_margin=12", "layout_margin=6", 1)
+picker_kv = dolphin_kv.replace("layout_margin=6", "layout_margin=4", 1)
 with open(os.path.join(picker_theme, "dolphin-picker.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(picker_kv)
 picker_svg = os.path.join(picker_theme, "dolphin-picker.svg")
@@ -324,11 +326,20 @@ os.makedirs(qss_dir, exist_ok=True)
 qss_path = os.path.join(qss_dir, "imperium.qss")
 ivory = hx(text)
 bg_hex = hx(mantle)
+# The wallpaper base is often near-black, so darkening it again does not
+# separate the plates. Chrome stays on that dark base; the file body is lifted
+# toward the foreground.
+chrome = dolphin_bg
+body = mix(dolphin_bg, text, 0.16)
+# 60% alpha. Chrome QSS stays opaque; only this fill lets the wallpaper through.
+body_alpha = 153
+chrome_hex = hx(chrome)
+body_hex = hx(body)
 alt_hex = hx(alternate)
 sel_hex = hx(select_bg)
 sel_fg = hx(selection_text)
 hover_hex = hx(hover)
-edge = hx(mix(accent, mantle, 0.45))
+edge = hx(mix(accent, chrome, 0.38))
 panel = hx(base)
 quiet = hx(muted)
 # Shared artwork stays outside Dolphin's private configuration. Repaint it
@@ -362,66 +373,63 @@ ornament_url = os.path.join(asset_dir, "dolphin-ornaments.svg").replace("\\", "/
 with open(qss_path, "w", encoding="utf-8") as handle:
     handle.write(f"""
 DolphinMainWindow {{
+    background-color: rgba({rgb(body)}, {body_alpha});
     color: #{ivory};
-    padding: 18px;
+    padding: 6px;
 }}
 DolphinMainWindow QToolBar {{
-    background-color: transparent;
+    background-color: #{chrome_hex};
     border: none;
-    padding: 8px 12px;
-    spacing: 6px;
-    margin: 8px 12px 6px 12px;
+    padding: 3px 8px;
+    spacing: 3px;
+    margin: 0px;
 }}
 DolphinMainWindow QStatusBar {{
-    background-color: transparent;
+    background-color: #{chrome_hex};
     color: #{quiet};
     border: none;
-    padding: 8px 16px;
-    margin: 6px 12px 12px 12px;
+    padding: 3px 10px;
+    margin: 0px;
 }}
 DolphinMainWindow QDockWidget {{
-    background-color: transparent;
+    background-color: #{chrome_hex};
     color: #{ivory};
     border: none;
     titlebar-close-icon: none;
-    margin: 10px;
-    padding: 6px;
+    margin: 0px;
+    padding: 0px;
 }}
 DolphinMainWindow::separator {{
-    background-color: #{edge};
-    width: 2px;
-    height: 2px;
-}}
-DolphinMainWindow::separator:hover {{
-    background-color: #{hx(accent)};
+    background-color: transparent;
+    width: 0px;
+    height: 0px;
 }}
 DolphinMainWindow QSplitter::handle {{
-    background-color: #{edge};
-    width: 2px;
-    height: 2px;
-}}
-DolphinMainWindow QSplitter::handle:hover {{
-    background-color: #{hx(accent)};
+    background-color: transparent;
+    width: 0px;
+    height: 0px;
 }}
 DolphinMainWindow QDockWidget#placesDock {{
-    margin-right: 2px;
+    margin-right: 0px;
     padding-right: 0px;
 }}
 DolphinMainWindow QToolButton {{
     background-color: transparent;
     color: #{ivory};
     border: none;
-    padding: 6px;
-    margin: 0 2px;
+    border-radius: 6px;
+    padding: 4px;
+    margin: 0 1px;
 }}
 DolphinMainWindow QToolButton:hover {{
     background-color: #{hover_hex};
     color: #{ivory};
 }}
 DolphinMainWindow QDockWidget::title {{
-    background-color: transparent;
+    background-color: #{chrome_hex};
     color: #{quiet};
-    padding: 10px 14px 4px 14px;
+    font-weight: 600;
+    padding: 6px 10px 4px 10px;
     border: none;
 }}
 DolphinMainWindow QDockWidget#placesDock::title,
@@ -430,21 +438,45 @@ DolphinMainWindow QDockWidget#infoDock::title {{
     background-image: url("{ornament_url}");
     background-repeat: no-repeat;
     background-position: right center;
-    padding-right: 78px;
+    padding-right: 64px;
+}}
+/* Path / breadcrumb strip: same chrome plate as the toolbars. */
+DolphinMainWindow UrlNavigator,
+DolphinMainWindow KUrlNavigator,
+DolphinMainWindow DolphinTabWidget QTabBar {{
+    background-color: #{chrome_hex};
+    color: #{ivory};
+    border: none;
+    padding: 2px 6px;
+    margin: 0px;
+}}
+DolphinMainWindow DolphinTabWidget QTabBar::tab {{
+    background-color: transparent;
+    color: #{quiet};
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    margin: 2px 1px;
+}}
+DolphinMainWindow DolphinTabWidget QTabBar::tab:selected,
+DolphinMainWindow DolphinTabWidget QTabBar::tab:hover {{
+    background-color: #{hover_hex};
+    color: #{ivory};
 }}
 QDockWidget#terminalDock {{
-    min-height: 220px;
+    min-height: 180px;
 }}
 QDockWidget#terminalDock::title {{
     max-height: 0px;
     padding: 0;
     margin: 0;
+    border: none;
 }}
 TerminalPanel {{
     background-color: transparent;
     color: #{ivory};
     border: none;
-    min-height: 200px;
+    min-height: 160px;
 }}
 TerminalPanel QWidget {{
     background-color: transparent;
@@ -452,7 +484,7 @@ TerminalPanel QWidget {{
     border: none;
 }}
 DolphinStatusBar QLabel {{
-    min-width: 240px;
+    min-width: 200px;
     color: #{quiet};
 }}
 TerminalPanel QMenuBar, TerminalPanel QToolBar, TerminalPanel QTabBar {{
@@ -479,24 +511,30 @@ QTreeView, QListView, QTableView, QColumnView {{
     selection-color: #{sel_fg};
     outline: 0;
     border: none;
-    padding: 4px;
+    padding: 2px;
 }}
 DolphinMainWindow QGraphicsView,
 DolphinMainWindow KItemListContainer,
 DolphinMainWindow QTreeView,
 DolphinMainWindow QListView,
 DolphinMainWindow QTableView,
-DolphinMainWindow QColumnView,
-DolphinMainWindow QHeaderView::section {{
+DolphinMainWindow QColumnView {{
     background-color: transparent;
     alternate-background-color: transparent;
     color: #{ivory};
     border: none;
-    padding: 8px;
+    padding: 4px;
+}}
+DolphinMainWindow QHeaderView::section {{
+    background-color: #{bg_hex};
+    color: #{quiet};
+    border: none;
+    padding: 5px 10px;
 }}
 QTreeView::item, QListView::item, QTableView::item {{
     color: #{ivory};
-    padding: 6px 12px;
+    padding: 3px 10px;
+    border-radius: 6px;
     background-color: transparent;
 }}
 DolphinMainWindow QTreeView::item,
@@ -514,15 +552,16 @@ QTreeView::item:selected:!active, QListView::item:selected:!active, QTableView::
     color: #{sel_fg};
 }}
 DolphinMainWindow KFilePlacesView {{
-    background-color: transparent;
+    background-color: #{chrome_hex};
     qproperty-spacing: 1;
-    padding: 4px 0px 8px 12px;
+    padding: 2px 0px 4px 4px;
 }}
 DolphinMainWindow KFilePlacesView::item {{
     color: #{ivory};
     background-color: transparent;
-    padding: 3px 12px;
-    margin: 0px;
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin: 0px 2px;
 }}
 DolphinMainWindow KFilePlacesView::item:hover {{
     background-color: #{hover_hex};
@@ -535,9 +574,9 @@ DolphinMainWindow KFilePlacesView::item:selected {{
 QHeaderView::section {{
     background-color: #{bg_hex};
     color: #{quiet};
+    font-weight: 600;
     border: none;
-    border-bottom: 1px solid #{edge};
-    padding: 8px 12px;
+    padding: 5px 10px;
 }}
 FilterBar {{
     max-height: 0px;
@@ -550,16 +589,19 @@ QToolTip {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    padding: 6px 10px;
+    border-radius: 6px;
+    padding: 5px 9px;
 }}
 QMenu {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    padding: 5px 8px;
+    border-radius: 8px;
+    padding: 4px 6px;
 }}
 QMenu::item {{
-    padding: 6px 12px;
+    border-radius: 5px;
+    padding: 5px 10px;
 }}
 QMenu::item:selected {{
     background-color: #{sel_hex};
@@ -567,32 +609,44 @@ QMenu::item:selected {{
 }}
 QMenu::separator {{
     height: 1px;
-    margin: 5px 8px;
-    background-color: #{edge};
+    margin: 4px 8px;
+    background-color: transparent;
+}}
+QLineEdit, QComboBox {{
+    background-color: #{panel};
+    color: #{ivory};
+    border: 1px solid #{edge};
+    border-radius: 6px;
+    padding: 4px 8px;
+    selection-background-color: #{sel_hex};
+    selection-color: #{sel_fg};
 }}
 QPlainTextEdit, QTextEdit, KTextEdit {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
+    border-radius: 6px;
     selection-background-color: #{sel_hex};
     selection-color: #{sel_fg};
 }}
 QTextEdit, KTextEdit {{
-    padding: 8px;
+    padding: 6px;
 }}
 /* F2 uses a one-line KTextEdit. Extra padding clips its initial filename
    until textChanged makes Dolphin recalculate the editor's height. */
 KItemListRoleEditor {{
     padding: 0px;
+    border-radius: 5px;
 }}
 KMessageWidget {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    padding: 8px 12px;
+    border-radius: 6px;
+    padding: 6px 10px;
 }}
 Baloo--FileMetaDataWidget {{
-    min-width: 260px;
+    min-width: 220px;
     color: #{ivory};
 }}
 """.lstrip())
@@ -627,8 +681,11 @@ def ensure_pair(lines, section, key, value):
 qt_conf = os.path.join(home, ".config", "qt6ct", "qt6ct.conf")
 # QFont::toString() in Qt 6 uses OpenType weights (Normal=400). A long
 # Qt 6 string with legacy weight 50 requests an extremely light font.
-font_regular = "Monaspace Argon,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
-font = '"' + font_regular + '"'
+# UI chrome uses Oxanium; mono stays on Monaspace for the terminal pane.
+font_ui = "Oxanium,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
+font_mono = "Monaspace Argon,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
+font_ui_quoted = '"' + font_ui + '"'
+font_mono_quoted = '"' + font_mono + '"'
 if os.path.isfile(qt_conf):
     with open(qt_conf, encoding="utf-8") as handle:
         qt_lines = handle.readlines()
@@ -641,7 +698,7 @@ for section, values in {
         "color_scheme_path": os.path.join(qt_dir, "Imperium.conf"),
         "custom_palette": "true", "icon_theme": "imperium", "style": "kvantum",
     },
-    "Fonts": {"fixed": font, "general": font},
+    "Fonts": {"fixed": font_mono_quoted, "general": font_ui_quoted},
     "Interface": {"stylesheets": qss_path},
 }.items():
     for key, value in values.items():
@@ -727,25 +784,31 @@ os.makedirs(scheme_dir, exist_ok=True)
 with open(os.path.join(scheme_dir, "Imperium.colors"), "w", encoding="utf-8") as handle:
     handle.write(scheme)
 
-# A fresh filename misses KColorScheme's in-process cache. View and window
-# backgrounds in this copy are 94% opaque. Fully clear backgrounds were
+# A fresh filename misses KColorScheme's in-process cache. View backgrounds
+# stay clear. The window fill is the lifted body at 60% alpha so the
+# wallpaper shows through the files. Fully clear window backgrounds were
 # flattened to black by opaque widgets. The shared Imperium scheme stays
 # opaque for every other Qt app.
-def clear_backgrounds(body):
+def clear_backgrounds(scheme_text):
     groups = {"Colors:View", "Colors:Window", "Colors:Complementary"}
     lines = []
     group = ""
-    for line in body.splitlines():
+    for line in scheme_text.splitlines():
         if line.startswith("[") and line.endswith("]"):
             group = line[1:-1]
         elif group in groups and (
             line.startswith("BackgroundNormal=") or line.startswith("BackgroundAlternate=")
         ):
-            if line.count(",") == 2:
-                # The file view must stay clear so it does not paint a second
-                # near-black slab over the window. The window fill is 94%.
+            if line.count(",") >= 2:
+                # Dolphin copies the view color onto the file surface and
+                # flattens a clear color to an opaque slab. The window and
+                # complementary fills carry the 60% body. The view stays the
+                # dark chrome base so the sidebar plate does not lighten.
                 key = line.split("=", 1)[0]
-                line = f"{key}={rgb(dolphin_bg)}," + ("0" if group == "Colors:View" else "240")
+                if group == "Colors:View":
+                    line = f"{key}={rgb(dolphin_bg)},0"
+                else:
+                    line = f"{key}={rgb(body)},{body_alpha}"
         lines.append(line)
     return "\n".join(lines) + "\n"
 
@@ -765,18 +828,16 @@ for name in os.listdir(scheme_dir):
 live_conf = os.path.join(home, ".config", "qt6ct", "dolphin-live.conf")
 
 kdeglobals = os.path.join(home, ".config", "kdeglobals")
-font_kde = font_regular
-font_small = font_regular.replace(",10,", ",8,", 1)
-font_toolbar = font_regular
+font_small = font_ui.replace(",11,", ",9,", 1)
 kde_keys = {
     "ColorScheme": "Imperium",
     "TerminalApplication": "kitty",
     "TerminalService": "kitty.desktop",
-    "font": font_kde,
-    "menuFont": font_kde,
-    "toolBarFont": font_toolbar,
+    "font": font_ui,
+    "menuFont": font_ui,
+    "toolBarFont": font_ui,
     "smallestReadableFont": font_small,
-    "fixed": font_kde,
+    "fixed": font_mono,
 }
 if os.path.isfile(kdeglobals):
     with open(kdeglobals, encoding="utf-8") as handle:
@@ -1081,7 +1142,7 @@ profile_body = (
         "[Appearance]\n"
         "BoldIntense=false\n"
         f"ColorScheme={terminal_live}\n"
-        f"Font={font_regular}\n"
+        f"Font={font_mono}\n"
         "LineSpacing=0\n"
         "\n"
         "[General]\n"

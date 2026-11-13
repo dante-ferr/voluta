@@ -20,8 +20,9 @@ voluta update
 This installs the launcher and desktop/D-Bus routing, merges the managed visual
 settings, builds the current hook, and regenerates Qt/Kvantum styling, icons,
 and the embedded terminal profile. It first installs missing packages from
-`deps/dolphin.txt`, including `otf-monaspace`, using the same installer as the
-full rice switch. It uses `paru`, or `sudo pacman` when paru is unavailable.
+`deps/dolphin.txt`, including `ttf-oxanium` and `otf-monaspace`, using the same
+installer as the full rice switch. It uses `paru`, or `sudo pacman` when paru is
+unavailable.
 A keybind invocation opens Kitty for authentication when needed; a terminal
 invocation uses that terminal. Installation failures stop the apply before
 appearance files are changed and report the remaining packages and a log path.
@@ -44,17 +45,19 @@ Opaque Qt window geometry is not copied between displays.
 
 The KDE portal file dialog (`xdg-desktop-portal-kde`) is a separate process, so
 it does not load the Dolphin hook. The generator gives it the `dolphin-picker`
-Kvantum theme: Dolphin's translucent palette with a 6px layout margin instead
-of Dolphin's 12px margin and stylesheet padding. The first launch uses a large
-details view, about 72% of the screen and at most 1280×800, with a 200px
-Places column. A later resize is kept. A saved maximize flag without a width
-is replaced, because that flag was opening the dialog at its small default size.
+Kvantum theme: Dolphin's translucent palette with a 4px layout margin instead
+of Dolphin's 6px margin. The first launch uses a large details view, about 72%
+of the screen and at most 1280×800, with a 200px Places column. A later resize
+is kept. A saved maximize flag without a width is replaced, because that flag
+was opening the dialog at its small default size. Toolbar and sidebar chrome
+use a darker opaque plate over the lighter file body.
 
 The Qt/KDE font strings use Qt 6's explicit Normal weight (400). The live hook
-also sets Monaspace Argon Regular at 10 points, and every view mode uses the
-system font instead of retaining a local custom font. `fonts.conf` gives this
-launcher the desktop's grayscale antialiasing and slight hinting, independently
-of machine-local fontconfig rules. It is inherited by the embedded terminal.
+sets Oxanium Regular at 11 points for UI chrome; qt6ct/kdeglobals `fixed` and
+the embedded Konsole profile keep Monaspace Argon Regular at 10 points. Every
+view mode uses the system font instead of retaining a local custom font.
+`fonts.conf` gives this launcher the desktop's grayscale antialiasing and slight
+hinting, independently of machine-local fontconfig rules.
 
 The launcher waits for a changed hook to compile and reports build failures
 instead of quietly loading an older version. Its cache fingerprints source,
@@ -72,8 +75,9 @@ Unwrapped processes and shell launchers are not treated as stale libraries.
 Refresh never kills an active Dolphin process or interrupts file transfers.
 
 Fonts and system Qt/KDE assets must also be installed on both hosts; the shared
-dependency list includes `otf-monaspace`, Kvantum, Breeze, qt6ct and the build
-dependencies. `voluta update` installs newly selected dependencies unless `--skip-deps` is used.
+dependency list includes `ttf-oxanium`, `otf-monaspace`, Kvantum, Breeze, qt6ct
+and the build dependencies. `voluta update` installs newly selected dependencies
+unless `--skip-deps` is used.
 Ark supplies the native Extract context menu for ZIP and other archives.
 Colors still follow each machine's wallpaper; screen scaling and differing
 system package versions can cause remaining differences.
@@ -82,8 +86,11 @@ Shared corner and scroll artwork lives in `../wallust/assets/`. The theme
 generator recolors it into `~/.config/wallust/assets/generated/` for the current
 palette. Dolphin uses the big corner design; notifications use the small
 design. All three sizes have mirrored variants in the shared asset folder.
-The hook frames each window and adds small ornaments to the panel
-headings. Decorations never receive clicks or keyboard focus. Existing
+The hook no longer frames the window with corner marks. Compact chrome has no
+margin for them, so they sat on the toolbar and status bar. Shared corner
+artwork remains for notifications and the New Tab gallery. The hook still adds
+small ornaments to panel headings when the heading is wide enough. Decorations
+never receive clicks or keyboard focus. Existing
 windows need one full quit and relaunch to load a changed hook; later palette
 changes refresh the artwork in place.
 
