@@ -70,6 +70,8 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("background-color: {{background}} !important;", text)
         self.assertNotIn("{{background}}a6", text)
         self.assertIn("--WDS-content-default: var(--voluta-ink) !important;", text)
+        self.assertIn("--WDS-content-default-RGB: {{ink | rgb}} !important;", text)
+        self.assertIn("--primary: var(--voluta-ink) !important;", text)
         self.assertIn("color: {{ink}};", text)
         self.assertNotIn("opacity: 0", text)
         self.assertNotIn("{{ink}}a", text)

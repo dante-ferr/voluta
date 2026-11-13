@@ -13,7 +13,7 @@
 
 pkgname=karere-custom-css
 pkgver=4.3.5
-pkgrel=2
+pkgrel=4
 pkgdesc="Karere with optional custom.css live reload"
 arch=('x86_64')
 url="https://github.com/riccardomarotti/karere"

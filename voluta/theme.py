@@ -89,9 +89,14 @@ def publish(config=None, cache=None, directory=None, host=None):
         return json.dumps(data, indent=4) + "\n"
     edit("quickshell/qml_color.json", quickshell)
     # Wallust writes the extracted background. Replace that hex only, so the accent stays put
-    # and a later refresh cannot darken the resolved base a second time.
+    # and a later refresh cannot darken the resolved base a second time. Karere also paints
+    # from --WDS-*-RGB triplets, so those must move with the hex.
+    source_rgb = ",".join(map(str, source))
+    def replace_background(text):
+        text = re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE)
+        return text.replace(source_rgb, rgb)
     edit("limusic/matugen.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
-    edit("karere/custom.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
+    edit("karere/custom.css", replace_background)
     edit("gtk-4.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("gtk-3.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
 
