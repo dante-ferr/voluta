@@ -34,7 +34,7 @@ MUSIC_FRAME = Path('wallust/assets/music-frame.png')
 MUSIC_SIZE = (624, 1040)
 SESSION_FRAME = Path('wallust/assets/session-frame.png')
 SESSION_SIZE = MUSIC_SIZE
-MUSIC_CONTENT_PAD = 18
+MUSIC_CONTENT_PAD = 28
 
 
 def hex_color(color):

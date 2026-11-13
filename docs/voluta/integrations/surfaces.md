@@ -393,8 +393,9 @@ after dismissal, while the sliding projection unmaps.
 The 21 focused checks passed again after this addition.
 
 Owner-art refit on 2026-11-07: 21 focused palette, geometry, renderer lifecycle,
-deployment, and toggle checks passed. The content rectangle has a tested 16px
+deployment, and toggle checks passed. The content rectangle has a tested 28px
 clearance from solid frame pixels; the archive scrollbar uses a 2px rail.
+Music and session content rectangles use the same 28px inset from the aperture.
 Live checks found matching native/glass surfaces at (0,34), 1920×1046, and
 captured the menu and projection moving upward together on dismissal.
 The renderer PID survived the idle/open/close test. The default GTK renderer took 2419ms in an isolated first-open comparison;

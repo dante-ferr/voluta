@@ -131,7 +131,7 @@ class SurfaceTests(unittest.TestCase):
         draw.rectangle((18, 0, 22, 10), fill=(0, 0, 0, 0))
         self.assertIsNone(surfaces.frame_aperture(frame).getbbox())
 
-    def test_notification_controls_clear_artwork_by_sixteen_pixels(self):
+    def test_notification_controls_clear_artwork_by_twenty_eight_pixels(self):
         self.publish(False)
         config = json.loads((ROOT / 'swaync/config.json').read_text())
         css = (ROOT / 'swaync/style.css').read_text()
@@ -143,7 +143,8 @@ class SurfaceTests(unittest.TestCase):
         self.assertEqual(config['control-center-height'], height)
         with Image.open(self.frames / 'notification-aperture.png') as mask:
             safe = mask.getchannel('A').point(lambda value: 255 if value >= 248 else 0)
-            safe = safe.filter(ImageFilter.MinFilter(33))
+            # MinFilter(2n+1) erodes n pixels; keep controls 28px inside solid frame.
+            safe = safe.filter(ImageFilter.MinFilter(57))
             self.assertEqual(safe.crop((left, top, width-right, height-bottom)).getextrema(), (255, 255))
 
     def test_selector_glass_stays_inside_the_opening(self):

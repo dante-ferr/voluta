@@ -21,7 +21,7 @@
   "timeout-low": 4,
   "timeout-critical": 10,
   "fit-to-screen": false,
-  "control-center-width": 492,
+  "control-center-width": 468,
   "control-center-height": 736,
   "keyboard-shortcuts": true,
   "image-visibility": "when-available",
