@@ -73,7 +73,9 @@ Unchanged launches reuse the compiled library. Logs are at
 
 Already-running Dolphin processes retain their loaded code and view settings.
 After an update, fully quit Dolphin and reopen it when the notification asks.
-Ordinary launches and unchanged refreshes do not check for or emit restart
+Ordinary launches skip config merge and hook rebuild when baselines are
+unchanged, and the live hook coalesces palette work during startup. Unchanged
+refreshes do not check for or emit restart
 reminders. After a successful hook rebuild, the installer checks whether an
 actual Dolphin process still maps the replaced library. Only that confirmed
 update can produce a reminder, once per build fingerprint across process IDs.

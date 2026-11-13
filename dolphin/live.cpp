@@ -456,7 +456,7 @@ class FolderBranchStyle : public QProxyStyle
 {
 public:
     explicit FolderBranchStyle(QGraphicsView *view)
-        : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))), m_view(view)
+        : QProxyStyle(nullptr), m_view(view)
     {
         setParent(view->scene());
         view->viewport()->setMouseTracking(true);
@@ -660,13 +660,12 @@ public:
         , m_conf(homeConfig("/.config/qt6ct/dolphin-live.conf"))
     {
         connect(&m_watcher, &QFileSystemWatcher::fileChanged, this, [this] {
-            QTimer::singleShot(80, this, [this] { apply(); });
+            scheduleApply(120);
         });
         qApp->installEventFilter(this);
         arm();
-        apply();
-        QTimer::singleShot(400, this, [this] { apply(); });
-        QTimer::singleShot(1200, this, [this] { apply(); });
+        scheduleApply(0);
+        QTimer::singleShot(900, this, [this] { scheduleApply(0); });
     }
 
     bool eventFilter(QObject *watched, QEvent *event) override
@@ -683,7 +682,7 @@ public:
         }
         if (event->type() == QEvent::Show && (watched->inherits("KFilePlacesView") || watched->inherits("TerminalPanel")
                                             || qobject_cast<QMainWindow *>(watched))) {
-            QTimer::singleShot(0, this, [this] { apply(); });
+            scheduleApply(80);
         }
         if (watched->property("imperiumGlass").toBool()
             && (event->type() == QEvent::PaletteChange || event->type() == QEvent::Show)) {
@@ -727,6 +726,17 @@ public:
     }
 
 private:
+    void scheduleApply(int delayMs)
+    {
+        if (!m_applyDebounce) {
+            m_applyDebounce = new QTimer(this);
+            m_applyDebounce->setSingleShot(true);
+            connect(m_applyDebounce, &QTimer::timeout, this, [this] { apply(); });
+        }
+        m_applyDebounce->setInterval(delayMs);
+        m_applyDebounce->start();
+    }
+
     void arm()
     {
         if (QFile::exists(m_conf) && !m_watcher.files().contains(m_conf)) {
@@ -772,18 +782,22 @@ private:
             return;
         }
         const bool schemeChanged = schemePath != m_schemePath;
+        // The first pass already inherits KVANTUM_THEME from the launcher.
+        // Rebuilding that style is only needed after a later palette path change.
+        const bool refreshStyle = m_haveScheme && schemeChanged;
+        m_haveScheme = true;
         m_schemePath = schemePath;
 
-        // The artwork can change even when the icon accent stays identical.
-        // Reload heading paints on every palette application, independently
-        // of the global icon pixmap cache's accent comparison.
-        headingOrnamentCache().clear();
+        if (schemeChanged) {
+            // Heading artwork follows the palette path, not the icon accent alone.
+            headingOrnamentCache().clear();
+        }
 
         // A new path misses KColorScheme's thread-local cache. DolphinView
         // then reads the wallpaper's colors, including the background alpha.
         qApp->setProperty("KDE_COLOR_SCHEME_PATH", schemePath);
 
-        if (schemeChanged) {
+        if (refreshStyle) {
             // KFilePlacesView's native delegate paints selections through
             // QApplication::style(), without passing its widget. Its Kvantum
             // SVG cache is independent of the file scene's FolderBranchStyle
@@ -847,8 +861,12 @@ private:
                 window->setAutoFillBackground(false);
                 auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly);
                 // CornerFrame has no Q_OBJECT; only this class sets the object name.
-                auto *corner = frame ? static_cast<CornerFrame *>(frame) : new CornerFrame(window);
-                corner->refresh();
+                if (!frame) {
+                    auto *corner = new CornerFrame(window);
+                    corner->refresh();
+                } else if (schemeChanged) {
+                    static_cast<CornerFrame *>(frame)->refresh();
+                }
             }
         }
         for (QWidget *widget : widgets) {
@@ -1116,12 +1134,14 @@ private:
     }
 
     QFileSystemWatcher m_watcher;
+    QTimer *m_applyDebounce = nullptr;
     QString m_conf;
     QString m_schemePath;
     QString m_qssPath;
     QString m_icons;
     QByteArray m_qss;
     bool m_iconsReady = false;
+    bool m_haveScheme = false;
     bool m_applying = false;
 };
 
@@ -1189,7 +1209,7 @@ extern "C" __attribute__((constructor)) void imperiumDolphinLiveInit()
                 QMetaObject::invokeMethod(QCoreApplication::instance(), installHook, Qt::QueuedConnection);
                 return;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            std::this_thread::sleep_for(std::chrono::milliseconds(attempt < 40 ? 5 : 25));
         }
     }).detach();
 }

@@ -7,14 +7,35 @@ here=$(readlink -f "$0")
 here=${here%/*}
 lib="${HOME}/.local/lib/imperium/libdolphin-live.so"
 
-# Disabled customization launches the unmodified system application. Invalid
-# settings also leave a usable file manager instead of injecting an uncertain hook.
-if ! python3 "$here/../voluta/cli.py" enabled dolphin --legacy; then
+# One process reads settings and applies tracked config. Reuse that result until
+# settings or this script change, so later launches skip Python startup.
+cache="${XDG_RUNTIME_DIR:-/tmp}/voluta-dolphin-launch"
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/voluta"
+fresh=false
+if [[ -s $cache ]]; then
+    fresh=true
+    for stamp in "$config_dir/settings.json" "$config_dir/hosts/$(hostname).json" \
+        "$here/preflight.py" "$here/apply-config.py" "$here/launch.sh"; do
+        if [[ -f $stamp && $stamp -nt $cache ]]; then
+            fresh=false
+            break
+        fi
+    done
+fi
+if [[ $fresh == false ]]; then
+    cache_tmp=$(mktemp "${cache}.XXXXXX")
+    if python3 "$here/preflight.py" --legacy >"$cache_tmp" 2>/dev/null; then
+        mv -f -- "$cache_tmp" "$cache"
+    else
+        rm -f -- "$cache_tmp"
+        printf '%s\n' enabled none >"$cache"
+    fi
+fi
+mapfile -t _voluta_meta <"$cache"
+if [[ ${_voluta_meta[0]:-disabled} != enabled ]]; then
     [[ ${1:-} == --prepare ]] && exit 0
     exec /usr/bin/dolphin "$@"
 fi
-
-python3 "$here/apply-config.py"
 if ! bash "$here/build.sh"; then
     notify-send "Dolphin customization failed" "See ~/.local/lib/imperium/dolphin-live-build.log" 2>/dev/null || true
     exit 1
@@ -28,8 +49,7 @@ export FONTCONFIG_FILE="$here/fonts.conf"
 export KVANTUM_THEME=dolphin
 
 platform_args=()
-rhi=$(python3 "$here/../voluta/cli.py" get dolphin_rhi 2>/dev/null || echo false)
-if [[ "$rhi" == true && -n "${WAYLAND_DISPLAY:-}" ]]; then
+if [[ ${_voluta_meta[1]:-none} == rhi && -n "${WAYLAND_DISPLAY:-}" ]]; then
     # Qt's default shared-memory presentation stalls during selection on DP-2.
     # The native Wayland RHI path was verified smooth in the interactive test.
     # Keep this workaround in Dolphin's launcher, away from session-wide Qt
