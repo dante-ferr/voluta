@@ -90,11 +90,10 @@ system package versions can cause remaining differences.
 
 Shared corner and scroll artwork lives in `../wallust/assets/`. The theme
 generator recolors it into `~/.config/wallust/assets/generated/` for the current
-palette. Dolphin uses the big corner design; notifications use the small
-design. All three sizes have mirrored variants in the shared asset folder.
-The hook no longer frames the window with corner marks. Compact chrome has no
-margin for them, so they sat on the toolbar and status bar. Shared corner
-artwork remains for notifications and the New Tab gallery. The hook still adds
+palette. Dolphin paints one medium corner at the bottom-right; notifications
+use the small design on the top-left and bottom-right only. All three sizes have
+mirrored variants in the shared asset folder. Shared corner artwork remains for
+notifications and the New Tab gallery. The hook still adds
 small ornaments to panel headings when the heading is wide enough. Decorations
 never receive clicks or keyboard focus. Existing
 windows need one full quit and relaunch to load a changed hook; later palette

@@ -616,9 +616,10 @@ public:
 
     void refresh()
     {
-        QImageReader reader(homeConfig("/.config/wallust/assets/generated/big-corner-tl.svg"));
+        QImageReader reader(homeConfig("/.config/wallust/assets/generated/medium-corner-br.svg"));
         const qreal ratio = devicePixelRatioF();
-        reader.setScaledSize(QSize(qRound(60 * ratio), qRound(60 * ratio)));
+        constexpr int kMediumCornerPx = 56;
+        reader.setScaledSize(QSize(qRound(kMediumCornerPx * ratio), qRound(kMediumCornerPx * ratio)));
         m_corner = QPixmap::fromImage(reader.read());
         m_corner.setDevicePixelRatio(ratio);
         raise();
@@ -640,15 +641,11 @@ protected:
         if (m_corner.isNull()) return;
         QPainter painter(this);
         painter.setOpacity(0.70);
-        for (int x : {0, 1}) {
-            for (int y : {0, 1}) {
-                painter.save();
-                painter.translate(x ? width() - 6 : 6, y ? height() - 6 : 6);
-                painter.scale(x ? -1 : 1, y ? -1 : 1);
-                painter.drawPixmap(0, 0, m_corner);
-                painter.restore();
-            }
-        }
+        const qreal ratio = devicePixelRatioF();
+        const int w = qRound(m_corner.width() / ratio);
+        const int h = qRound(m_corner.height() / ratio);
+        constexpr int kMarginPx = 6;
+        painter.drawPixmap(width() - kMarginPx - w, height() - kMarginPx - h, m_corner);
     }
 
 private:
@@ -848,11 +845,10 @@ private:
                 window->setAttribute(Qt::WA_TranslucentBackground, true);
                 window->setAttribute(Qt::WA_NoSystemBackground, true);
                 window->setAutoFillBackground(false);
-                // Compact chrome has no spare margin for the 60px corner marks.
-                if (auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly)) {
-                    frame->hide();
-                    frame->deleteLater();
-                }
+                auto *frame = window->findChild<QWidget *>(QStringLiteral("imperiumCornerFrame"), Qt::FindDirectChildrenOnly);
+                // CornerFrame has no Q_OBJECT; only this class sets the object name.
+                auto *corner = frame ? static_cast<CornerFrame *>(frame) : new CornerFrame(window);
+                corner->refresh();
             }
         }
         for (QWidget *widget : widgets) {
