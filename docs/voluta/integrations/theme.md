@@ -63,13 +63,10 @@ it into WhatsApp Web. `make karere` enables that feature. If stock `karere` is
 already installed, the installer removes that conflicting package first and
 keeps files in your home directory. Wallust writes the file
 from `wallust/templates/colors-karere.css` on every palette refresh. The package
-reloads the file while Karere is open. The chat list and the conversation canvas
-use the shared background at 65% opacity. Message bubbles, the composer, headers,
-menus, icons, and text stay opaque: the sheet sets their colors without a
-fractional `opacity`. Upstream Karere does not load this file (it avoids WhatsApp
-Web injection). A window-wide fade is not used, because that would also fade the
-type. Chromium paints the page into Karere's surface, so the canvas alpha shows
-the wallpaper only when that surface is itself transparent.
+reloads the file while Karere is open. The chat list, conversation canvas,
+bubbles, composer, headers, menus, icons, and text use opaque palette colors.
+The sheet does not set a fractional `opacity` on those nodes. Upstream Karere
+does not load this file (it avoids WhatsApp Web injection).
 
 Wallust also writes `wallust/templates/colors-karere-gtk.css` to
 `~/.config/gtk-4.0/gtk.css` and `~/.config/gtk-3.0/gtk.css`. That sheet is the

@@ -3,12 +3,11 @@
  * karere-custom-css injects this file and reloads it while the app is open.
  * WhatsApp paints from --WDS-* variables on .color-refresh / .dark, so those
  * names are set with !important. The chat wallpaper and the app wash use the
- * shared background at 65% opacity, the same fraction Limusic uses for its
- * window. Text, bubbles, the composer, headers, and controls stay opaque.
- * This sheet never sets a fractional opacity on those nodes.
+ * shared opaque background. Text, bubbles, the composer, headers, and controls
+ * stay opaque. This sheet never sets a fractional opacity on those nodes.
  *
  * The shared background publisher then replaces the extracted background with
- * the resolved base. The a6 suffix and the accent stay put.
+ * the resolved base. The accent stays put.
  */
 
 {% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
@@ -22,7 +21,7 @@
 .app-wrapper-web.app-wrapper-web {
     color-scheme: dark;
 
-    --voluta-canvas: {{background}}a6;
+    --voluta-canvas: {{background}};
     --voluta-ink: {{ink}};
     --voluta-muted: color-mix(in oklab, {{ink}} 70%, {{background}});
     --voluta-accent: {{accent}};
@@ -31,7 +30,7 @@
     --voluta-in: color-mix(in oklab, {{ink}} 9%, {{background}});
     --voluta-out: color-mix(in oklab, {{accent}} 28%, {{background}});
 
-    /* Large canvases only. These are the translucent backgrounds. */
+    /* Large canvases. Opaque shared background. */
     --WDS-systems-chat-background-wallpaper: var(--voluta-canvas) !important;
     --WDS-systems-chat-background-wallpaper-RGB: {{background | rgb}} !important;
     --WDS-systems-chat-foreground-wallpaper: transparent !important;
@@ -79,7 +78,7 @@ html,
 body,
 #app,
 .app-wrapper-web {
-    background-color: {{background}}a6 !important;
+    background-color: {{background}} !important;
     background-image: none !important;
     color: {{ink}};
 }
