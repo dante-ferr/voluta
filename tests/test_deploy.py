@@ -148,9 +148,57 @@ class DeploymentTests(unittest.TestCase):
         script = (ROOT / 'hypr/scripts/Refresh.sh').read_text()
         self.assertIn('VOLUTA_REFRESH_SKIP_SYNC', script)
         self.assertIn('update --skip-deps --no-session-refresh', script)
+        self.assertLess(script.index('palette_before'), script.index('update --skip-deps --no-session-refresh'))
+        self.assertLess(script.index('update --skip-deps --no-session-refresh'), script.index('hyprctl reload'))
+        self.assertIn('paint_dolphin_theme.sh', script)
+        self.assertIn('dolphin/apply.sh', script)
+        self.assertIn('--refresh-frames', script)
+        self.assertIn('StartTopGlow.sh', script)
         self.run_cli('init')
         help_text = self.run_cli('update', '-h').stdout
         self.assertIn('--no-session-refresh', help_text)
+
+    def test_update_skips_unchanged_checkout_and_restores_missing_files(self):
+        self.run_cli('init')
+        self.run_cli('install', '--skip-deps')
+        manifest_path = self.home / '.local/state/voluta/install.json'
+        manifest = json.loads(manifest_path.read_text())
+        self.assertTrue(manifest.get('source_stamp'))
+        target = self.home / '.local/share/voluta/current/hypr/hyprland.lua'
+        mtime = target.stat().st_mtime_ns
+        self.run_cli('update', '--skip-deps')
+        self.assertEqual(target.stat().st_mtime_ns, mtime)
+        target.unlink()
+        self.run_cli('update', '--skip-deps')
+        self.assertTrue(target.is_file())
+        self.assertGreater(target.stat().st_size, 0)
+
+    def test_unchanged_palette_inputs_skip_theme_republish(self):
+        self.run_cli('init')
+        self.run_cli('install', '--skip-deps')
+        palette = self.home / '.config/hypr/wallust/colors-shell.sh'
+        palette.parent.mkdir(parents=True, exist_ok=True)
+        palette.write_text("wc_bg='102030'\nwc_fg='E0D0C0'\nwc_15='E0D0C0'\nwc_1='AA5577'\n")
+        sys.path.insert(0, str(ROOT / 'voluta'))
+        import deploy
+        import theme
+        config = self.home / '.config'
+        directory = config / 'voluta'
+        with patch.dict(os.environ, {**self.env, 'HYPRLAND_INSTANCE_SIGNATURE': ''}):
+            settings, _ = deploy.resolve(directory, 'public-test-host')
+            stamp = deploy.publish_stamp(config, ROOT, settings['appearance']['background'])
+            manifest_path = self.home / '.local/state/voluta/install.json'
+            manifest = json.loads(manifest_path.read_text())
+            manifest['publish_stamp'] = stamp
+            manifest_path.write_text(json.dumps(manifest))
+            with patch.object(theme, 'publish') as publish:
+                deploy.install(directory, 'public-test-host', skip_deps=True, no_session_refresh=True)
+            publish.assert_not_called()
+            manifest['publish_stamp'] = 'stale'
+            manifest_path.write_text(json.dumps(manifest))
+            with patch.object(theme, 'publish') as publish:
+                deploy.install(directory, 'public-test-host', skip_deps=True, no_session_refresh=True)
+            publish.assert_called_once()
 
     def test_installed_cli_updates_the_recorded_checkout(self):
         self.run_cli('init')

@@ -180,12 +180,15 @@ Both leave the outer silhouette clear.
 Malformed/open cutouts produce no glass rather than painting outside the frame.
 
 Wallpaper publication regenerates both frames before reloading consumers.
-`Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout,
-and re-renders shared SVG templates such as the clear `launcher-vignette.svg`;
-the old `--refresh-selector` publisher option remains an alias for
-`--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
-Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
-existing light compositor blur settings. The artwork itself stays sharp.
+`Super+Alt+R` syncs the recorded checkout when it is newer or a deployed file
+is missing. That deploy publishes both source PNGs and the shared SVG templates,
+including the clear `launcher-vignette.svg`, once. The key filters them again
+only when that publish did not run. The old `--refresh-selector` publisher
+option remains an alias for `--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
+Wallust. Hyprland slides the control center in from the top. The blur is the
+shared full-output veil on `voluta-notification-backdrop`: it fades by opacity
+and does not move with the panel. The control center and the frame layer stay
+sharp. The artwork itself stays sharp.
 
 Both menus use `wallust/effects/MenuGlass.qml` for the clear veil, masked glass,
 preloading, readiness, inner-rim ignition, and entrance/dismissal lifecycle.
@@ -199,8 +202,8 @@ same canonical source.
 Accent colors and the artwork stamp come from `voluta/menus.py`. All four menus
 read `wc_2`, `wc_4`, and `wc_fg` there. The stamp covers the shell palette plus
 that menu's frame, glass plate, aperture, and veil. The selector passes this
-publication on every open. The notification watcher refreshes it while the panel
-is visible. Music and session do both: each toggle reads the publication before
+publication on every open. The notification watcher pushes `recolor` while the
+panel is visible. Music and session do both: each toggle reads the publication before
 opening, and the resident watcher pushes `recolor` when those files change,
 including while the menu is open. That reload replaces the frame image and the
 glass plate. A renderer does not keep the palette captured at process start.
@@ -212,11 +215,15 @@ its controls the same way.
 The notification backdrop stays mapped but fully transparent when closed,
 matching the selector's warm surface. The shared module preloads its veil at
 screen dimensions and prepaints the projection on the resident surface. It
-reveals the veil immediately when ready; it does not map a cold blur window
-on each open. The same projection canvas joins the native-sized sliding
-surface when the panel opens. On dismissal, the veil clears immediately and
-the bounded projection follows the native compositor exit. The canvas pauses
-while hidden. Neither menu maintains a separate copy of the blur or animation
+fades the veil in by opacity when ready; it does not map a cold blur window
+on each open, and it does not parent the veil to the sliding layer. The
+projection canvas joins the native-sized sliding surface when the panel opens.
+On dismissal, the veil stays on the backdrop and fades out. The aperture stays
+on the sliding surface for the whole exit, on the same rectangle as the frame,
+and returns to the resident surface only after that slide finishes. The canvas
+pauses while hidden. Selector, music,
+and session exits are the shared 230ms item travel. The entrance is 170ms.
+The exit is a little slower than the entrance, and neither waits before moving. Neither menu maintains a separate copy of the blur or animation
 implementation.
 
 `swaync/watch-glass.py` is the native visibility/IPC adapter. It prewarms one
@@ -226,8 +233,8 @@ watcher is still running, and numbered requests prevent stale closes.
 `status` IPC reports readiness and open/paint timestamps for real effect
 latency checks; native D-Bus acknowledgement alone is insufficient.
 A per-compositor lock prevents duplicate watchers after reloads.
-The helper detects changed palette, aperture, or panel configuration while
-visible, and refreshes the projection. It drops the effect on daemon disconnect
+The helper detects a changed shared publication or panel configuration while
+visible, and pushes `recolor` so the resident renderer reloads the frame. It drops the effect on daemon disconnect
 and reconnects with bounded backoff. A missing or broken renderer leaves the
 permanent dark GTK glass usable. The managed SwayNC user-service drop-in starts
 `swaync/launch.sh`: it defaults only this application's `GSK_RENDERER` to
@@ -263,8 +270,11 @@ Opening the salon starts the watcher if it is not already running. Media keys
 keep controlling playback.
 
 Selector, notification, music, and session menus are mutually exclusive:
-`hypr/scripts/exclusive-framed.sh` closes the other three before one of them
-opens. Opening music does not toggle the notification panel.
+`hypr/scripts/exclusive-framed.sh` closes whichever of the other three are
+open before one of them opens. Each resident renderer writes
+`$XDG_RUNTIME_DIR/voluta-<menu>.open` while it is visible. A missing file
+means that menu is closed, and the keypress does not start Quickshell or
+D-Bus to confirm it. Opening music does not toggle the notification panel.
 
 The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`, and
 it applies the shared publication from `voluta/menus.py` on open and while it
@@ -272,7 +282,8 @@ is visible. A new Wallust palette recolors the frame, plate, trails, and labels.
 `MenuGlass` slides the selector on `y` and the music salon on `x`.
 `music/salon.qml` owns only the cherub frame popup, poster, bars, and labels.
 `music/watch.py` prewarms one renderer at compositor start/reload, with a
-per-session lock matching the notification watcher. Startup can leave
+per-session lock matching the notification watcher. It reads the open-state
+file to learn whether the salon is visible. It does not poll Quickshell IPC. Startup can leave
 `WAYLAND_DISPLAY` empty; the watcher uses the live `wayland-*` socket in the
 runtime directory and respawns once that socket exists. A missing Quickshell, CAVA,
 or player leaves the rest of the desktop unchanged.
@@ -298,8 +309,8 @@ closes the other framed menus when it opens, and they close it in return.
 The column fills its output, like the other framed menus, so the shared veil,
 aperture glass, and blur cover the desktop instead of a tiny default window.
 `MenuGlass` loads `*-glass.png` beside the aperture when the menu does not
-pass its own plate. The notification panel sets `suppressPlate` because GTK
-already paints that glass.
+pass its own plate. The notification panel uses that same plate. Its GTK
+window stays transparent inside the opening.
 The column applies the same `voluta/menus.py` publication as the salon, on open
 and while it is visible, so its frame and plate follow the current Wallust
 palette. `session-menu/watch.py` prewarms one renderer and uses the same live
@@ -382,8 +393,9 @@ after dismissal, while the sliding projection unmaps.
 The 21 focused checks passed again after this addition.
 
 Owner-art refit on 2026-11-07: 21 focused palette, geometry, renderer lifecycle,
-deployment, and toggle checks passed. The content rectangle has a tested 16px
+deployment, and toggle checks passed. The content rectangle has a tested 28px
 clearance from solid frame pixels; the archive scrollbar uses a 2px rail.
+Music and session content rectangles use the same 28px inset from the aperture.
 Live checks found matching native/glass surfaces at (0,34), 1920×1046, and
 captured the menu and projection moving upward together on dismissal.
 The renderer PID survived the idle/open/close test. The default GTK renderer took 2419ms in an isolated first-open comparison;

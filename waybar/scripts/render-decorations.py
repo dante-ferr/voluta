@@ -6,6 +6,7 @@ under wallust/assets/generated/waybar; rebuilt on wallpaper refresh and startup.
 """
 from pathlib import Path
 import colorsys
+import hashlib
 import json
 import math
 import subprocess
@@ -243,6 +244,80 @@ def query(command):
         return ""
 
 
+def stat_fingerprint(paths):
+    rows = []
+    for path in paths:
+        path = Path(path)
+        try:
+            st = path.stat()
+        except OSError:
+            rows.append(f"{path}:missing")
+        else:
+            rows.append(f"{path}:{st.st_size}:{st.st_mtime_ns}")
+    return hashlib.sha256("\n".join(rows).encode()).hexdigest()
+
+
+def stamp_matches(stamp_path, fingerprint, outputs):
+    try:
+        recorded = Path(stamp_path).read_text().strip()
+    except OSError:
+        return False
+    return recorded == fingerprint and all(Path(path).is_file() for path in outputs)
+
+
+def monitor_images():
+    """Return (monitors, wallpaper paths) or None when the monitor list is unusable."""
+    try:
+        monitors = json.loads(query(["hyprctl", "-j", "monitors"]) or "[]")
+    except ValueError:
+        return None
+    if not isinstance(monitors, list):
+        return None
+    paths = {}
+    for daemon in ("awww", "swww"):
+        for line in query([daemon, "query"]).splitlines():
+            match = re.search(r"(?:^|: )([^:]+): \d+x\d+, scale: [\d.]+, .*image: (.*)$", line)
+            if match:
+                paths[match[1]] = match[2]
+        if paths:
+            break
+    return monitors, paths
+
+
+def wallpaper_paths():
+    """Wallpaper files for every monitor, or None when that set cannot be read."""
+    found = monitor_images()
+    if found is None:
+        return None
+    monitors, paths = found
+    if not monitors:
+        return []
+    files = []
+    for monitor in monitors:
+        name = monitor.get("name") if isinstance(monitor, dict) else None
+        raw = paths.get(name) if name else None
+        if not raw:
+            return None
+        path = Path(raw)
+        if not path.is_file():
+            return None
+        files.append(path)
+    return files
+
+
+def decoration_inputs(wallpapers):
+    paths = [
+        ROOT / "glow.json",
+        ROOT / "chrome.json",
+        ROOT / "wallust/colors-waybar.css",
+        Path(__file__).resolve(),
+    ]
+    for _, filename in DECORATIONS:
+        paths.append(ROOT.parent / "wallust/assets" / filename)
+    paths.extend(wallpapers)
+    return paths
+
+
 def relative_luminance(pixels):
     def linear(value):
         value /= 255
@@ -259,18 +334,10 @@ def top_light_factors(heaven):
     fully on, at or above `off_above` it is off, with a linear ramp between.
     The wallpaper is approximated as center-cropped to fill the output.
     """
-    try:
-        monitors = json.loads(query(["hyprctl", "-j", "monitors"]) or "[]")
-    except ValueError:
+    found = monitor_images()
+    if found is None:
         return {}
-    paths = {}
-    for daemon in ("awww", "swww"):
-        for line in query([daemon, "query"]).splitlines():
-            match = re.search(r"(?:^|: )([^:]+): \d+x\d+, scale: [\d.]+, .*image: (.*)$", line)
-            if match:
-                paths[match[1]] = match[2]
-        if paths:
-            break
+    monitors, paths = found
     low, high = heaven["full_below"], heaven["off_above"]
     factors = {}
     for monitor in monitors:
@@ -320,6 +387,22 @@ def main():
         return
     output = ROOT.parent / "wallust/assets/generated/waybar"
     output.mkdir(parents=True, exist_ok=True)
+    wallpapers = wallpaper_paths()
+    fingerprint = None
+    targets = []
+    for _, filename in DECORATIONS:
+        boxed_icon = filename in ("note.svg", "note-paused.svg")
+        variant = "bright" if boxed_icon else "dark"
+        targets.append(output / f"{Path(filename).stem}-{variant}.png")
+    if wallpapers is not None:
+        fingerprint = stat_fingerprint(decoration_inputs(wallpapers))
+        ready = [
+            ROOT / "wallust/angel-paths.css",
+            ROOT / "wallust/glow-state.json",
+            *targets,
+        ]
+        if stamp_matches(output / ".inputs.stamp", fingerprint, ready):
+            return
     def brightness(value):
         return sum(weight * int(value[i:i+2], 16) for weight, i in
                    ((.2126, 1), (.7152, 3), (.0722, 5)))
@@ -390,6 +473,8 @@ def main():
         "/* Generated from waybar/glow.json and waybar/chrome.json. */\n"
         + "\n".join(rules)
     )
+    if fingerprint is not None:
+        (output / ".inputs.stamp").write_text(fingerprint + "\n")
 
 
 if __name__ == "__main__":

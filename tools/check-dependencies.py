@@ -83,6 +83,37 @@ exec "$@"
         check(result.returncode != 0 and "fixture-font" in result.stderr,
               "failed font install was treated as success")
 
+        # Installer exit status is not enough: a sudo timeout after packages
+        # land must still let Dolphin apply continue and regenerate icons.
+        installed.write_text("fixture-existing\n")
+        calls.write_text("")
+        executable(binaries / "pacman", '''
+case "$1" in
+    -Q) grep -Fxq "$2" "$FIXTURE_INSTALLED" ;;
+    -Si) [[ "$2" != *-git ]] ;;
+    -S) printf '%s\\n' "$*" >>"$FIXTURE_CALLS"
+        pkg=${@: -1}
+        printf '%s\\n' "$pkg" >>"$FIXTURE_INSTALLED"
+        exit 1 ;;
+    *) exit 2 ;;
+esac
+''')
+        result = run()
+        check(result.returncode == 0, f"installed packages still blocked apply: {result.stderr}")
+        check("ignoring installer exit status" in result.stderr,
+              "false installer failure was not reported")
+        executable(binaries / "pacman", '''
+case "$1" in
+    -Q) grep -Fxq "$2" "$FIXTURE_INSTALLED" ;;
+    -Si) [[ "$2" != *-git ]] ;;
+    -S) printf '%s\\n' "$*" >>"$FIXTURE_CALLS"
+        pkg=${@: -1}
+        [[ "$pkg" == "${FIXTURE_FAIL:-}" ]] && exit 1
+        printf '%s\\n' "$pkg" >>"$FIXTURE_INSTALLED" ;;
+    *) exit 2 ;;
+esac
+''')
+
         # A graphical refresh needs a terminal for sudo/paru authentication.
         installed.write_text("fixture-existing\n")
         calls.write_text("")
@@ -108,7 +139,7 @@ exec "$@"
         check(run().returncode == 0, "pacman fallback failed without paru")
         check(installed.read_text().splitlines() == ["fixture-tool", "fixture-font"],
               "pacman fallback selected an unavailable AUR alternative")
-    print("PASS: missing font installation, alternatives/includes, repeat apply, failure propagation, GUI terminal and pacman fallback")
+    print("PASS: missing font installation, alternatives/includes, repeat apply, failure propagation, false installer failure, GUI terminal and pacman fallback")
 
 
 if __name__ == "__main__":

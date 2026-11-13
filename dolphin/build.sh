@@ -8,6 +8,20 @@ mkdir -p "$libdir"
 exec 9>"$libdir/.dolphin-live-build.lock"
 flock 9
 
+toolchain_id="$libdir/dolphin-live-toolchain.id"
+quick_stamp="$libdir/dolphin-live-build.quick"
+if [[ -f "$lib" && -f "$lib.sha256" && -f "$quick_stamp" && -f "$toolchain_id" ]]; then
+    if [[ "$here/live.cpp" -ot "$lib" && "$here/build.sh" -ot "$lib" ]]; then
+        if [[ $(<"$lib.sha256") == "$(<"$quick_stamp")" ]]; then
+            current_toolchain=$(printf '%s\n%s' "$(g++ -dumpfullversion 2>/dev/null || g++ -dumpversion)" \
+                "$(pkg-config --modversion Qt6Widgets 2>/dev/null || echo missing)")
+            if [[ "$current_toolchain" == "$(<"$toolchain_id")" ]]; then
+                exit 0
+            fi
+        fi
+    fi
+fi
+
 # Include the toolchain and KDE/Qt versions: an unchanged source can still
 # need rebuilding after a system upgrade. Content hashes survive preserved mtimes.
 signature=$({
@@ -19,6 +33,9 @@ signature=$({
         /usr/include/KF6/KParts/kparts_version.h
 } | sha256sum | cut -d ' ' -f 1)
 if [[ -f "$lib" && -f "$lib.sha256" && $(< "$lib.sha256") == "$signature" ]]; then
+    printf '%s\n' "$signature" >"$quick_stamp"
+    printf '%s' "$(printf '%s\n%s' "$(g++ -dumpfullversion 2>/dev/null || g++ -dumpversion)" \
+        "$(pkg-config --modversion Qt6Widgets 2>/dev/null || echo missing)")" >"$toolchain_id"
     exit 0
 fi
 
@@ -35,6 +52,9 @@ fi
 chmod 755 "$build_tmp"
 mv -f -- "$build_tmp" "$lib"
 printf '%s\n' "$signature" >"$lib.sha256"
+printf '%s\n' "$signature" >"$quick_stamp"
+printf '%s' "$(printf '%s\n%s' "$(g++ -dumpfullversion 2>/dev/null || g++ -dumpversion)" \
+    "$(pkg-config --modversion Qt6Widgets 2>/dev/null || echo missing)")" >"$toolchain_id"
 
 # Ordinary launches and unchanged refreshes are silent. Only a successful
 # replacement can require a restart, and only for apps mapping that old file.

@@ -22,7 +22,7 @@ DIRECTORY = Path(__file__).resolve().parent
 ROOT = DIRECTORY.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from voluta.menus import compositor_environment, menu_colors
+from voluta.menus import compositor_environment, menu_colors, menu_paths
 from voluta.window_grid import gaps_from_option, grid_for_monitor
 CONFIG = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
 GLASS_QML = DIRECTORY / 'glass.qml'
@@ -151,12 +151,13 @@ def renderer_pid(path=GLASS_QML):
 
 
 def artwork_fingerprint(config=CONFIG):
-    paths = ('hypr/wallust/colors-shell.sh', 'wallust/assets/generated/notification-aperture.png',
-             'swaync/config.json', 'wallust/assets/generated/launcher-vignette.svg')
+    # The shared publication lists the frame, so a Wallust rewrite of that PNG
+    # is the same signal the other framed menus already follow.
+    paths = [*menu_paths(config, 'notification'), config / 'swaync/config.json']
     fingerprints = []
-    for relative in paths:
+    for path in paths:
         try:
-            stat = (config / relative).stat()
+            stat = path.stat()
             fingerprints.append((stat.st_ino, stat.st_mtime_ns, stat.st_size))
         except OSError:
             fingerprints.append(None)
@@ -261,14 +262,23 @@ class Glass:
         if now < self.next_check:
             return
         self.next_check = now + .5
-        if artwork_fingerprint() != self.fingerprint:
-            # Same URL may contain new bytes. QML explicitly unloads its mask.
-            self.warm()
+        fingerprint = artwork_fingerprint()
+        if fingerprint == self.fingerprint:
+            return
+        # Recolor in place. showPanel would replay the entrance.
+        self.fingerprint = fingerprint
+        environment = renderer_environment()
+        if environment is None:
+            self.next_check = now + 2
+            return
+        self.environment = environment
+        self._send('recolor', *self._arguments())
 
     def show(self):
         self.active = True
-        # Focused output or palette can change while the menu is hidden.
-        # Refresh placement without restarting the warmed Qt process.
+        # Map with the frame. A palette refresh must not run before that map.
+        if self.environment is not None:
+            self._send('showPanel', *self._arguments())
         self.warm()
 
     def hide(self):

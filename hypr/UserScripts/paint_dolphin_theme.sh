@@ -910,6 +910,7 @@ with open(kdeglobals, "w", encoding="utf-8") as handle:
 def paint_icons():
     # Imperium is a Wallust-tinted Papirus. Papirus-Dark inherits most sizes
     # from Papirus, so places and devices are recolored from that shared tree.
+    # Returns True when the generated theme matches this palette token.
     source = "/usr/share/icons/Papirus"
     dark = "/usr/share/icons/Papirus-Dark"
     dest = os.path.join(home, ".local", "share", "icons", "imperium")
@@ -926,9 +927,15 @@ def paint_icons():
         with open(stamp, encoding="utf-8") as handle:
             previous_accent = handle.read().strip()
         if previous_accent == accent_hex and previous_preview_accent == preview_token:
-            return
+            return True
     if not os.path.isdir(source) and not os.path.isdir(dark):
-        return
+        # Keep stale stamps so the next update retries after papirus-icon-theme
+        # lands. Do not claim papirus-v1 in the live marker below.
+        print(
+            "papirus-icon-theme is not installed; Imperium icons were not regenerated.",
+            file=sys.stderr,
+        )
+        return False
     os.makedirs(dest, exist_ok=True)
     index_src = os.path.join(dark if os.path.isdir(dark) else source, "index.theme")
     if os.path.isfile(index_src):
@@ -1058,6 +1065,7 @@ def paint_icons():
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    return True
 
 def session_thumbnail_worker(proc_dir, address):
     """Match only this user's thumbnail plugin on the same session bus."""
@@ -1208,7 +1216,7 @@ def invalidate_folder_thumbnails():
                 except OSError:
                     pass
 
-paint_icons()
+icons_ready = paint_icons()
 
 konsole_dir = os.path.join(home, ".local", "share", "konsole")
 os.makedirs(konsole_dir, exist_ok=True)
@@ -1449,13 +1457,21 @@ def push_open_windows(stylesheet):
 
 # Publish only after icons, thumbnails, QSS, and terminal files are ready.
 # An atomic replacement prevents the live hook from reading a partial marker.
+icons_token = f"{hx(icon_accent)}:papirus-v1" if icons_ready else f"{hx(icon_accent)}:missing-papirus"
 os.makedirs(os.path.dirname(live_conf), exist_ok=True)
 pending_conf = live_conf + "." + live_stamp
 with open(pending_conf, "w", encoding="utf-8") as handle:
-    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}:papirus-v1\nterminal={terminal_live}\n")
+    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={icons_token}\nterminal={terminal_live}\n")
 os.replace(pending_conf, live_conf)
 
 if dolphin_enabled:
     with open(qss_path, encoding="utf-8") as handle:
         push_open_windows(handle.read())
+
+if not icons_ready:
+    # Qt colors still updated above; fail so voluta update / Refresh retry the
+    # icon pack after papirus-icon-theme is installed.
+    raise SystemExit(
+        "papirus-icon-theme is required to regenerate Imperium Dolphin icons"
+    )
 PY

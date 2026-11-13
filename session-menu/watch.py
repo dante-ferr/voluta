@@ -197,8 +197,19 @@ class Session:
         if live:
             if self.process is None or getattr(self.process, 'pid', None) != live:
                 self.process = AttachedProcess(live)
+            self._remember(live)
             return True
-        return self.process is not None and self.process.poll() is None
+        if self.process is not None and self.process.poll() is None:
+            self._remember(self.process.pid)
+            return True
+        return False
+
+    def _remember(self, pid):
+        runtime = Path(os.environ.get('XDG_RUNTIME_DIR', '/tmp'))
+        try:
+            (runtime / 'voluta-session-renderer.pid').write_text(f'{pid}\n')
+        except OSError:
+            pass
 
     def warm(self):
         self.next_spawn = time.monotonic() + 2

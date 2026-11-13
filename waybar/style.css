@@ -46,7 +46,7 @@ window#waybar {
 
 #window,
 #custom-mpris {
-    padding: 3px 12px;
+    padding: 2px 12px;
     /* Layer margins already match gaps_out; keep only the inter-plate gap. */
     margin: 4px 3px 4px 0;
     background-color: @box-background; /* Shared Wallust ink with dark decorations */
@@ -71,7 +71,7 @@ window#waybar {
     padding-left: 24px;
     background-repeat: no-repeat;
     background-position: -2px center;
-    background-size: 28px 33px;
+    background-size: 28px 25px;
 }
 
 #custom-mpris.paused {
@@ -158,7 +158,7 @@ box.modules-right {
    clamps this label, and
    the window-title label, to the bar font's line so neither can grow the bar. */
 #workspaces button {
-    padding: 3px 10px;
+    padding: 2px 10px;
     margin: 0;
     color: @foreground;
     background-color: #101017;
@@ -230,7 +230,7 @@ box.modules-right {
 }
 
 #timedate #clock {
-    padding: 3px 14px;
+    padding: 2px 14px;
     margin: 0;
     background-color: transparent;
     color: @accent11;
@@ -264,7 +264,7 @@ box.modules-right {
 #network,
 #bluetooth,
 #pulseaudio {
-    padding: 3px 10px;
+    padding: 2px 10px;
     margin: 4px 0px;
     background-color: @box-background;
     color: @foreground;
@@ -359,7 +359,7 @@ box.modules-right {
 
 /* Tray */
 #tray {
-    padding: 2px 6px;
+    padding: 1px 6px;
 }
 
 /* Medallion floating between the status plate and the power plate. */
@@ -392,7 +392,7 @@ box.modules-right {
 
 #powerplate > widget > #battery,
 #powerplate > widget > #custom-power {
-    padding: 3px 10px;
+    padding: 2px 10px;
     margin: 0;
     background-color: transparent;
     color: @foreground;

@@ -1,12 +1,17 @@
 #!/bin/sh
 # Close every framed menu except the one named in $1
-# (selector|notification|music|session).
+# (selector|notification|music|session). Closed menus have no open-state
+# file, so this returns without Quickshell or D-Bus.
 keep=${1:-}
 config=${XDG_CONFIG_HOME:-$HOME/.config}
-runtime=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+here=$(CDPATH= cd -- "${0%/*}" && pwd)
+# shellcheck disable=SC1091
+. "$here/framed-runtime.sh"
+runtime=$(voluta_runtime)
 
 close_selector() {
     [ "$keep" = selector ] && return 0
+    found=
     pidfile="$runtime/rofi.pid"
     if [ -r "$pidfile" ]; then
         pid=
@@ -16,17 +21,20 @@ close_selector() {
             *)
                 if [ -r "/proc/$pid/comm" ] && read -r name < "/proc/$pid/comm"; then
                     case "$name" in
-                        rofi|rofi-wayland) kill "$pid" 2>/dev/null ;;
+                        rofi|rofi-wayland) kill "$pid" 2>/dev/null && found=1 ;;
                     esac
                 fi
                 ;;
         esac
     fi
-    pkill -x rofi >/dev/null 2>&1 || true
+    if [ -n "$found" ] || voluta_menu_open selector; then
+        pkill -x rofi >/dev/null 2>&1 || true
+    fi
 }
 
 close_notification() {
     [ "$keep" = notification ] && return 0
+    voluta_menu_open notification || return 0
     if command -v gdbus >/dev/null 2>&1; then
         gdbus call --session --timeout 2 \
             --dest org.erikreider.swaync.cc \
@@ -40,23 +48,15 @@ close_notification() {
 
 close_music() {
     [ "$keep" = music ] && return 0
-    command -v quickshell >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 0
-    renderer=$(readlink -f -- "$config/music/salon.qml")
-    [ -n "$renderer" ] || return 0
-    pid=$(quickshell list -j -p "$renderer" 2>/dev/null | jq -r '.[].pid // empty' 2>/dev/null |
-        awk 'NF && $1 ~ /^[0-9]+$/ { print; exit }')
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 0
+    voluta_menu_open music || return 0
+    pid=$(voluta_renderer_pid music "$config/music/salon.qml") || return 0
     timeout 0.5s quickshell ipc --pid "$pid" call music dismiss "" </dev/null >/dev/null 2>&1 || true
 }
 
 close_session() {
     [ "$keep" = session ] && return 0
-    command -v quickshell >/dev/null 2>&1 && command -v jq >/dev/null 2>&1 || return 0
-    renderer=$(readlink -f -- "$config/session-menu/panel.qml")
-    [ -n "$renderer" ] || return 0
-    pid=$(quickshell list -j -p "$renderer" 2>/dev/null | jq -r '.[].pid // empty' 2>/dev/null |
-        awk 'NF && $1 ~ /^[0-9]+$/ { print; exit }')
-    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null || return 0
+    voluta_menu_open session || return 0
+    pid=$(voluta_renderer_pid session "$config/session-menu/panel.qml") || return 0
     timeout 0.5s quickshell ipc --pid "$pid" call session dismiss "" </dev/null >/dev/null 2>&1 || true
 }
 

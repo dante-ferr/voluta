@@ -274,8 +274,18 @@ class Salon:
         if live:
             if self.process is None or getattr(self.process, 'pid', None) != live:
                 self.process = AttachedProcess(live)
+            self._remember(live)
             return True
-        return self.process is not None and self.process.poll() is None
+        if self.process is not None and self.process.poll() is None:
+            self._remember(self.process.pid)
+            return True
+        return False
+
+    def _remember(self, pid):
+        try:
+            (RUNTIME / 'voluta-music-renderer.pid').write_text(f'{pid}\n')
+        except OSError:
+            pass
 
     def warm(self):
         self.next_spawn = time.monotonic() + 2
@@ -350,19 +360,15 @@ class Salon:
                    environment['VOLUTA_MUSIC_ASSETS'], environment['VOLUTA_MUSIC_VERSION'])
 
     def renderer_showing(self):
-        if self.process is None or self.process.poll() is not None:
-            return False
-        raw = run(['quickshell', 'ipc', '--pid', str(self.process.pid), 'call', 'music', 'status'])
-        if not raw:
-            return False
+        """The resident renderer publishes this. Do not poll Quickshell IPC."""
         try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError:
+            return (RUNTIME / 'voluta-music.open').stat().st_size > 0
+        except OSError:
             return False
-        return bool(payload.get('showing') or payload.get('active'))
 
     def reconcile(self):
-        self.bind_renderer()
+        if self.process is None or self.process.poll() is not None:
+            self.bind_renderer()
         showing = self.renderer_showing()
         was_active = self.active
         self.active = showing

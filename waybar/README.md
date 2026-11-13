@@ -19,6 +19,8 @@ the machine and user names (`voluta/runtime.py` fills the empty-title rewrite).
 Wallpaper changes run it through the existing Waypaper/Wallust refresh hook.
 Callers use `/usr/bin/python3` so Arch's `python-pillow` is available when
 Homebrew or Conda put another `python3` earlier on `PATH`.
+The script leaves the existing rasters in place when `glow.json`, `chrome.json`,
+the Waybar palette, the source SVGs, and each monitor's wallpaper are unchanged.
 
 ## Chrome outlines
 

@@ -410,6 +410,9 @@ def main(argv=None):
     check = commands.add_parser("enabled", help="exit 0 if a feature is enabled, 1 if disabled")
     check.add_argument("name", choices=FEATURES)
     check.add_argument("--legacy", action="store_true", help=argparse.SUPPRESS)
+    launch_meta = commands.add_parser("launch-meta", help=argparse.SUPPRESS)
+    launch_meta.add_argument("app", choices=("dolphin",))
+    launch_meta.add_argument("--legacy", action="store_true", help=argparse.SUPPRESS)
     feature = commands.add_parser("feature", help="list or change feature selections")
     feature.add_argument("action", choices=("list", "enable", "disable", "reset"))
     feature.add_argument("name", nargs="?", choices=FEATURES)
@@ -560,6 +563,12 @@ def main(argv=None):
         # Before explicit initialization, existing installs retain their startup behavior.
         value = settings["features"][args.name] if initialized or not args.legacy else True
         return 0 if value else 1
+    elif args.command == "launch-meta":
+        if args.app == "dolphin":
+            enabled = settings["features"]["dolphin"] if initialized or not args.legacy else True
+            print("enabled" if enabled else "disabled")
+            print("rhi" if enabled and settings.get("dolphin_rhi") else "none")
+        return 0
     else:
         for name, description in FEATURES.items():
             print(f"{name}: {'enabled' if settings['features'][name] else 'disabled'} — {description}")

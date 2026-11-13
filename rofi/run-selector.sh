@@ -19,9 +19,6 @@ if [ "${1:-}" = --prewarm ]; then
     prewarm=true
     shift
 fi
-if [ "$prewarm" = false ]; then
-    sh "$directory/../hypr/scripts/exclusive-framed.sh" selector
-fi
 selector=
 request=$$
 launch_selector() {
@@ -35,6 +32,13 @@ launch_selector() {
     trap 'kill "$selector" 2>/dev/null; exit 143' TERM
     trap 'kill "$selector" 2>/dev/null; exit 130' INT
 }
+if [ "$prewarm" = false ] && [ "$resident" = true ]; then
+    # Keyboard ownership is first. The frame may still be off screen.
+    launch_selector "$@"
+fi
+if [ "$prewarm" = false ]; then
+    sh "$directory/../hypr/scripts/exclusive-framed.sh" selector
+fi
 fallback() {
     [ "$prewarm" = false ] || exit 0
     if [ -n "$selector" ]; then
@@ -49,12 +53,6 @@ if ! command -v quickshell >/dev/null || ! command -v jq >/dev/null ||
     [ ! -r "$assets/selector-glass.png" ] ||
     [ ! -r "$assets/launcher-vignette.svg" ]; then
     fallback "$@"
-fi
-
-# The warmed renderer is already validated. Nothing involving Qt, compositor
-# IPC, palette reads, or asset timestamps may precede keyboard ownership here.
-if [ "$resident" = true ] && [ "$prewarm" = false ]; then
-    launch_selector "$@"
 fi
 
 # A binary can exist but fail to load after a Qt upgrade. Keep Rofi's own

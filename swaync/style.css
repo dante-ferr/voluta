@@ -72,14 +72,13 @@
 .notification-row .notification-background .notification {
     padding: 24px 20px;
     background-color: @surface-raised;
-    background-image: url("../wallust/assets/generated/small-corner-tl.svg"), url("../wallust/assets/generated/small-corner-tr.svg"),
-                      url("../wallust/assets/generated/small-corner-bl.svg"), url("../wallust/assets/generated/small-corner-br.svg");
+    background-image: url("../wallust/assets/generated/small-corner-tl.svg"),
+                      url("../wallust/assets/generated/small-corner-br.svg");
     background-repeat: no-repeat;
-    background-position: 8px 8px, calc(100% - 8px) 8px,
-                         8px calc(100% - 8px), calc(100% - 8px) calc(100% - 8px);
+    background-position: 8px 8px, calc(100% - 8px) calc(100% - 8px);
     background-size: 48px 48px;
     border: 1px solid @line;
-    /* A fine illuminated edge joins the four corner carvings. */
+    /* A fine illuminated edge joins the diagonal corner carvings. */
     box-shadow: inset 0 1px 0 alpha(@color1, 0.5), 0 4px 12px @shadow;
     transition: background 0.15s ease-in-out;
 }
@@ -215,13 +214,9 @@
 
 .control-center {
     background-color: transparent;
-    background-image: url("../wallust/assets/generated/notification-angels-frame.png"),
-                      url("../wallust/assets/generated/notification-glass.png");
-    background-repeat: no-repeat;
-    background-position: center, center;
-    background-size: 100% 100%, 100% 100%;
+    background-image: none;
     color: @foreground;
-    padding: 57px 289px 283px 275px;
+    padding: 69px 301px 295px 287px;
     border: none;
     box-shadow: none;
 }

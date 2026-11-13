@@ -12,9 +12,6 @@ hl.curve("fluidDecel", { type = "bezier", points = { { 0.16, 1.0 }, { 0.30, 1.0 
 hl.curve("snappySpring", { type = "bezier", points = { { 0.05, 0.95 }, { 0.15, 1.05 } } })
 hl.curve("softEaseInOut", { type = "bezier", points = { { 0.42, 0.0 }, { 0.58, 1.0 } } })
 hl.curve("fastOut", { type = "bezier", points = { { 0.25, 0.1 }, { 0.25, 1.0 } } })
--- A gentle lift before acceleration keeps small notification cards visible
--- while their full-height layer surface starts travelling off-screen.
-hl.curve("inertialLift", { type = "bezier", points = { { 0.65, 0.0 }, { 0.85, 0.35 } } })
 
 -- Window Animations
 hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "fluidDecel", style = "slide" })
@@ -41,30 +38,42 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3, bezier = "fast
 
 -- Layer Surface Animations (Rofi, Waybar, Notifications)
 hl.animation({ leaf = "layers", enabled = true, speed = 4, bezier = "fluidDecel", style = "fade" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "snappySpring", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 5, bezier = "inertialLift", style = "fade" })
-hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 4, bezier = "softEaseInOut" })
-hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 5, bezier = "softEaseInOut" })
+-- speed is duration in deciseconds. The exit is a little slower than the entrance.
+hl.animation({ leaf = "layersIn", enabled = true, speed = 5, bezier = "snappySpring", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 6, bezier = "fastOut", style = "fade" })
+hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 5, bezier = "softEaseInOut" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 6, bezier = "fastOut" })
 
--- Popup and panel share the same entrance, exit, and inertial easing.
--- These layers inherit snappySpring on entry and inertialLift on exit above;
--- slide also animates alpha from zero to one and back on every map/unmap.
+-- Popup and panel share the same entrance and a moderate exit.
+-- These layers inherit snappySpring on entry and fastOut on exit above.
 -- The veil is one opacity across the screen. Hyprland blurs those pixels;
 -- a fully transparent layer shows the sharp wallpaper instead.
+-- Toasts still blur on their own window. The control center only slides:
+-- its blur is the stationary full-output veil, so the frost does not travel
+-- with the panel or stop short of the top of the screen.
 hl.layer_rule({
-    name = "notification-drop",
-    match = { namespace = "^swaync-(control-center|notification-window)$" },
+    name = "notification-toast",
+    match = { namespace = "^swaync-notification-window$" },
     blur = true,
     xray = false,
     ignore_alpha = 0,
     animation = "slide top",
 })
 
--- The in-frame projection stays below SwayNC's native Overlay controls.
+hl.layer_rule({
+    name = "notification-drop",
+    match = { namespace = "^swaync-control-center$" },
+    blur = false,
+    xray = false,
+    ignore_alpha = 0,
+    animation = "slide top",
+})
+
+-- The frame and the in-frame projection slide with SwayNC. They stay sharp.
 hl.layer_rule({
     name = "voluta-notification-glass",
     match = { namespace = "^voluta-notification-glass$" },
-    blur = true,
+    blur = false,
     xray = false,
     ignore_alpha = 0,
     animation = "slide top",
@@ -81,7 +90,7 @@ hl.layer_rule({
     no_anim = true,
 })
 
--- Rofi owns input and slides independently of the decorative layer.
+-- Rofi takes the keyboard immediately and still slides in and out.
 hl.layer_rule({
     name = "rofi-launcher",
     match = { namespace = "^rofi$" },
@@ -91,7 +100,7 @@ hl.layer_rule({
     animation = "slide bottom",
 })
 
--- Quickshell owns the frame's fast entrance and slower delayed departure.
+-- Quickshell owns the frame entrance and the short exit.
 hl.layer_rule({
     name = "voluta-selector-glass",
     match = { namespace = "^voluta-selector-glass$" },

@@ -32,7 +32,13 @@ def generator_python() -> str:
     shell = GENERATOR.read_text(encoding="utf-8")
     match = re.search(r"^exec python3 - \"\$root\".*?<<'PY'\n(.*?)^PY$", shell, re.M | re.S)
     check(match is not None, "could not find embedded theme generator")
-    return match.group(1).replace(ICON_SOURCE, "__TEST_ICON_SOURCE__")
+    # Replace the Dark path first so it is not partially rewritten by the
+    # Papirus prefix substitution.
+    return (
+        match.group(1)
+        .replace("/usr/share/icons/Papirus-Dark", "__TEST_ICON_DARK__")
+        .replace(ICON_SOURCE, "__TEST_ICON_SOURCE__")
+    )
 
 
 def verify_worker_selection(base: Path) -> None:
@@ -86,8 +92,19 @@ def write_palette(path: Path, colors: dict[str, str]) -> None:
     )
 
 
-def run_generator(home: Path, cache: Path, icon_source: Path, palette: Path | None) -> None:
-    code = generator_python().replace("__TEST_ICON_SOURCE__", str(icon_source))
+def run_generator(
+    home: Path,
+    cache: Path,
+    icon_source: Path,
+    palette: Path | None,
+    *,
+    expect_success: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    code = (
+        generator_python()
+        .replace("__TEST_ICON_SOURCE__", str(icon_source))
+        .replace("__TEST_ICON_DARK__", str(icon_source.parent / "Papirus-Dark-missing"))
+    )
     env = os.environ.copy()
     env.update(
         HOME=str(home),
@@ -105,7 +122,9 @@ def run_generator(home: Path, cache: Path, icon_source: Path, palette: Path | No
         text=True,
         check=False,
     )
-    check(result.returncode == 0, "theme generator failed in isolated home")
+    if expect_success:
+        check(result.returncode == 0, "theme generator failed in isolated home")
+    return result
 
 
 def read_ansi(
@@ -276,6 +295,36 @@ def verify_cache_refresh(base: Path, source: Path) -> None:
     check(len(list((home / ".local/share/konsole").glob("dolphin-terminal-live-*.profile"))) == 2, "obsolete live terminal profiles were not pruned")
 
 
+def verify_missing_papirus(base: Path) -> None:
+    # Updates must surface a missing icon pack instead of claiming papirus-v1
+    # while leaving a stale Breeze-based Imperium tree in place.
+    home = base / "home"
+    cache = base / "cache"
+    home.mkdir(parents=True)
+    palette_path = home / ".config/hypr/wallust/colors-shell.sh"
+    colors = {"bg": "#121218", "fg": "#f2f0ed", "1": "#3daee9"}
+    colors.update({str(i): "#5c8fbd" for i in range(16)})
+    write_palette(palette_path, colors)
+    stale = home / ".local/share/icons/imperium"
+    stale.mkdir(parents=True)
+    (stale / "index.theme").write_text(
+        "[Icon Theme]\nName=Imperium\nInherits=breeze-dark\n",
+        encoding="utf-8",
+    )
+    (stale / ".accent").write_text("abcdef\n", encoding="utf-8")
+    (stale / ".folder-preview-accent").write_text("abcdef:workers-v2\n", encoding="utf-8")
+    result = run_generator(home, cache, base / "missing-Papirus", palette_path, expect_success=False)
+    check(result.returncode != 0, "missing Papirus was treated as success")
+    check("papirus-icon-theme" in result.stderr, "missing Papirus was not reported")
+    live = (home / ".config/qt6ct/dolphin-live.conf").read_text(encoding="utf-8")
+    check("missing-papirus" in live, "live marker claimed Papirus while icons were skipped")
+    check("papirus-v1" not in live, "live marker still advertised a Papirus token")
+    check((stale / ".folder-preview-accent").read_text(encoding="utf-8").strip() == "abcdef:workers-v2",
+          "missing Papirus overwrote the retry stamp")
+    check("Inherits=breeze-dark" in (stale / "index.theme").read_text(encoding="utf-8"),
+          "missing Papirus rewrote the stale icon theme index")
+
+
 def verify_existing_install(base: Path, source: Path) -> None:
     home = base / "home"
     config = home / ".config"
@@ -355,6 +404,7 @@ def main() -> None:
 
         verify_cache_refresh(base / "cache-case", icon_source)
         verify_existing_install(base / "existing-install", icon_source)
+        verify_missing_papirus(base / "missing-papirus")
 
         custom = base / "custom-case"
         custom_home = custom / "home"
@@ -376,7 +426,7 @@ def main() -> None:
         fallback_data = json.loads((ROOT / "wallust/colorschemes/imperium.json").read_text(encoding="utf-8"))
         verify_colors(fallback_home, dolphin_background(fallback_data["background"]), "fallback palette")
 
-    print("PASS: Dolphin theme cache refresh, ANSI contrast, live backgrounds, and existing-install convergence")
+    print("PASS: Dolphin theme cache refresh, ANSI contrast, live backgrounds, missing Papirus, and existing-install convergence")
 
 
 if __name__ == "__main__":

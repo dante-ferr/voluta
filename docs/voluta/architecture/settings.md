@@ -192,9 +192,16 @@ The installed `voluta` command and the Hyprland settings helper run the recorded
 source checkout when that checkout is present, so commands added after the last
 copy work immediately. Pull that checkout first; updates never discard
 uncommitted source changes or auto-pull. `voluta update` copies the checkout
-into the deployment before it installs packages, then reloads the live session.
-Super+Alt+R does that copy without package installation, then reloads Hyprland,
-Waybar, and SwayNC. A package failure still leaves the new files in place.
+into the deployment when that checkout is newer or a deployed file is missing,
+then installs packages and reloads the live session. An unchanged checkout
+leaves the deployed tree and the published theme in place.
+Super+Alt+R does that copy without package installation. The deploy publishes
+frames once. The key filters them again only when that publish did not run.
+It reloads Hyprland after the palette and frames are on disk, and it reloads
+Hyprland, Waybar, SwayNC, and the top glow when their files changed. The top
+glow restart does not block the rest of the key. Dolphin's full apply runs
+when the Dolphin module changed; a palette change repaints the Qt theme.
+A package failure still leaves the new files in place.
 
 Feature selection is distinct from activation. A dependency/setup failure leaves
 the explicit selection saved and reports that activation needs attention. Running
