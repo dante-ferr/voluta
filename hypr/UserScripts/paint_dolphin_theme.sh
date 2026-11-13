@@ -3,8 +3,8 @@
 #
 # Dolphin follows qt6ct + Kvantum + the KDE color scheme. This writes those
 # three from the current wallpaper colors and points Kvantum at the Imperium
-# theme. Soft corners and the Oxanium UI font are applied in the QSS layer;
-# the embedded terminal keeps Monaspace Argon.
+# theme. Soft corners and typography.* tokens are applied in the QSS layer;
+# the embedded terminal keeps typography.mono.
 set +m
 
 _rice_paths="$HOME/.config/hypr/UserScripts/lib/rice_paths.sh"
@@ -34,7 +34,20 @@ import xml.etree.ElementTree as ET
 root, colors_path, home = sys.argv[1:4]
 dolphin_enabled = len(sys.argv) <= 4 or sys.argv[4] == "true"
 sys.path.insert(0, os.path.join(root, "voluta"))
+from design import css_px, load_design_from_settings, qt_font
 from theme import preferred_background
+
+design = load_design_from_settings()
+typo_ui = design["typography"]["ui"]
+typo_mono = design["typography"]["mono"]
+shape = design["shape"]
+density = design["density"]
+glass = design["glass"]
+radius_md = css_px(shape["radius_md_px"])
+radius_sm = css_px(shape["radius_sm_px"])
+radius_lg = css_px(shape["radius_lg_px"])
+space_xs = css_px(density["space_xs_px"])
+space_sm = css_px(density["space_sm_px"])
 
 def parse_hex(value):
     value = value.strip().lstrip("#")
@@ -334,11 +347,11 @@ chrome = dolphin_bg
 body = mix(dolphin_bg, text, 0.16)
 # Body stays the clearer glass (~40%). The Places column stays translucent
 # too, but denser (75%) so that left pane still reads above the files.
-body_alpha = 102
-chrome_alpha = 191
+body_alpha = int(glass["body_alpha"])
+chrome_alpha = int(glass["chrome_alpha"])
 # Faint zebra: a soft lift toward the text, mostly clear.
 stripe = mix(body, text, 0.06)
-stripe_alpha = 40
+stripe_alpha = int(glass["stripe_alpha"])
 chrome_hex = hx(chrome)
 chrome_rgba = f"rgba({rgb(chrome)}, {chrome_alpha})"
 body_hex = hx(body)
@@ -383,20 +396,20 @@ with open(qss_path, "w", encoding="utf-8") as handle:
 DolphinMainWindow {{
     background-color: rgba({rgb(body)}, {body_alpha});
     color: #{ivory};
-    padding: 6px;
+    padding: {space_sm};
 }}
 DolphinMainWindow QToolBar {{
     background-color: {chrome_rgba};
     border: none;
-    padding: 3px 8px;
-    spacing: 3px;
+    padding: {space_xs} 8px;
+    spacing: {space_xs};
     margin: 0px;
 }}
 DolphinMainWindow QStatusBar {{
     background-color: {chrome_rgba};
     color: #{quiet};
     border: none;
-    padding: 3px 10px;
+    padding: {space_xs} 10px;
     margin: 0px;
 }}
 DolphinMainWindow QDockWidget {{
@@ -433,7 +446,7 @@ DolphinMainWindow QToolButton {{
     background-color: transparent;
     color: #{ivory};
     border: none;
-    border-radius: 6px;
+    border-radius: {radius_md};
     padding: 4px;
     margin: 0 1px;
 }}
@@ -445,7 +458,7 @@ DolphinMainWindow QDockWidget::title {{
     background-color: {chrome_rgba};
     color: #{quiet};
     font-weight: 600;
-    padding: 6px 10px 4px 10px;
+    padding: {space_sm} 10px 4px 10px;
     border: none;
 }}
 DolphinMainWindow QDockWidget#placesDock::title,
@@ -463,14 +476,14 @@ DolphinMainWindow DolphinTabWidget QTabBar {{
     background-color: {chrome_rgba};
     color: #{ivory};
     border: none;
-    padding: 2px 6px;
+    padding: 2px {space_sm};
     margin: 0px;
 }}
 DolphinMainWindow DolphinTabWidget QTabBar::tab {{
     background-color: transparent;
     color: #{quiet};
     border: none;
-    border-radius: 6px;
+    border-radius: {radius_md};
     padding: 4px 10px;
     margin: 2px 1px;
 }}
@@ -549,8 +562,8 @@ DolphinMainWindow QHeaderView::section {{
 }}
 QTreeView::item, QListView::item, QTableView::item {{
     color: #{ivory};
-    padding: 3px 10px;
-    border-radius: 6px;
+    padding: {space_xs} 10px;
+    border-radius: {radius_md};
     background-color: transparent;
 }}
 DolphinMainWindow QTreeView::item,
@@ -575,8 +588,8 @@ DolphinMainWindow KFilePlacesView {{
 DolphinMainWindow KFilePlacesView::item {{
     color: #{ivory};
     background-color: transparent;
-    border-radius: 6px;
-    padding: 3px 8px;
+    border-radius: {radius_md};
+    padding: {space_xs} 8px;
     margin: 0px 2px;
 }}
 DolphinMainWindow KFilePlacesView::item:hover {{
@@ -605,18 +618,18 @@ QToolTip {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    border-radius: 6px;
+    border-radius: {radius_md};
     padding: 5px 9px;
 }}
 QMenu {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    border-radius: 8px;
+    border-radius: {radius_lg};
     padding: 4px 6px;
 }}
 QMenu::item {{
-    border-radius: 5px;
+    border-radius: {radius_sm};
     padding: 5px 10px;
 }}
 QMenu::item:selected {{
@@ -632,7 +645,7 @@ QLineEdit, QComboBox {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    border-radius: 6px;
+    border-radius: {radius_md};
     padding: 4px 8px;
     selection-background-color: #{sel_hex};
     selection-color: #{sel_fg};
@@ -641,24 +654,24 @@ QPlainTextEdit, QTextEdit, KTextEdit {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    border-radius: 6px;
+    border-radius: {radius_md};
     selection-background-color: #{sel_hex};
     selection-color: #{sel_fg};
 }}
 QTextEdit, KTextEdit {{
-    padding: 6px;
+    padding: {space_sm};
 }}
 /* F2 uses a one-line KTextEdit. Extra padding clips its initial filename
    until textChanged makes Dolphin recalculate the editor's height. */
 KItemListRoleEditor {{
     padding: 0px;
-    border-radius: 5px;
+    border-radius: {radius_sm};
 }}
 KMessageWidget {{
     background-color: #{panel};
     color: #{ivory};
     border: 1px solid #{edge};
-    border-radius: 6px;
+    border-radius: {radius_md};
     padding: 6px 10px;
 }}
 Baloo--FileMetaDataWidget {{
@@ -697,9 +710,9 @@ def ensure_pair(lines, section, key, value):
 qt_conf = os.path.join(home, ".config", "qt6ct", "qt6ct.conf")
 # QFont::toString() in Qt 6 uses OpenType weights (Normal=400). A long
 # Qt 6 string with legacy weight 50 requests an extremely light font.
-# UI chrome uses Oxanium; mono stays on Monaspace for the terminal pane.
-font_ui = "Oxanium,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
-font_mono = "Monaspace Argon,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0"
+# UI chrome uses typography.ui; mono stays on typography.mono for the terminal pane.
+font_ui = qt_font(typo_ui["family"], typo_ui["size_pt"])
+font_mono = qt_font(typo_mono["family"], typo_mono["size_pt"])
 font_ui_quoted = '"' + font_ui + '"'
 font_mono_quoted = '"' + font_mono + '"'
 if os.path.isfile(qt_conf):
@@ -847,7 +860,7 @@ for name in os.listdir(scheme_dir):
 live_conf = os.path.join(home, ".config", "qt6ct", "dolphin-live.conf")
 
 kdeglobals = os.path.join(home, ".config", "kdeglobals")
-font_small = font_ui.replace(",11,", ",9,", 1)
+font_small = qt_font(typo_ui["family"], max(8, int(typo_ui["size_pt"]) - 2))
 kde_keys = {
     "ColorScheme": "Imperium",
     "TerminalApplication": "kitty",

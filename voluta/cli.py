@@ -11,8 +11,11 @@ import re
 import socket
 import sys
 import tempfile
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
+# Personal overlays prefer TOML; public machine defaults stay JSON (see settings.md).
+_NULL_TOKEN = "___VOLUTA_NULL___"
 FEATURES = {
     "dolphin": "Custom styling and live palette hook (takes effect on next launch)",
     "session_restore": "Window restore on login and background session saving",
@@ -51,6 +54,10 @@ def validate_value(value):
 
 
 def validate_appearance(appearance):
+    from design import validate_design
+
+    if not isinstance(appearance, dict):
+        raise ValueError("appearance must be an object")
     background = appearance.get("background", {})
     if not isinstance(background, dict) or set(background) - {"source", "darken"}:
         raise ValueError("appearance.background accepts source and darken")
@@ -59,13 +66,159 @@ def validate_appearance(appearance):
     amount = background.get("darken", 0.35)
     if type(amount) not in (int, float) or not math.isfinite(amount) or not 0 <= amount <= 1:
         raise ValueError("background darken must be a number between 0 and 1")
+    validate_design(appearance)
+
+
+def layer_path(directory, name):
+    """Prefer a `.toml` overlay over a legacy `.json` file for one settings layer."""
+    for suffix in (".toml", ".json"):
+        path = directory / f"{name}{suffix}"
+        if path.is_file() or path.is_symlink():
+            return path
+    return None
+
+
+def host_layer_path(directory, host):
+    return layer_path(directory / "hosts", hostname(host))
+
+
+def write_layer_path(directory, name):
+    """Return the path to update: keep an existing layer's format, else create `.toml`."""
+    found = layer_path(directory, name)
+    return found if found is not None else directory / f"{name}.toml"
+
+
+def host_write_path(directory, host):
+    return write_layer_path(directory / "hosts", hostname(host))
+
+
+def settings_initialized(directory, host):
+    return layer_path(directory, "settings") is not None or host_layer_path(directory, host) is not None
+
+
+def _restore_nulls(value):
+    if value == _NULL_TOKEN:
+        return None
+    if isinstance(value, dict):
+        return {key: _restore_nulls(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_restore_nulls(item) for item in value]
+    return value
+
+
+def _prepare_toml_nulls(text):
+    """Accept Voluta's `null` extension (JSON-compatible) before stdlib tomllib."""
+    lines = []
+    for line in text.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if not stripped or stripped.startswith("#"):
+            lines.append(line)
+            continue
+        match = re.match(r"^(\s*[A-Za-z0-9_.-]+\s*=\s*)null(\s*(?:#.*)?)(\r?\n)?$", line)
+        if match:
+            ending = match.group(3) or ""
+            lines.append(f'{match.group(1)}"{_NULL_TOKEN}"{match.group(2)}{ending}')
+        else:
+            lines.append(line)
+    return "".join(lines)
+
+
+def _toml_escape(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int) and not isinstance(value, bool):
+        return str(value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("non-finite numbers are not supported")
+        return format(value, ".15g")
+    if isinstance(value, str):
+        escaped = (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\b", "\\b")
+            .replace("\f", "\\f")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        )
+        return f'"{escaped}"'
+    if isinstance(value, list):
+        if any(isinstance(item, dict) for item in value):
+            raise TypeError("array of tables cannot be inlined")
+        return "[" + ", ".join(_toml_escape(item) for item in value) + "]"
+    raise TypeError(f"unsupported TOML value type: {type(value).__name__}")
+
+
+def dumps_toml(data):
+    """Serialize a settings object to TOML. Nested dicts become dotted tables."""
+    if not isinstance(data, dict):
+        raise TypeError("settings root must be a table")
+    lines = []
+
+    def split_table(table):
+        scalars, nested, arrays = [], [], []
+        for key, value in table.items():
+            if not isinstance(key, str) or not key or not re.fullmatch(r"[A-Za-z0-9_-]+", key):
+                raise ValueError(f"unsupported TOML key: {key!r}")
+            if isinstance(value, dict):
+                nested.append((key, value))
+            elif isinstance(value, list) and value and all(isinstance(item, dict) for item in value):
+                arrays.append((key, value))
+            else:
+                scalars.append((key, value))
+        return scalars, nested, arrays
+
+    def emit_table(header, table, *, array_header=None):
+        scalars, nested, arrays = split_table(table)
+        if array_header is not None:
+            lines.append(f"[[{array_header}]]")
+        elif header and (scalars or not nested and not arrays):
+            # Skip empty intermediate parents; write truly empty tables explicitly.
+            lines.append(f"[{header}]")
+        for key, value in scalars:
+            lines.append(f"{key} = {_toml_escape(value)}")
+        if scalars and (nested or arrays):
+            lines.append("")
+        base = array_header if array_header is not None else header
+        for key, value in nested:
+            child = f"{base}.{key}" if base else key
+            emit_table(child, value)
+            lines.append("")
+        for key, value in arrays:
+            child = f"{base}.{key}" if base else key
+            for item in value:
+                if not isinstance(item, dict):
+                    raise TypeError("array of tables entries must be tables")
+                emit_table("", item, array_header=child)
+                lines.append("")
+
+    emit_table("", data)
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def loads_settings_text(text, suffix):
+    if suffix == ".toml":
+        data = _restore_nulls(tomllib.loads(_prepare_toml_nulls(text)))
+    elif suffix == ".json":
+        data = json.loads(text)
+    else:
+        raise ValueError(f"unsupported settings format: {suffix}")
+    return data
 
 
 def read(path):
-    if not path.exists():
+    if path is None or not path.exists():
         return {}
+    suffix = path.suffix.lower()
     with path.open(encoding="utf-8") as handle:
-        data = json.load(handle)
+        text = handle.read()
+    try:
+        data = loads_settings_text(text, suffix)
+    except (json.JSONDecodeError, tomllib.TOMLDecodeError) as error:
+        raise ValueError(f"{path}: {error}") from error
     if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
         raise ValueError(f"{path}: expected settings version 1")
     unknown = set(data) - {"version", "features", "hyprland", "environment", "apps", "paths", "keybindings", "startup", "monitors", "workspaces", "waybar_output", "dolphin_rhi", "rgb", "appearance"}
@@ -109,23 +262,65 @@ def merge(base, override):
 
 
 def resolve(directory, host):
-    shared = directory / "settings.json"
-    per_host = directory / "hosts" / f"{hostname(host)}.json"
+    shared = layer_path(directory, "settings")
+    per_host = host_layer_path(directory, host)
+    # Public defaults remain JSON so the core checkout stays machine-oriented;
+    # personal companion overlays (TOML or legacy JSON) still win via merge.
     result = read(ROOT / "voluta/defaults.json")
     result = merge(result, read(shared))
     result = merge(result, read(per_host))
-    return result, shared.exists() or per_host.exists()
+    return result, shared is not None or per_host is not None
+
+
+def migrate_json_layer(json_path):
+    """Write a TOML sibling from a JSON layer and rename JSON to `*.json.bak`."""
+    json_path = Path(json_path)
+    if not (json_path.is_file() or json_path.is_symlink()):
+        return None
+    toml_path = json_path.with_suffix(".toml")
+    if toml_path.exists() or toml_path.is_symlink():
+        return None
+    data = read(json_path)
+    atomic_write(toml_path, data)
+    backup = Path(str(json_path) + ".bak")
+    if not backup.exists() and not backup.is_symlink():
+        json_path.rename(backup)
+    return toml_path
+
+
+def migrate_directory(directory):
+    """Optionally convert personal JSON overlays to TOML without dropping values."""
+    migrated = []
+    directory = Path(directory)
+    shared = directory / "settings.json"
+    if (shared.is_file() or shared.is_symlink()) and not (directory / "settings.toml").exists():
+        path = migrate_json_layer(shared)
+        if path is not None:
+            migrated.append(path)
+    hosts = directory / "hosts"
+    if hosts.is_dir():
+        for json_path in sorted(hosts.glob("*.json")):
+            hostname(json_path.stem)
+            if not json_path.with_suffix(".toml").exists():
+                path = migrate_json_layer(json_path)
+                if path is not None:
+                    migrated.append(path)
+    return migrated
 
 
 def atomic_write(path, data):
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
                                          delete=False) as handle:
             temporary = Path(handle.name)
-            json.dump(data, handle, indent=2, ensure_ascii=False, allow_nan=False)
-            handle.write("\n")
+            if path.suffix.lower() == ".toml":
+                handle.write(dumps_toml(data))
+            else:
+                json.dump(data, handle, indent=2, ensure_ascii=False, allow_nan=False)
+                handle.write("\n")
             handle.flush()
             os.fsync(handle.fileno())
         # Preserve a companion-managed settings-file symlink rather than replacing it.
@@ -226,7 +421,7 @@ def main(argv=None):
     config.add_argument("--scope", choices=("shared", "host"), default="shared")
     theme = commands.add_parser("theme", help="set/reset shared appearance preferences")
     theme.add_argument("action", choices=("set", "reset"))
-    theme.add_argument("key", help="background.source or background.darken")
+    theme.add_argument("key", help="dotted appearance key, e.g. background.darken or typography.ui.family")
     theme.add_argument("value", nargs="?", help="JSON value")
     theme.add_argument("--scope", choices=("shared", "host"), default="shared")
     companion = commands.add_parser("companion", help="attach a local companion settings directory")
@@ -243,12 +438,18 @@ def main(argv=None):
         return dispatch(args, directory, host)
     if args.command == "companion":
         source = args.path.expanduser().resolve(strict=True)
-        if source == directory or not (source / "settings.json").is_file():
-            raise ValueError("companion must be a different directory containing settings.json")
-        read(source / "settings.json")
-        for path in (source / "hosts").glob("*.json"):
-            hostname(path.stem)
-            read(path)
+        shared = layer_path(source, "settings")
+        if source == directory or shared is None:
+            raise ValueError("companion must be a different directory containing settings.toml or settings.json")
+        read(shared)
+        hosts_dir = source / "hosts"
+        if hosts_dir.is_dir():
+            names = {path.stem for path in hosts_dir.glob("*.toml")} | {
+                path.stem for path in hosts_dir.glob("*.json")
+            }
+            for name in sorted(names):
+                hostname(name)
+                read(layer_path(hosts_dir, name))
         if directory.is_symlink() and directory.resolve() == source:
             print("Companion already attached")
             return 0
@@ -269,13 +470,15 @@ def main(argv=None):
         with (lock_dir / lock_name).open("w") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
             # Validate the effective configuration before mutating any override.
+            migrated = migrate_directory(directory)
             _, initialized = resolve(directory, host)
             if args.command != "init" and not initialized:
                 raise ValueError("initialize settings first: voluta init (use --preserve-session for the existing setup)")
-            path = directory / "settings.json"
+            path = write_layer_path(directory, "settings")
             if args.command == "init":
-                if path.exists() or path.is_symlink():
-                    print("Settings already exist; preserved")
+                if settings_initialized(directory, host):
+                    note = f" (migrated {len(migrated)} JSON layer(s) to TOML)" if migrated else ""
+                    print(f"Settings already exist; preserved{note}")
                     return 0
                 data = {"version": 1, "features": {}, "hyprland": {}}
                 if args.preserve_session:
@@ -284,7 +487,7 @@ def main(argv=None):
                 print(f"Initialized {path}")
                 return 0
             if args.scope == "host":
-                path = directory / "hosts" / f"{host}.json"
+                path = host_write_path(directory, host)
             data = read(path) or {"version": 1}
             if args.command == "feature":
                 if not args.name:
@@ -299,9 +502,11 @@ def main(argv=None):
                     raise ValueError("set requires a JSON value")
                 keys = args.key.split(".")
                 if len(keys) < 2 or not all(re.fullmatch(r"[A-Za-z0-9_:-]+", key) for key in keys):
-                    raise ValueError("use a dotted Hyprland section.key")
-                if args.command == "theme" and args.key not in ("background.source", "background.darken"):
-                    raise ValueError("use background.source or background.darken")
+                    raise ValueError("use a dotted section.key path")
+                if args.command == "theme" and keys[0] not in (
+                    "background", "typography", "density", "shape", "glass",
+                ):
+                    raise ValueError("theme keys must start with background, typography, density, shape, or glass")
                 node = data.setdefault("appearance" if args.command == "theme" else "hyprland", {})
                 for key in keys[:-1]:
                     node = node.setdefault(key, {})

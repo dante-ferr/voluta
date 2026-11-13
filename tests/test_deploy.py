@@ -36,10 +36,12 @@ class DeploymentTests(unittest.TestCase):
         gtk = self.home / '.config/gtk-3.0/settings.ini'
         gtk.parent.mkdir(parents=True)
         gtk.write_text('[Settings]\ngtk-font-name=Serif 11\n')
-        settings_path = self.home / '.config/voluta/settings.json'
-        settings = json.loads(settings_path.read_text())
+        settings_path = self.home / '.config/voluta/settings.toml'
+        sys.path.insert(0, str(ROOT / 'voluta'))
+        import cli as voluta_cli
+        settings = voluta_cli.read(settings_path)
         settings['environment'] = {'XCURSOR_THEME': 'Adwaita', 'XCURSOR_SIZE': '32'}
-        settings_path.write_text(json.dumps(settings))
+        voluta_cli.atomic_write(settings_path, settings)
         before = settings_path.read_bytes()
         self.run_cli('install', '--skip-deps')
         import configparser
@@ -63,7 +65,7 @@ class DeploymentTests(unittest.TestCase):
         self.run_cli('init')
         self.run_cli('feature', 'disable', 'dolphin')
         self.run_cli('config', 'set', 'input.kb_layout', '"br"')
-        settings_path = self.home / '.config/voluta/settings.json'
+        settings_path = self.home / '.config/voluta/settings.toml'
         before = settings_path.read_bytes()
         self.run_cli('install', '--skip-deps')
         self.assertTrue(original.is_symlink())

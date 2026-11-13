@@ -101,8 +101,9 @@ voluta rgb                              # apply saved selections
 voluta rgb --dry-run                     # inspect without hardware writes
 ```
 
-`select` persists each device's `preset` in `hosts/<hostname>.json`, preserving
-other host settings and leaving shared/notebook settings untouched. The existing
+`select` persists each device's `preset` in `hosts/<hostname>.toml` (or the
+existing host layer format), preserving other host settings and leaving
+shared/notebook settings untouched. The existing
 `layout` setting remains a fallback when a device has no explicit preset.
 Selections survive restart, reconnect and updates; palette-derived presets adapt
 to wallpaper changes. The public RGB default remains disabled with no devices.

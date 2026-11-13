@@ -23,6 +23,7 @@ do not stage, revert, or commit another task's changes incidentally.
 | --- | --- | --- |
 | Repository relationship | Public core plus a separate private companion repo containing personal preferences and host profiles. | Accepted |
 | Persistent settings location | Under `${XDG_CONFIG_HOME:-$HOME/.config}/voluta/`, outside the core checkout; the companion repo can manage these files. | Accepted |
+| Personal settings format | Human-edited personal/host overlays use TOML (`settings.toml`, `hosts/<hostname>.toml`). Public machine defaults remain `voluta/defaults.json`. Legacy personal JSON still loads; TOML wins when both exist; init/update can migrate JSON→TOML. | Accepted |
 | Public scope | A complete themed desktop with optional integrations; the core/optional classification is described in features.md. | Accepted |
 | Supported platform | Arch Linux only for the initial public release. Other distributions, including Arch derivatives, are outside the initial support commitment. | Accepted |
 | Update policy | Updated defaults apply to unset preferences; explicit user overrides survive, with migrations for renamed/removed keys. | Accepted |

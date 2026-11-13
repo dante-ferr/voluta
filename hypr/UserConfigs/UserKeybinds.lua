@@ -72,7 +72,7 @@ if settings.enabled("obs") then
 end
 
 -- Config shortcuts
-bind("CTRL + SUPER + Slash", hl.dsp.exec_cmd("xdg-open ~/.config/voluta/settings.json"))
+bind("CTRL + SUPER + Slash", hl.dsp.exec_cmd("bash -lc 'f=\"${XDG_CONFIG_HOME:-$HOME/.config}/voluta/settings.toml\"; [ -e \"$f\" ] || f=\"${XDG_CONFIG_HOME:-$HOME/.config}/voluta/settings.json\"; xdg-open \"$f\"'"))
 bind("CTRL + SUPER + ALT + Slash", hl.dsp.exec_cmd("xdg-open ~/.config/hypr/UserConfigs/UserKeybinds.lua"))
 
 -- Display layout profiles (nwg-displays)

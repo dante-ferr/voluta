@@ -29,6 +29,7 @@
 }
 
 * {
+    /* @@voluta-tokens:start */
     border-radius: 0px;
     font-family: "Monaspace Argon", "JetBrainsMono Nerd Font", monospace;
     font-size: 10pt;
@@ -36,6 +37,7 @@
     letter-spacing: 0;
     text-shadow: none;
     box-shadow: none;
+    /* @@voluta-tokens:end */
 }
 
 /* The compositor owns everything behind the panels */

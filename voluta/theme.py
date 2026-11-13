@@ -1,4 +1,4 @@
-"""Resolve the rice's shared background and publish it to generated app palettes."""
+"""Resolve shared appearance and publish it to generated app palettes."""
 
 import argparse
 import json
@@ -8,6 +8,18 @@ import re
 import tempfile
 
 from cli import config_home, hostname, resolve
+from design import (
+    apply_kitty_fonts,
+    apply_rofi_fonts,
+    export_payload,
+    gsimplecal_font_block,
+    gtk_font_block,
+    replace_marked_block,
+    resolve_design,
+    swaync_tokens_block,
+    theme_css,
+    theme_sh,
+)
 
 
 def read_palette(path):
@@ -46,12 +58,65 @@ def write_changed(path, text):
     return True
 
 
+def _ensure_gtk_design_block(text, design):
+    start, end = "/* @@voluta-design:start */", "/* @@voluta-design:end */"
+    body = gtk_font_block(design)
+    if start in text and end in text:
+        return replace_marked_block(text, "voluta-design", body)
+    return text.rstrip() + f"\n\n{start}\n{body}{end}\n"
+
+
+def publish_design(config, cache, design, background=None, background_rgb=None, source_background=None):
+    """Write design-token exports and apply them to stylesheet/conf consumers."""
+    changed = False
+    generated = cache / "voluta"
+    payload = export_payload(design, background, background_rgb, source_background)
+    changed = write_changed(generated / "theme.json", json.dumps(payload, indent=2) + "\n") or changed
+    changed = write_changed(generated / "theme.css", theme_css(design, background)) or changed
+    changed = write_changed(generated / "theme.sh", theme_sh(design, background, background_rgb)) or changed
+
+    def edit(relative, transform):
+        nonlocal changed
+        path = config / relative
+        if path.is_file():
+            changed = write_changed(path, transform(path.read_text())) or changed
+
+    # Marker-driven stylesheet roots. Waybar style.css stays hardcoded (no token rewrite).
+    edit("swaync/style.css", lambda text: replace_marked_block(text, "voluta-tokens", swaync_tokens_block(design)))
+    edit("gsimplecal/gtk.css", lambda text: replace_marked_block(text, "voluta-font", gsimplecal_font_block(design)))
+
+    # Conf files that own typography keys.
+    edit("kitty/kitty.conf", lambda text: apply_kitty_fonts(text, design))
+    for relative in ("rofi/config.rasi", "rofi/dashboard.rasi", "rofi/picker.rasi"):
+        edit(relative, lambda text: apply_rofi_fonts(text, design))
+
+    # Global GTK user stylesheets (Wallust output + design markers).
+    for relative in ("gtk-4.0/gtk.css", "gtk-3.0/gtk.css"):
+        edit(relative, lambda text: _ensure_gtk_design_block(text, design))
+
+    # Disposable per-app copies of the CSS variables sheet.
+    for relative in (
+        "waybar/wallust/tokens.css",
+        "swaync/wallust/tokens.css",
+        "hypr/wallust/tokens.css",
+    ):
+        path = config / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        changed = write_changed(path, theme_css(design, background)) or changed
+
+    return changed
+
+
 def publish(config=None, cache=None, directory=None, host=None):
     config = config or Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     cache = cache or Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    settings_dir = directory or config / "voluta"
+    settings, _ = resolve(settings_dir, hostname(host))
+    design = resolve_design(settings.get("appearance", {}))
+
     shell = config / "hypr/wallust/colors-shell.sh"
     palette = read_palette(shell)
-    source, darken = background_policy(palette, directory or config / "voluta", host)
+    source, darken = background_policy(palette, settings_dir, host)
     background = tuple(round(channel * (1 - darken)) for channel in source)
     color = "#" + "".join(f"{channel:02x}" for channel in background)
     source_color = "#" + "".join(f"{channel:02x}" for channel in source)
@@ -100,13 +165,17 @@ def publish(config=None, cache=None, directory=None, host=None):
     edit("gtk-4.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("gtk-3.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
 
-    source = palette.get("source_bg", palette["bg"])
-    generated = cache / "voluta"
-    write_changed(generated / "theme.json", json.dumps({"version": 1, "background": color, "background_rgb": background, "source_background": "#" + "".join(f"{c:02x}" for c in source)}, indent=2) + "\n")
-    write_changed(generated / "theme.css", f"@define-color voluta_background {color};\n")
-    write_changed(generated / "theme.sh", f"voluta_bg='{color[1:]}'\nvoluta_bg_rgb='{rgb}'\n")
+    source_hex = "#" + "".join(f"{c:02x}" for c in palette.get("source_bg", palette["bg"]))
+    changed = publish_design(
+        config,
+        cache,
+        design,
+        background=color,
+        background_rgb=background,
+        source_background=source_hex,
+    ) or changed
     from surfaces import publish as publish_surfaces
-    publish_surfaces(config=config, directory=directory or config / "voluta", host=host)
+    publish_surfaces(config=config, directory=settings_dir, host=host)
     return changed
 
 

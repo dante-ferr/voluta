@@ -11,7 +11,9 @@ window {
 calendar {
     background-color: @imperium_bg;
     color: @imperium_fg;
-    font-family: "JetBrainsMono Nerd Font", monospace;
+    /* @@voluta-font:start */
+    font-family: "Oxanium", sans-serif;
+    /* @@voluta-font:end */
     font-size: 15px;
     font-weight: 600;
     padding: 28px 36px 30px;

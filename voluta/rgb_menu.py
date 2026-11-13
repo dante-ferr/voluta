@@ -8,7 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from cli import atomic_write, hostname, read, resolve
+from cli import atomic_write, host_write_path, hostname, read, resolve
 from rgb_presets import PRESETS, get
 
 
@@ -53,7 +53,7 @@ def select(directory, host, name, target='all'):
         for device in updated:
             if device in devices:
                 device['preset'] = name
-        path = directory / 'hosts' / f'{host}.json'
+        path = host_write_path(directory, host)
         data = read(path) or {'version': 1}
         data.setdefault('rgb', {})['devices'] = updated
         atomic_write(path, data)

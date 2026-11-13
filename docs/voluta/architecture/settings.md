@@ -7,19 +7,53 @@ AUR dependencies require `paru` or `yay`. No remote repository is created.
 
 | Layer | Location and behavior |
 | --- | --- |
-| Public defaults and code | Core checkout. Pull changes here, then run `voluta update`. |
-| Shared personal preferences | `${XDG_CONFIG_HOME:-~/.config}/voluta/settings.json`. Preserved across updates. |
-| Host preferences | `voluta/hosts/<hostname>.json` under the personal settings directory. Override shared values. |
+| Public defaults and code | Core checkout (`voluta/defaults.json`). Pull changes here, then run `voluta update`. Machine-oriented JSON stays in the public core. |
+| Shared personal preferences | `${XDG_CONFIG_HOME:-~/.config}/voluta/settings.toml` (legacy `settings.json` still loads). Preserved across updates. |
+| Host preferences | `voluta/hosts/<hostname>.toml` under the personal settings directory (legacy `.json` still loads). Override shared values. |
 | Optional Lua hooks | Companion `shared.lua`, then `hosts/<hostname>.lua`, then `<hostname>-power.lua`. Trusted personal code. |
 | Deployed application config | `${XDG_DATA_HOME:-~/.local/share}/voluta/current/`. Config links point here so app writes cannot dirty the public checkout. |
 | Backups and ownership manifest | `${XDG_STATE_HOME:-~/.local/state}/voluta/`. Retained across updates/uninstall. |
 | Palettes, sessions and runtime files | Local generated output/state. Never synchronize as shared preferences. |
 
-JSON objects merge recursively; arrays/scalars replace. `false` explicitly
-disables a feature or named command. Removing an override restores inheritance.
+### Format and merge path
+
+Personal overlays use **TOML** so comments and nested tables (`appearance.*`,
+`hyprland.input`, …) stay easy to edit. Public defaults remain **JSON** in
+`voluta/defaults.json` so the core checkout stays a compact machine default
+file; companion TOML does not need to restate it.
+
+Resolve order in `voluta/cli.py` `resolve()`:
+
+1. Read `voluta/defaults.json` from the core checkout.
+2. Recursively merge shared personal `settings.toml` (or legacy `settings.json`).
+3. Recursively merge host `hosts/<hostname>.toml` (or legacy `.json`).
+
+When both `.toml` and `.json` exist for the same layer, **TOML wins**. Objects
+merge recursively; arrays/scalars replace. `false` explicitly disables a feature
+or named command. Removing an override restores inheritance from a lower layer.
+Voluta TOML accepts a `null` value (JSON-compatible) for explicit unsets such as
+environment clears. `voluta init`, `voluta update`, and preference writers migrate
+a JSON-only layer to TOML when no sibling `.toml` exists, renaming the JSON file
+to `*.json.bak` so values are not destroyed.
+
 The `hyprland` object and declarative monitor/workspace rules apply after personal
 Lua hooks. Keybinding overrides replace matching default chords; new chords are
 additive. Named `startup` commands run once at login; false disables an entry.
+
+Example shared personal overlay:
+
+```toml
+version = 1
+
+[features]
+session_restore = true
+
+[hyprland.input]
+kb_layout = "us,br"
+
+[appearance.background]
+darken = 0.5
+```
 
 The compositor loader validates complete helper output rather than relying on
 `pclose()` status: Hyprland may reap that child early and return ECHILD. It keeps
@@ -68,10 +102,11 @@ voluta uninstall
 ```
 
 `config set/reset` edits Hyprland options. Other settings sections are editable
-JSON. Global `--host <name>` and `--config-dir <path>` precede the subcommand.
-`get <dotted-key>` reads any resolved setting as JSON. Writes are serialized and
-atomic, preserve companion symlinks, and reject unsupported schema versions.
-Invalid compositor options still need correction; they are not silently migrated.
+TOML (or legacy JSON). Global `--host <name>` and `--config-dir <path>` precede
+the subcommand. `get <dotted-key>` reads any resolved setting as JSON. Writes are
+serialized and atomic, prefer `.toml` for new files, preserve companion symlinks,
+and reject unsupported schema versions. Invalid compositor options still need
+correction; they are not silently migrated.
 
 `init --preserve-session` records the old always-on session-restore preference.
 Repeated init preserves existing files. Uninitialized legacy configurations retain
@@ -92,7 +127,7 @@ existing Dolphin/session behavior, but a fresh `init` defaults restoration off.
 | `waybar_output` | Connector name or null for the normal all-output configuration. |
 | `dolphin_rhi` | Host-specific Qt rendering workaround. |
 | `rgb` | Palette accent token and explicitly selected USB/backend device records. |
-| `appearance` | Shared palette background source and darkening; see [Shared background](../integrations/theme.md). |
+| `appearance` | Shared background policy plus design tokens (typography, density, shape, glass); see [Shared appearance](../integrations/theme.md). |
 
 Personal shell code lives in `shell/interactive.zsh` and is sourced only for an
 interactive shell with developer_shell enabled. The login path only sources the
@@ -102,8 +137,8 @@ client GLX policy stays in the private host Lua hook, after compositor startup.
 Host idle files are `idle/<hostname>.conf`; resume hooks are
 `resume/<hostname>.sh`. Local nwg-displays outputs remain local; companion
 `displays/<hostname>/{monitors,workspaces}.conf` supplies a host-specific fallback.
-Declarative JSON rules override both. Never put a desktop layout in a shared
-fallback that affects the notebook.
+Declarative monitor/workspace rules override both. Never put a desktop layout in
+a shared fallback that affects the notebook.
 
 ## Companion repository
 
@@ -120,10 +155,14 @@ For another user:
 ./bin/voluta companion attach ~/voluta-personal
 ```
 
-Attach refuses an existing settings directory or a different symlink. Back up and
-merge deliberately first. `examples/companion/` contains an anonymous skeleton.
-Version personal preferences separately, without `.env`, credentials, generated
-palettes, session snapshots, logs or VM images. No provider or Git remote is needed.
+Attach requires `settings.toml` or legacy `settings.json` in the companion root
+and refuses an existing settings directory or a different symlink. Back up and
+merge deliberately first. `examples/companion/` contains an anonymous TOML
+skeleton. Version personal preferences separately, without `.env`, credentials,
+generated palettes, session snapshots, logs or VM images. No provider or Git
+remote is needed. Public defaults stay overlayable: only keys you set in the
+companion replace matching defaults; everything else inherits from
+`voluta/defaults.json` on each resolve.
 
 ## Installer, updates and rollback
 

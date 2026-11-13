@@ -5,11 +5,10 @@
 // PaletteChange. Wallpaper changes rewrite the scheme file under a new path
 // and this library points the running process at it.
 //
-// The file body uses ~47% opacity. The Places column and toolbar stay
-// translucent too, but denser (~90%) so that left pane reads above the files.
-// A fully clear color is what turned some panels black: an opaque widget
-// flattens alpha 0 against black. Text, selection, buttons, and tooltips stay
-// fully opaque.
+// Body and chrome alphas come from appearance.glass in theme.json (defaults:
+// body ~40%, chrome 75%). A fully clear color turns some panels black: an
+// opaque widget flattens alpha 0 against black. Text, selection, buttons, and
+// tooltips stay fully opaque.
 
 #include <QAbstractScrollArea>
 #include <QAbstractItemDelegate>
@@ -25,6 +24,8 @@
 #include <QGraphicsWidget>
 #include <QHash>
 #include <QImageReader>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QListView>
 #include <QMainWindow>
 #include <QMouseEvent>
@@ -55,15 +56,65 @@
 
 namespace {
 
-constexpr int kBackgroundAlpha = 102; // ~0.40 file body.
-constexpr int kChromeAlpha = 191; // 0.75 Places column and toolbar.
-constexpr int kStripeAlpha = 40; // faint alternating rows in the file view.
 constexpr int kPlacesSpacing = 0;
 constexpr int kPlacesIconSize = 22;
 constexpr int kPlacesExtraIconGap = 6;
 constexpr int kSidebarDefaultWidth = 220;
 
+// Defaults match appearance.glass / typography.ui in voluta/defaults.json.
+struct DesignTokens {
+    int bodyAlpha = 102;
+    int chromeAlpha = 191;
+    int stripeAlpha = 40;
+    QString uiFamily = QStringLiteral("Oxanium");
+    int uiSizePt = 11;
+};
+
 QString homeConfig(const char *leaf);
+
+QString themeJsonPath()
+{
+    const QByteArray cache = qgetenv("XDG_CACHE_HOME");
+    if (!cache.isEmpty()) {
+        return QString::fromLocal8Bit(cache) + QStringLiteral("/voluta/theme.json");
+    }
+    return homeConfig("/.cache/voluta/theme.json");
+}
+
+DesignTokens &designTokens()
+{
+    static DesignTokens tokens;
+    return tokens;
+}
+
+void loadDesignTokens()
+{
+    DesignTokens tokens;
+    QFile file(themeJsonPath());
+    if (file.open(QIODevice::ReadOnly)) {
+        const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+        const QJsonObject glass = root.value(QStringLiteral("glass")).toObject();
+        if (glass.contains(QStringLiteral("body_alpha"))) {
+            tokens.bodyAlpha = qBound(0, glass.value(QStringLiteral("body_alpha")).toInt(tokens.bodyAlpha), 255);
+        }
+        if (glass.contains(QStringLiteral("chrome_alpha"))) {
+            tokens.chromeAlpha = qBound(0, glass.value(QStringLiteral("chrome_alpha")).toInt(tokens.chromeAlpha), 255);
+        }
+        if (glass.contains(QStringLiteral("stripe_alpha"))) {
+            tokens.stripeAlpha = qBound(0, glass.value(QStringLiteral("stripe_alpha")).toInt(tokens.stripeAlpha), 255);
+        }
+        const QJsonObject ui = root.value(QStringLiteral("typography")).toObject()
+                                   .value(QStringLiteral("ui")).toObject();
+        const QString family = ui.value(QStringLiteral("family")).toString();
+        if (!family.isEmpty()) {
+            tokens.uiFamily = family;
+        }
+        if (ui.contains(QStringLiteral("size_pt"))) {
+            tokens.uiSizePt = qBound(1, int(ui.value(QStringLiteral("size_pt")).toDouble(tokens.uiSizePt)), 72);
+        }
+    }
+    designTokens() = tokens;
+}
 
 QHash<qreal, QPixmap> &headingOrnamentCache()
 {
@@ -96,8 +147,9 @@ QRect headingOrnamentRect(const QRect &heading, int textWidth)
 
 QFont imperiumFont()
 {
-    // Proportional UI sans (Limusic default). The embedded terminal keeps Monaspace.
-    QFont font(QStringLiteral("Oxanium"), 11, QFont::Normal);
+    // Proportional UI sans from appearance.typography.ui. Terminal keeps mono.
+    const DesignTokens &tokens = designTokens();
+    QFont font(tokens.uiFamily, tokens.uiSizePt, QFont::Normal);
     font.setStyleName(QStringLiteral("Regular"));
     return font;
 }
@@ -293,7 +345,7 @@ QColor parseColor(const QString &text)
 
 QColor glass(QColor color)
 {
-    color.setAlpha(kBackgroundAlpha);
+    color.setAlpha(designTokens().bodyAlpha);
     return color;
 }
 
@@ -738,6 +790,10 @@ private:
         if (!m_qssPath.isEmpty() && QFile::exists(m_qssPath) && !m_watcher.files().contains(m_qssPath)) {
             m_watcher.addPath(m_qssPath);
         }
+        const QString tokensPath = themeJsonPath();
+        if (QFile::exists(tokensPath) && !m_watcher.files().contains(tokensPath)) {
+            m_watcher.addPath(tokensPath);
+        }
     }
 
     void apply()
@@ -746,6 +802,7 @@ private:
             return;
         }
         m_applying = true;
+        loadDesignTokens();
         arm();
 
         QFile conf(m_conf);
@@ -807,7 +864,7 @@ private:
         }
         QPalette chromePalette = palette;
         QColor chrome = solid(colors.viewBg);
-        chrome.setAlpha(kChromeAlpha);
+        chrome.setAlpha(designTokens().chromeAlpha);
         chromePalette.setColor(QPalette::Window, chrome);
         chromePalette.setColor(QPalette::Base, chrome);
         chromePalette.setColor(QPalette::Button, chrome);
@@ -824,7 +881,7 @@ private:
                                           .arg(chrome.red())
                                           .arg(chrome.green())
                                           .arg(chrome.blue())
-                                          .arg(kChromeAlpha);
+                                          .arg(designTokens().chromeAlpha);
             if (widget->property("imperiumChrome").toString() != chromeCss) {
                 widget->setStyleSheet(chromeCss);
                 widget->setProperty("imperiumChrome", chromeCss);
@@ -967,7 +1024,7 @@ private:
                                             .arg(colors.windowBg.red())
                                             .arg(colors.windowBg.green())
                                             .arg(colors.windowBg.blue())
-                                            .arg(kBackgroundAlpha);
+                                            .arg(designTokens().bodyAlpha);
                 view->setProperty("imperiumGlass", true);
                 view->setAttribute(Qt::WA_TranslucentBackground, true);
                 view->setAutoFillBackground(false);
@@ -1018,7 +1075,7 @@ private:
                     stripe.setRed(qBound(0, 255, qRound(stripe.red() * 0.94 + text.red() * 0.06)));
                     stripe.setGreen(qBound(0, 255, qRound(stripe.green() * 0.94 + text.green() * 0.06)));
                     stripe.setBlue(qBound(0, 255, qRound(stripe.blue() * 0.94 + text.blue() * 0.06)));
-                    stripe.setAlpha(kStripeAlpha);
+                    stripe.setAlpha(designTokens().stripeAlpha);
                     body.setColor(QPalette::Base, fill);
                     body.setColor(QPalette::Window, fill);
                     body.setColor(QPalette::AlternateBase, stripe);

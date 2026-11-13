@@ -125,4 +125,4 @@ leaves the Developer-mode **Load unpacked** steps and appearance toggles to you.
 
 Component notes next to the code:
 [Brave README](../../../brave/README.md). Shared toolbar background policy:
-[Shared background](theme.md).
+[Shared appearance](theme.md).

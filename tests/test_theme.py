@@ -61,6 +61,18 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("color: #80BAED;", karere.read_text())
         exported = json.loads((self.cache / "voluta/theme.json").read_text())
         self.assertEqual(exported["background"], "#060e0e")
+        self.assertEqual(exported["typography"]["ui"]["family"], "Oxanium")
+        self.assertEqual(exported["typography"]["mono"]["family"], "Monaspace Argon")
+        self.assertEqual(exported["typography"]["display"]["family"], "Cinzel")
+        self.assertEqual(exported["glass"]["body_alpha"], 102)
+        self.assertEqual(exported["glass"]["chrome_alpha"], 191)
+        self.assertEqual(exported["shape"]["radius_md_px"], 6)
+        css_export = (self.cache / "voluta/theme.css").read_text()
+        self.assertIn("--voluta-font-ui:", css_export)
+        self.assertIn("--voluta-radius-md:", css_export)
+        sh_export = (self.cache / "voluta/theme.sh").read_text()
+        self.assertIn("voluta_font_ui='Oxanium'", sh_export)
+        self.assertIn("voluta_glass_chrome_alpha='191'", sh_export)
         self.assertFalse(self.publish(), "repeated publication must not darken twice or rewrite outputs")
 
     def test_karere_canvas_is_opaque(self):
@@ -122,15 +134,109 @@ class ThemeTests(unittest.TestCase):
                 self.assertEqual(self.shell.read_bytes(), original)
 
     def test_cli_theme_override_does_not_clobber_other_preferences(self):
-        path = self.write("voluta/settings.json", json.dumps({"version": 1, "apps": {"terminal": "example"}}))
+        path = self.settings / "settings.toml"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        cli.atomic_write(path, {"version": 1, "apps": {"terminal": "example"}})
         cli.main(["--config-dir", str(self.settings), "--host", "test-host", "theme", "set", "background.darken", "0.2"])
-        self.assertEqual(json.loads(path.read_text())["apps"], {"terminal": "example"})
+        self.assertEqual(cli.read(path)["apps"], {"terminal": "example"})
         previous = path.read_bytes()
         with self.assertRaises(ValueError):
             cli.main(["--config-dir", str(self.settings), "theme", "set", "background.darken", "2"])
         self.assertEqual(path.read_bytes(), previous)
         cli.main(["--config-dir", str(self.settings), "theme", "reset", "background.darken"])
         self.assertEqual(cli.resolve(self.settings, "test-host")[0]["appearance"]["background"]["darken"], 0.35)
+
+    def test_design_tokens_rewrite_marked_styles_and_conf(self):
+        waybar_source = (
+            '* {\n'
+            '    border: none;\n'
+            '    border-radius: 0px; /* Strict 0px sharp geometric corners */\n'
+            '    font-family: "Cinzel", "JetBrainsMono Nerd Font", "FiraCode Nerd Font", serif, monospace;\n'
+            '    font-size: 11.5px;\n'
+            '    font-weight: 700;\n'
+            '    letter-spacing: 0.8px;\n'
+            '    min-height: 0;\n'
+            '}\n'
+            '#window {\n    border-top-right-radius: 13px;\n}\n'
+        )
+        waybar = self.write("waybar/style.css", waybar_source)
+        swaync = self.write(
+            "swaync/style.css",
+            '* {\n'
+            '    /* @@voluta-tokens:start */\n'
+            '    border-radius: 0px;\n'
+            '    font-family: "Monaspace Argon", monospace;\n'
+            '    font-size: 10pt;\n'
+            '    font-weight: 400;\n'
+            '    letter-spacing: 0;\n'
+            '    text-shadow: none;\n'
+            '    box-shadow: none;\n'
+            '    /* @@voluta-tokens:end */\n'
+            '}\n',
+        )
+        calendar = self.write(
+            "gsimplecal/gtk.css",
+            'calendar {\n'
+            '    /* @@voluta-font:start */\n'
+            '    font-family: "Oxanium", sans-serif;\n'
+            '    /* @@voluta-font:end */\n'
+            '}\n',
+        )
+        kitty = self.write(
+            "kitty/kitty.conf",
+            'font_family      family="Monaspace Argon" style="Regular"\n'
+            'bold_font        family="Monaspace Argon" style="Bold"\n'
+            'italic_font      family="Monaspace Argon" style="Italic"\n'
+            'bold_italic_font family="Monaspace Argon" style="Bold Italic"\n'
+            'font_size        10\n',
+        )
+        rofi = self.write("rofi/config.rasi", 'font: "JetBrains Mono 12";\n')
+        gtk = self.write("gtk-4.0/gtk.css", "window { color: red; }\n")
+        self.write(
+            "voluta/settings.json",
+            json.dumps({
+                "version": 1,
+                "appearance": {
+                    "typography": {
+                        "ui": {"family": "Oxanium", "size_pt": 12},
+                        "mono": {"family": "Monaspace Argon", "size_pt": 11},
+                        "display": {"family": "Cinzel", "size_pt": 12, "weight": 700, "letter_spacing_px": 1},
+                    },
+                    "shape": {"radius_xl_px": 10, "radius_sharp_px": 0},
+                    "glass": {"chrome_alpha": 180},
+                },
+            }),
+        )
+        self.assertTrue(self.publish())
+        self.assertEqual(waybar.read_text(), waybar_source)
+        self.assertIn("font-size: 11.5px;", waybar.read_text())
+        self.assertIn("border-top-right-radius: 13px;", waybar.read_text())
+        self.assertNotIn("@@voluta-tokens", waybar.read_text())
+        self.assertIn('font-family: "Monaspace Argon"', swaync.read_text())
+        self.assertIn("font-size: 11pt;", swaync.read_text())
+        self.assertIn('font-family: "Oxanium"', calendar.read_text())
+        self.assertIn('font_size        11', kitty.read_text())
+        self.assertIn('font: "Monaspace Argon 12";', rofi.read_text())
+        self.assertIn("@@voluta-design:start", gtk.read_text())
+        self.assertIn('font-family: "Oxanium"', gtk.read_text())
+        exported = json.loads((self.cache / "voluta/theme.json").read_text())
+        self.assertEqual(exported["glass"]["chrome_alpha"], 180)
+        self.assertEqual(exported["shape"]["radius_xl_px"], 10)
+
+    def test_invalid_design_token_is_rejected(self):
+        self.write("voluta/settings.json", json.dumps({"version": 1}))
+        with self.assertRaises(ValueError):
+            self.write(
+                "voluta/settings.json",
+                json.dumps({"version": 1, "appearance": {"glass": {"body_alpha": 300}}}),
+            )
+            cli.read(self.settings / "settings.json")
+        self.write("voluta/settings.json", json.dumps({"version": 1}))
+        with self.assertRaises(ValueError):
+            cli.main([
+                "--config-dir", str(self.settings), "theme", "set",
+                "glass.body_alpha", "300",
+            ])
 
 
 if __name__ == "__main__":

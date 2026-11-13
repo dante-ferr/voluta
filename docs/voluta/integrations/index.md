@@ -7,7 +7,7 @@ prevent the core desktop from starting when unavailable.
 | Document | Purpose |
 | --- | --- |
 | [Integration categories](../architecture/integration_categories.md) | Theme-only apps vs feature modules vs soft presence checks. |
-| [Shared background](theme.md) | One persistent palette policy for application backgrounds and generated theme exports. |
+| [Shared appearance](theme.md) | Shared background policy plus design tokens (fonts, spacing, radii, glass) for rice consumers. |
 | [Brave with Prismwing and Gallery](brave.md) | User setup for Brave GTK theming, Prismwing favicons, and the Gallery New Tab page. |
 | [Architectural surfaces and Gallery](surfaces.md) | Stepped launcher, notification, and music frames, the shared window-grid insets, plus Gallery geometry, motion, and storage. |
 | [Wallust RGB integration](rgb.md) | Preset gallery, native animations, palette fidelity and desktop scoping. |

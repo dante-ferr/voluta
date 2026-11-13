@@ -38,6 +38,51 @@
     "background": {
       "source": "background",
       "darken": 0.35
+    },
+    "typography": {
+      "ui": {
+        "family": "Oxanium",
+        "size_pt": 11,
+        "fallback": ["sans-serif"]
+      },
+      "mono": {
+        "family": "Monaspace Argon",
+        "size_pt": 10,
+        "fallback": ["JetBrainsMono Nerd Font", "monospace"]
+      },
+      "display": {
+        "family": "Cinzel",
+        "size_pt": 11.5,
+        "weight": 700,
+        "letter_spacing_px": 0.8,
+        "fallback": [
+          "JetBrainsMono Nerd Font",
+          "FiraCode Nerd Font",
+          "serif",
+          "monospace"
+        ]
+      },
+      "icon": {
+        "family": "JetBrainsMono Nerd Font"
+      }
+    },
+    "density": {
+      "space_xs_px": 3,
+      "space_sm_px": 6,
+      "space_md_px": 12,
+      "space_lg_px": 18
+    },
+    "shape": {
+      "radius_sharp_px": 0,
+      "radius_sm_px": 5,
+      "radius_md_px": 6,
+      "radius_lg_px": 8,
+      "radius_xl_px": 13
+    },
+    "glass": {
+      "body_alpha": 102,
+      "chrome_alpha": 191,
+      "stripe_alpha": 40
     }
   }
 }

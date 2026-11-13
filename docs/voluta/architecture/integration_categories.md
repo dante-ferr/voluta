@@ -3,7 +3,7 @@
 Status: current behavior. Use this page to classify a new app, theme hook, or
 module before adding packages or a `voluta feature` flag. Lifecycle rules for
 feature modules live in [Core and optional features](features.md). Shared palette
-policy lives in [Shared background](../integrations/theme.md).
+policy lives in [Shared appearance](../integrations/theme.md).
 
 Voluta does not ship a third-party plugin API. Public integrations are either
 always-on core/theme wiring or an explicit feature module in the companion
@@ -35,7 +35,7 @@ optional-module contract.
 
 Wallust templates that feed Voluta-owned UI. Targets sit under the deployed
 config tree (or paths the rice always manages). Palette refresh and
-`voluta/theme.py` keep them aligned with `appearance.background`.
+`voluta/theme.py` keep them aligned with `appearance` (background and design tokens).
 
 | Consumer | Wallust / publish path |
 | --- | --- |
@@ -52,7 +52,8 @@ config tree (or paths the rice always manages). Palette refresh and
 | Corner SVG assets | `~/.config/wallust/assets/generated/` |
 
 Generated exports under `${XDG_CACHE_HOME:-~/.cache}/voluta/` (`theme.json`,
-`theme.css`, `theme.sh`) are disposable outputs for any extra consumer.
+`theme.css`, `theme.sh`) carry the resolved background and design tokens for any
+extra consumer.
 
 ## External theme-only consumers
 

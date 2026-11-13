@@ -37,11 +37,16 @@ class SettingsTests(unittest.TestCase):
     def write(self, relative, data):
         path = self.directory / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"version": 1, **data}))
+        if path.suffix.lower() == ".toml":
+            cli.atomic_write(path, {"version": 1, **data})
+        else:
+            path.write_text(json.dumps({"version": 1, **data}))
+        return path
 
     def test_init_preserves_existing_preferences(self):
         self.run_cli("init", "--preserve-session")
-        path = self.directory / "settings.json"
+        path = self.directory / "settings.toml"
+        self.assertTrue(path.is_file())
         before = path.read_bytes()
         self.run_cli("init")
         self.assertEqual(path.read_bytes(), before)
@@ -120,18 +125,54 @@ class SettingsTests(unittest.TestCase):
     def test_companion_attach_preserves_source_and_refuses_overwrite(self):
         companion = self.root / "personal"
         companion.mkdir()
-        source = companion / "settings.json"
-        source.write_text('{"version":1,"features":{"dolphin":false}}')
+        source = companion / "settings.toml"
+        cli.atomic_write(source, {"version": 1, "features": {"dolphin": False}})
         self.run_cli("companion", "attach", str(companion))
         self.assertTrue(self.directory.is_symlink())
         self.run_cli("companion", "attach", str(companion))
         self.run_cli("feature", "enable", "dolphin")
-        self.assertTrue(json.loads(source.read_text())["features"]["dolphin"])
+        self.assertTrue(cli.read(source)["features"]["dolphin"])
         other = self.root / "other"
         other.mkdir()
-        (other / "settings.json").write_text('{"version":1}')
+        cli.atomic_write(other / "settings.toml", {"version": 1})
         self.run_cli("companion", "attach", str(other), code=2)
         self.assertEqual(self.directory.resolve(), companion)
+
+    def test_toml_preferred_over_json_and_migrates_on_write(self):
+        self.write("settings.json", {"features": {"session_restore": True},
+                                     "hyprland": {"input": {"kb_layout": "br"}}})
+        self.write("settings.toml", {"features": {"session_restore": False},
+                                     "hyprland": {"input": {"kb_layout": "us"}}})
+        self.write("hosts/test-desktop.json", {"hyprland": {"input": {"repeat_rate": 40}}})
+        self.write("hosts/test-desktop.toml", {"hyprland": {"input": {"repeat_rate": 50}}})
+        resolved, initialized = cli.resolve(self.directory, "test-desktop")
+        self.assertTrue(initialized)
+        self.assertFalse(resolved["features"]["session_restore"])
+        self.assertEqual(resolved["hyprland"]["input"]["kb_layout"], "us")
+        self.assertEqual(resolved["hyprland"]["input"]["repeat_rate"], 50)
+
+        alone = self.root / "legacy-only"
+        alone.mkdir()
+        (alone / "settings.json").write_text(json.dumps({
+            "version": 1,
+            "features": {"dolphin": False},
+            "environment": {"EXAMPLE_CLEAR": None},
+        }))
+        migrated = cli.migrate_directory(alone)
+        self.assertEqual(len(migrated), 1)
+        self.assertTrue((alone / "settings.toml").is_file())
+        self.assertTrue((alone / "settings.json.bak").is_file())
+        self.assertFalse((alone / "settings.json").exists())
+        data = cli.read(alone / "settings.toml")
+        self.assertFalse(data["features"]["dolphin"])
+        self.assertIsNone(data["environment"]["EXAMPLE_CLEAR"])
+        self.assertIn("null", (alone / "settings.toml").read_text())
+
+        self.run_cli("init")
+        self.run_cli("config", "set", "input.kb_layout", '"toml-write"')
+        shared = self.directory / "settings.toml"
+        self.assertTrue(shared.is_file())
+        self.assertEqual(cli.read(shared)["hyprland"]["input"]["kb_layout"], "toml-write")
 
     def test_lua_roundtrip_and_no_injection(self):
         payload = 'br"; error("injected") --\nç\\'

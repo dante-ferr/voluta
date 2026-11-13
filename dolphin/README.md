@@ -1,9 +1,13 @@
 # Dolphin appearance
 
-Dolphin's base background comes from Voluta's shared `appearance.background`
+Dolphin's base background comes from Voluta's shared `appearance.background`.
+UI fonts, soft-corner radii, density spacing, and glass alphas come from the
+shared design tokens under `appearance.typography`, `appearance.shape`,
+`appearance.density`, and `appearance.glass` (see
+[Shared appearance](../docs/voluta/integrations/theme.md)).
 preference, also used by Brave and the other palette consumers. The default
 preserves its existing 35% darkening. See
-[Shared background](../docs/voluta/integrations/theme.md) for overrides and exports.
+[Shared appearance](../docs/voluta/integrations/theme.md) for overrides and exports.
 
 The repo owns the visual keys in `../dolphinrc`, the global view defaults in
 `view-properties`, the toolbar/shortcuts in `dolphinui.rc`, and the customization
@@ -59,7 +63,8 @@ green, yellow, violet, and grey variants map onto the palette's accent,
 secondary, negative, and muted tones.
 
 The Qt/KDE font strings use Qt 6's explicit Normal weight (400). The live hook
-sets Oxanium Regular at 11 points for UI chrome; qt6ct/kdeglobals `fixed` and
+reads `appearance.typography.ui` from `~/.cache/voluta/theme.json` (default
+Oxanium Regular at 11 points) for UI chrome; qt6ct/kdeglobals `fixed` and
 the embedded Konsole profile keep Monaspace Argon Regular at 10 points. Every
 view mode uses the system font instead of retaining a local custom font.
 `fonts.conf` gives this launcher the desktop's grayscale antialiasing and slight

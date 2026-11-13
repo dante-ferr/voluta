@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from cli import ROOT, atomic_write, resolve, read
+from cli import ROOT, atomic_write, host_layer_path, layer_path, migrate_directory, resolve, read
 
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
 # Theme sources and runtime support must remain siblings in the installed tree.
@@ -435,6 +435,7 @@ def module_links(settings, current, manifest, state):
 
 
 def _install(directory, host, skip_deps=False, dry_run=False):
+    migrated = migrate_directory(directory)
     settings, initialized = resolve(directory, host)
     if not initialized:
         raise ValueError('initialize settings or attach a companion before installation')
@@ -444,6 +445,8 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     if dry_run:
         print(json.dumps({'config': str(locations()[0]), 'packages': package_list(settings), 'features': settings['features']}, indent=2))
         return
+    if migrated:
+        print('Migrated personal settings to TOML: ' + ', '.join(str(path) for path in migrated))
     config, data, state = locations()
     if (state / "rice.json").exists():
         raise ValueError("return to Voluta with rice-switch before updating managed configuration")
@@ -486,7 +489,12 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     if not parser.has_section('Settings'):
         parser.add_section('Settings')
     parser.set('Settings', 'post_command', f'bash "{config}/hypr/UserScripts/combined_wallust.sh" "$wallpaper"')
-    explicit_paths = {**read(directory / 'settings.json').get('paths', {}), **read(directory / 'hosts' / (host + '.json')).get('paths', {})}
+    shared_layer = layer_path(directory, 'settings')
+    host_layer = host_layer_path(directory, host)
+    explicit_paths = {
+        **(read(shared_layer).get('paths', {}) if shared_layer else {}),
+        **(read(host_layer).get('paths', {}) if host_layer else {}),
+    }
     if 'wallpapers' in explicit_paths or not parser.has_option('Settings', 'folder'):
         parser.set('Settings', 'folder', settings['paths']['wallpapers'])
     if not parser.has_option('Settings', 'wallpaper'):
