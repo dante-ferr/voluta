@@ -45,8 +45,13 @@ PanelWindow {
         panel.plateWidth = Number(width);
         panel.plateHeight = Number(height);
         panel.artworkVersion = version;
-        if (refresh)
+        if (refresh) {
+            // Same URL can hold a newly filtered frame. Clearing the source
+            // is what makes Qt load the Wallust colors, as on the other menus.
+            frameArtwork.source = "";
+            frameArtwork.source = Qt.resolvedUrl(panel.assets + "/notification-angels-frame.png");
             glass.prepare(version);
+        }
         return true;
     }
 
@@ -59,20 +64,18 @@ PanelWindow {
         backdropNamespace: "voluta-notification-backdrop"
         aperture: panel.aperture
         vignetteSource: Qt.resolvedUrl(panel.assets + "/launcher-vignette.svg")
-        suppressPlate: true
         palette: panel.palette
         projectionParent: panel.contentItem
         projectionWidth: panel.plateWidth
         projectionHeight: panel.plateHeight
         projectionY: panel.panelMargin
-        // GTK's persistent 50% dark backing attenuates this to selector's .34.
-        projectionOpacity: 0.68
         openState: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/voluta-notification.open"
     }
 
     // Same rectangle and same surface as the aperture, so the glass cannot drift
     // from the frame while Hyprland slides this layer.
     Image {
+        id: frameArtwork
         x: (parent.width - panel.plateWidth) / 2
         y: panel.panelMargin
         width: panel.plateWidth
@@ -94,6 +97,10 @@ PanelWindow {
                            margin: string, width: string, height: string, version: string, token: string): void {
             if (panel.apply(output, colors, assets, reserved, margin, width, height, version, token))
                 glass.open();
+        }
+        function recolor(output: string, colors: string, assets: string, reserved: string,
+                         margin: string, width: string, height: string, version: string, token: string): void {
+            panel.apply(output, colors, assets, reserved, margin, width, height, version, token);
         }
         function dismiss(token: string): void {
             const next = Number(token);

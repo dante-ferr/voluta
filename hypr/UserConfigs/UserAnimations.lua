@@ -45,24 +45,35 @@ hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 5, bezier = "softE
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 6, bezier = "fastOut" })
 
 -- Popup and panel share the same entrance and a moderate exit.
--- These layers inherit snappySpring on entry and fastOut on exit above;
--- slide also animates alpha from zero to one and back on every map/unmap.
+-- These layers inherit snappySpring on entry and fastOut on exit above.
 -- The veil is one opacity across the screen. Hyprland blurs those pixels;
 -- a fully transparent layer shows the sharp wallpaper instead.
+-- Toasts still blur on their own window. The control center only slides:
+-- its blur is the stationary full-output veil, so the frost does not travel
+-- with the panel or stop short of the top of the screen.
 hl.layer_rule({
-    name = "notification-drop",
-    match = { namespace = "^swaync-(control-center|notification-window)$" },
+    name = "notification-toast",
+    match = { namespace = "^swaync-notification-window$" },
     blur = true,
     xray = false,
     ignore_alpha = 0,
     animation = "slide top",
 })
 
--- The in-frame projection stays below SwayNC's native Overlay controls.
+hl.layer_rule({
+    name = "notification-drop",
+    match = { namespace = "^swaync-control-center$" },
+    blur = false,
+    xray = false,
+    ignore_alpha = 0,
+    animation = "slide top",
+})
+
+-- The frame and the in-frame projection slide with SwayNC. They stay sharp.
 hl.layer_rule({
     name = "voluta-notification-glass",
     match = { namespace = "^voluta-notification-glass$" },
-    blur = true,
+    blur = false,
     xray = false,
     ignore_alpha = 0,
     animation = "slide top",

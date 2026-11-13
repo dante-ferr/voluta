@@ -12,14 +12,10 @@ Item {
     required property var targetScreen
     required property url aperture
     required property url vignetteSource
-    // Aperture-shaped dark glass. Empty uses the sibling *-glass.png so a new
-    // framed menu gets the same plate without a second property. Set
-    // suppressPlate when a native toolkit already paints that glass.
+    // Aperture-shaped dark glass, the same 50% palette plate on every framed
+    // menu. Empty uses the sibling *-glass.png, so a menu does not paint its own.
     property url plateGlass: ""
-    property bool suppressPlate: false
     readonly property url resolvedPlate: {
-        if (suppressPlate)
-            return "";
         if (plateGlass.toString() !== "")
             return plateGlass;
         const text = aperture.toString();
@@ -108,10 +104,10 @@ Item {
 
     Image {
         id: veil
-        // On the sliding surface while the frame is moving, including the exit.
-        // The stationary backdrop is only for the closed menu.
-        parent: !glass.separateBackdrop ? glass
-            : (glass.parked ? residentBackdrop.contentItem : glass.surfaceWindow.contentItem)
+        // The frost stays on the full output. Fading its opacity is what shows
+        // and hides the blur. Parenting it to the sliding notification surface
+        // makes that blur travel with the panel and miss the top of the screen.
+        parent: glass.separateBackdrop ? residentBackdrop.contentItem : glass
         anchors.fill: parent
         z: -2
         cache: false
@@ -121,6 +117,13 @@ Item {
         sourceSize.width: Math.ceil((glass.targetScreen?.width ?? 1) / 4)
         sourceSize.height: Math.ceil((glass.targetScreen?.height ?? 1) / 4)
         onStatusChanged: glass.startWhenReady()
+    }
+
+    NumberAnimation {
+        id: veilFade
+        target: veil
+        property: "opacity"
+        easing.type: Easing.OutQuad
     }
 
     // Moves with the frame. The PNG's own alpha keeps the frost inside the opening.
@@ -192,6 +195,17 @@ Item {
         ignition.reset();
     }
 
+    function fadeVeil(targetOpacity: real, duration: int): void {
+        if (motion !== "compositor") {
+            veil.opacity = targetOpacity;
+            return;
+        }
+        veilFade.stop();
+        veilFade.duration = duration;
+        veilFade.to = targetOpacity;
+        veilFade.restart();
+    }
+
     function startWhenReady(): void {
         // As with the selector, the veil and artwork gate the entrance; the
         // projection can complete its first paint during the native animation.
@@ -199,7 +213,7 @@ Item {
             veil.status !== Image.Ready)
             return;
         entranceStarted = true;
-        veil.opacity = 1;
+        fadeVeil(1, 170);
         lastEntranceAt = Date.now();
         projection.requestPaint();
         ignition.arm();
@@ -228,6 +242,7 @@ Item {
         entrance.stop();
         startDelay.stop();
         entranceStarted = false;
+        veilFade.stop();
         veil.opacity = 0;
         if (motion === "item") {
             motionTarget.x = itemAxis === "x" ? itemEnterFrom : 0;
@@ -252,11 +267,11 @@ Item {
         ignition.disarm();
         closing();
         if (motion === "compositor") {
-            // Keep the veil and the aperture on this surface for the whole exit.
-            // Parking early leaves the glass behind while the frame is still moving.
+            // The aperture stays on the sliding surface until the snapshot
+            // finishes. The veil fades where it is, across the whole output.
             active = false;
             entranceStarted = false;
-            veil.opacity = 0;
+            fadeVeil(0, exitFade);
             surfaceMapped = false;
             parkTimer.restart();
         } else {

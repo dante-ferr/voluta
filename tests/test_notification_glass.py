@@ -136,12 +136,13 @@ elif name == 'quickshell':
         method = sys.argv[sys.argv.index('notification') + 1]
         args = sys.argv[sys.argv.index('notification') + 2:]
         if method == 'dismiss': time.sleep(.15)
-        if method in ('prepare', 'showPanel'): log('palette=' + args[1])
+        if method in ('prepare', 'showPanel', 'recolor'): log('palette=' + args[1])
         state_path = root / 'renderer-state'
         previous = json.loads(state_path.read_text()) if state_path.exists() else {'token': -1, 'active': False}
         if int(args[-1]) >= previous['token']:
             previous['token'] = int(args[-1])
-            if method != 'prepare': previous['active'] = method == 'showPanel'
+            if method == 'showPanel': previous['active'] = True
+            elif method == 'dismiss': previous['active'] = False
             state_path.write_text(json.dumps(previous))
         log('ipc=' + method)
         sys.exit(0)
@@ -194,9 +195,9 @@ else:
         await_count('ipc=showPanel', 1)
         time.sleep(.65)
         self.assertEqual(lines().count('monitors'), 2)
-        # Publication updates the resident palette/mask instead of restarting Qt.
+        # Publication updates the resident frame in place instead of replaying the entrance.
         (self.root / 'hypr/wallust/colors-shell.sh').write_text("wc_2='223344'\nwc_4='556677'\nwc_fg='bbccdd'\n")
-        await_count('ipc=showPanel', 2)
+        await_count('ipc=recolor', 1)
         self.assertIn('palette=#223344 #556677 #bbccdd', lines())
         emit(False)
         await_count('ipc=dismiss', 1)
