@@ -214,9 +214,11 @@ matching the selector's warm surface. The shared module preloads its veil at
 screen dimensions and prepaints the projection on the resident surface. It
 reveals the veil immediately when ready; it does not map a cold blur window
 on each open. The same projection canvas joins the native-sized sliding
-surface when the panel opens. On dismissal, the veil clears immediately and
-the bounded projection follows the native compositor exit. The canvas pauses
-while hidden. Neither menu maintains a separate copy of the blur or animation
+surface when the panel opens. On dismissal, the veil and the aperture stay on the sliding surface for the
+whole exit, on the same rectangle as the frame, and return to the resident
+surface only after that slide finishes. The canvas pauses while hidden. Selector, music,
+and session exits are the shared 230ms item travel. The entrance is 170ms.
+The exit is a little slower than the entrance, and neither waits before moving. Neither menu maintains a separate copy of the blur or animation
 implementation.
 
 `swaync/watch-glass.py` is the native visibility/IPC adapter. It prewarms one
@@ -263,8 +265,11 @@ Opening the salon starts the watcher if it is not already running. Media keys
 keep controlling playback.
 
 Selector, notification, music, and session menus are mutually exclusive:
-`hypr/scripts/exclusive-framed.sh` closes the other three before one of them
-opens. Opening music does not toggle the notification panel.
+`hypr/scripts/exclusive-framed.sh` closes whichever of the other three are
+open before one of them opens. Each resident renderer writes
+`$XDG_RUNTIME_DIR/voluta-<menu>.open` while it is visible. A missing file
+means that menu is closed, and the keypress does not start Quickshell or
+D-Bus to confirm it. Opening music does not toggle the notification panel.
 
 The salon reuses `MenuGlass.qml`, `StainedGlass.qml`, and `RimIgnition.qml`, and
 it applies the shared publication from `voluta/menus.py` on open and while it
@@ -272,7 +277,8 @@ is visible. A new Wallust palette recolors the frame, plate, trails, and labels.
 `MenuGlass` slides the selector on `y` and the music salon on `x`.
 `music/salon.qml` owns only the cherub frame popup, poster, bars, and labels.
 `music/watch.py` prewarms one renderer at compositor start/reload, with a
-per-session lock matching the notification watcher. Startup can leave
+per-session lock matching the notification watcher. It reads the open-state
+file to learn whether the salon is visible. It does not poll Quickshell IPC. Startup can leave
 `WAYLAND_DISPLAY` empty; the watcher uses the live `wayland-*` socket in the
 runtime directory and respawns once that socket exists. A missing Quickshell, CAVA,
 or player leaves the rest of the desktop unchanged.

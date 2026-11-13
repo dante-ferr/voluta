@@ -74,6 +74,12 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn('itemAxis: "x"', salon)
         self.assertIn('music-glass.png', salon)
         self.assertIn('plateGlass', shared)
+        self.assertIn('property int exitTravel: 230', shared)
+        self.assertNotIn('PauseAnimation', shared)
+        self.assertIn('glass.surfaceMapped', (ROOT / 'swaync/glass.qml').read_text())
+        self.assertIn('notification-angels-frame.png', (ROOT / 'swaync/glass.qml').read_text())
+        self.assertIn('no_anim = true', (ROOT / 'hypr/UserConfigs/UserAnimations.lua').read_text())
+        self.assertNotIn('inertialLift', (ROOT / 'hypr/UserConfigs/UserAnimations.lua').read_text())
         self.assertIn('WlrKeyboardFocus.Exclusive', salon)
         self.assertIn('sequence: "Escape"', salon)
         self.assertIn('Nothing playing', salon)
@@ -122,6 +128,8 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn('readlink -f', script)
         self.assertIn('call music toggle', script)
         self.assertIn('exclusive-framed.sh', script)
+        self.assertIn('voluta_menu_open music', script)
+        self.assertNotIn('call music status', script)
         self.assertIn('ensure_watcher', script)
         self.assertIn('setsid', script)
         self.assertIn("'--follow', 'metadata'", (ROOT / 'music/watch.py').read_text())
@@ -130,6 +138,23 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn('function toggle(colors: string, assets: string, version: string)',
                       (ROOT / 'music/salon.qml').read_text())
         self.assertIn('itemAxis', (ROOT / 'wallust/effects/MenuGlass.qml').read_text())
+
+    def test_reconcile_reads_the_open_marker_without_ipc(self):
+        with patch.object(watch, 'RUNTIME', self.root):
+            salon = watch.Salon()
+            self.addCleanup(salon.shutdown)
+            salon.process = type('Alive', (), {
+                'pid': 7, 'poll': lambda self: None, 'terminate': lambda self: None,
+                'kill': lambda self: None, 'wait': lambda self, timeout=None: None})()
+            with patch.object(watch, 'run', side_effect=AssertionError('quickshell')):
+                salon.reconcile()
+            self.assertFalse(salon.active)
+            (self.root / 'voluta-music.open').write_text('1\n')
+            with patch.object(watch, 'run', side_effect=AssertionError('quickshell')), \
+                    patch.object(watch, 'snapshot_player', return_value={'status': 'Stopped'}), \
+                    patch.object(salon, 'push_metadata'):
+                salon.reconcile()
+            self.assertTrue(salon.active)
 
     def test_publication_follows_recolored_frame_and_palette(self):
         with patch.object(watch, 'CONFIG', self.root), patch.object(watch, 'run', side_effect=self.hypr):

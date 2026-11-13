@@ -6,12 +6,8 @@ environment captured at process start goes stale after the next palette.
 """
 import os
 from pathlib import Path
+import re
 import sys
-
-_VOLUTA = Path(__file__).resolve().parent
-if str(_VOLUTA) not in sys.path:
-    sys.path.insert(0, str(_VOLUTA))
-from theme import read_palette
 
 ACCENTS = ('2', '4', 'fg')
 # Files whose bytes change when a menu is republished. The shell palette is
@@ -58,8 +54,14 @@ def _hex(color):
 
 
 def menu_colors(palette_path):
-    """Return the framed-menu accents as ``#wc_2 #wc_4 #wc_fg``."""
-    palette = read_palette(Path(palette_path))
+    """Return the framed-menu accents as ``#wc_2 #wc_4 #wc_fg``.
+
+    Parse the shell palette here. Importing the theme publisher pulls in the
+    settings loader, and that startup cost was landing on every keypress.
+    """
+    text = Path(palette_path).read_text()
+    palette = {key: tuple(int(value[index:index + 2], 16) for index in (0, 2, 4))
+               for key, value in re.findall(r"^wc_(\w+)='([0-9a-fA-F]{6})'\s*$", text, re.M)}
     missing = [key for key in ACCENTS if key not in palette]
     if missing:
         raise KeyError('framed menu palette missing ' + ', '.join(missing))

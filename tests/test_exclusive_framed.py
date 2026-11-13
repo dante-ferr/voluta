@@ -1,4 +1,4 @@
-"""Framed menus close every other framed menu before opening."""
+"""Framed menus close every other open framed menu before opening."""
 import os
 from pathlib import Path
 import subprocess
@@ -9,9 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ExclusiveFramedTests(unittest.TestCase):
-    def test_keep_argument_closes_only_the_other_menus(self):
+    def test_keep_argument_closes_only_the_other_open_menus(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
+            runtime = directory / 'runtime'
+            runtime.mkdir()
+            (runtime / 'voluta-notification.open').write_text('1\n')
+            (runtime / 'voluta-selector.open').write_text('1\n')
             log = directory / 'calls'
             for tool, body in {
                 'gdbus': 'printf "%s\\n" "$*" >> "$TOGGLE_LOG"\n',
@@ -26,7 +30,8 @@ class ExclusiveFramedTests(unittest.TestCase):
                 path.write_text('#!/bin/sh\n' + body)
                 path.chmod(0o755)
             env = {**os.environ, 'PATH': f'{directory}:/usr/bin:/bin', 'TOGGLE_LOG': str(log),
-                   'XDG_CONFIG_HOME': str(directory / 'config')}
+                   'XDG_CONFIG_HOME': str(directory / 'config'),
+                   'XDG_RUNTIME_DIR': str(runtime)}
             (directory / 'config/music').mkdir(parents=True)
             (directory / 'config/music/salon.qml').write_text('// salon\n')
             script = ['/bin/sh', str(ROOT / 'hypr/scripts/exclusive-framed.sh')]
@@ -49,3 +54,24 @@ class ExclusiveFramedTests(unittest.TestCase):
             script_text = (ROOT / 'hypr/scripts/exclusive-framed.sh').read_text()
             self.assertIn('call session dismiss', script_text)
             self.assertIn('[ "$keep" = session ]', script_text)
+
+    def test_closed_menus_are_not_queried(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            runtime = directory / 'runtime'
+            runtime.mkdir()
+            log = directory / 'calls'
+            for tool, body in {
+                'gdbus': 'printf "%s\\n" "$*" >> "$TOGGLE_LOG"\n',
+                'pkill': 'printf "pkill %s\\n" "$*" >> "$TOGGLE_LOG"\n',
+                'quickshell': 'printf "quickshell %s\\n" "$*" >> "$TOGGLE_LOG"\n',
+            }.items():
+                path = directory / tool
+                path.write_text('#!/bin/sh\n' + body)
+                path.chmod(0o755)
+            env = {**os.environ, 'PATH': f'{directory}:/usr/bin:/bin', 'TOGGLE_LOG': str(log),
+                   'XDG_RUNTIME_DIR': str(runtime),
+                   'XDG_CONFIG_HOME': str(directory / 'config')}
+            subprocess.run(['/bin/sh', str(ROOT / 'hypr/scripts/exclusive-framed.sh'), 'music'],
+                           env=env, check=True)
+            self.assertFalse(log.exists())

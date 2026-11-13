@@ -289,6 +289,7 @@ PanelWindow {
         projectionX: panel.plateX
         projectionY: panel.plateY
         projectionOpacity: 0.30
+        openState: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/voluta-session.open"
         itemAxis: "x"
         itemEnterFrom: -(panel.plateWidth + panel.gridLeft)
         itemLeaveTo: -(panel.plateWidth + panel.gridLeft)

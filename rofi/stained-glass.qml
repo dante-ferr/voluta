@@ -103,6 +103,7 @@ PanelWindow {
         projectionWidth: panel.plateWidth
         projectionHeight: panel.plateHeight
         externalReady: frameArtwork.status === Image.Ready
+        openState: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/voluta-selector.open"
         initialVersion: panel.artworkVersion
     }
 

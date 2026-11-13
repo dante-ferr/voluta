@@ -267,8 +267,9 @@ class Glass:
 
     def show(self):
         self.active = True
-        # Focused output or palette can change while the menu is hidden.
-        # Refresh placement without restarting the warmed Qt process.
+        # Map with the frame. A palette refresh must not run before that map.
+        if self.environment is not None:
+            self._send('showPanel', *self._arguments())
         self.warm()
 
     def hide(self):

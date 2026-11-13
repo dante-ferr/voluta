@@ -1,0 +1,13 @@
+---
+description: Preferences for the framed selector, notification, music, and session menus. Apply only while editing those menus.
+globs: rofi/**,swaync/**,music/**,session-menu/**,wallust/effects/**,hypr/UserConfigs/UserAnimations.lua,hypr/scripts/exclusive-framed.sh,hypr/scripts/framed-runtime.sh
+alwaysApply: false
+---
+
+# Framed menus
+
+Super+D, Super+O, Super+M, and Super+N are the framed menus.
+
+- The entrance and the exit are both deliberate. The exit is a little slower than the entrance, and only a little. Do not put a hold before either one starts.
+- Super+D accepts typed search text immediately. Rofi owns the keyboard before the frame is visible. Do not wait on the other menus, the palette, or the compositor before starting it. The input and buttons still use the slide animation. Do not disable it.
+- The Super+N animated glass occupies the same rectangle as the frame and stays on that frame's surface for the whole entrance and exit. Do not park it on the stationary backdrop while the frame is still moving.

@@ -364,6 +364,7 @@ PanelWindow {
         projectionOpacity: 0.30
         itemAxis: "x"
         itemEnterFrom: panel.plateWidth + panel.gridRight
+        openState: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/voluta-music.open"
         externalReady: frameArtwork.status === Image.Ready
         initialVersion: panel.artworkVersion
     }

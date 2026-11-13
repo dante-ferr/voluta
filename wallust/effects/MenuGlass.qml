@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 // One lifecycle for the menu veil, aperture projection and entrance/exit.
@@ -32,6 +33,9 @@ Item {
     property real projectionY: (projectionParent.height - projectionHeight) / 2
     property real projectionOpacity: 0.34
     property string motion: "item"
+    // Shell toggles read this file instead of asking Quickshell whether the
+    // menu is open. A missing or empty file means closed.
+    property string openState: ""
     property string itemAxis: "y"
     property real itemEnterFrom: 130
     property real itemLeaveTo: -1
@@ -43,6 +47,29 @@ Item {
     property string backdropNamespace: ""
     property bool externalReady: true
     property int entranceDelay: motion === "item" ? 20 : 0
+    // Item exits match the short entrance. The notification layer is unmapped
+    // while this stays false so the compositor snapshots the glass in place.
+    property bool surfaceMapped: false
+    property bool parked: true
+    property int exitTravel: 230
+    property int exitFade: 200
+
+    FileView {
+        id: openMarker
+        path: glass.openState
+        blockWrites: true
+        atomicWrites: true
+        printErrors: false
+        watchChanges: false
+    }
+
+    function publishOpenState(): void {
+        if (glass.openState === "")
+            return;
+        openMarker.setText(glass.active ? "1\n" : "");
+    }
+
+    onActiveChanged: publishOpenState()
     property bool active: false
     property bool entranceStarted: false
     readonly property bool showing: active && entranceStarted
@@ -58,6 +85,7 @@ Item {
     Component.onCompleted: {
         preparedVersion = initialVersion;
         preparedAperture = aperture;
+        publishOpenState();
     }
     onExternalReadyChanged: startWhenReady()
     onPaletteChanged: projection.requestPaint()
@@ -80,7 +108,10 @@ Item {
 
     Image {
         id: veil
-        parent: glass.separateBackdrop ? residentBackdrop.contentItem : glass
+        // On the sliding surface while the frame is moving, including the exit.
+        // The stationary backdrop is only for the closed menu.
+        parent: !glass.separateBackdrop ? glass
+            : (glass.parked ? residentBackdrop.contentItem : glass.surfaceWindow.contentItem)
         anchors.fill: parent
         z: -2
         cache: false
@@ -111,13 +142,16 @@ Item {
         id: projection
         // Prepaint the notification mask on the mapped resident surface while
         // idle. The same Canvas/texture joins its native sliding layer on open.
-        parent: glass.separateBackdrop && !glass.showing
+        // Stay on the sliding surface through unmap. Parking on the backdrop
+        // in the same frame drops the glass out of Hyprland's exit snapshot,
+        // so it no longer travels with the frame.
+        parent: glass.separateBackdrop && glass.parked
             ? residentBackdrop.contentItem : glass.projectionParent
         x: glass.projectionX
         y: glass.projectionY
         width: glass.projectionWidth
         height: glass.projectionHeight
-        opacity: glass.separateBackdrop && !glass.showing ? 0 : glass.projectionOpacity
+        opacity: glass.separateBackdrop && glass.parked ? 0 : glass.projectionOpacity
         aperture: glass.aperture
         palette: glass.palette
         animationRunning: glass.showing && glass.surfaceWindow.visible
@@ -188,6 +222,7 @@ Item {
             startWhenReady();
             return;
         }
+        parkTimer.stop();
         active = false;
         departure.stop();
         entrance.stop();
@@ -198,6 +233,9 @@ Item {
             motionTarget.x = itemAxis === "x" ? itemEnterFrom : 0;
             motionTarget.y = itemAxis === "y" ? itemEnterFrom : 0;
             motionTarget.opacity = 0;
+        } else {
+            parked = false;
+            surfaceMapped = true;
         }
         active = true;
         if (entranceDelay > 0)
@@ -214,13 +252,25 @@ Item {
         ignition.disarm();
         closing();
         if (motion === "compositor") {
-            // Unmapping captures the projection for the compositor's native
-            // slide. There is no independent Qt fade to race that snapshot.
+            // Keep the veil and the aperture on this surface for the whole exit.
+            // Parking early leaves the glass behind while the frame is still moving.
             active = false;
             entranceStarted = false;
             veil.opacity = 0;
+            surfaceMapped = false;
+            parkTimer.restart();
         } else {
             departure.start();
+        }
+    }
+
+    Timer {
+        id: parkTimer
+        interval: 720
+        onTriggered: {
+            if (glass.surfaceMapped)
+                return;
+            glass.parked = true;
         }
     }
 
@@ -232,27 +282,22 @@ Item {
 
     ParallelAnimation {
         id: entrance
-        NumberAnimation { target: glass.motionTarget; property: glass.itemAxis; to: 0; duration: 135; easing.type: Easing.OutCubic }
-        NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 1; duration: 85; easing.type: Easing.OutQuad }
+        NumberAnimation { target: glass.motionTarget; property: glass.itemAxis; to: 0; duration: 170; easing.type: Easing.OutCubic }
+        NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 1; duration: 110; easing.type: Easing.OutQuad }
     }
 
     SequentialAnimation {
         id: departure
         ParallelAnimation {
-            NumberAnimation { target: veil; property: "opacity"; to: 0; duration: 390; easing.type: Easing.InOutQuad }
-            SequentialAnimation {
-                PauseAnimation { duration: 90 }
-                ParallelAnimation {
-                    NumberAnimation {
-                        target: glass.motionTarget
-                        property: glass.itemAxis
-                        to: glass.itemExitTo
-                        duration: 350
-                        easing.type: Easing.InCubic
-                    }
-                    NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 0; duration: 350; easing.type: Easing.InQuad }
-                }
+            NumberAnimation { target: veil; property: "opacity"; to: 0; duration: glass.exitFade; easing.type: Easing.OutQuad }
+            NumberAnimation {
+                target: glass.motionTarget
+                property: glass.itemAxis
+                to: glass.itemExitTo
+                duration: glass.exitTravel
+                easing.type: Easing.InQuad
             }
+            NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 0; duration: glass.exitTravel; easing.type: Easing.InQuad }
         }
         ScriptAction { script: glass.active = false }
     }
