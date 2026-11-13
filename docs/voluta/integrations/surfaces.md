@@ -180,10 +180,11 @@ Both leave the outer silhouette clear.
 Malformed/open cutouts produce no glass rather than painting outside the frame.
 
 Wallpaper publication regenerates both frames before reloading consumers.
-`Super+Alt+R` also syncs and filters both source PNGs from the recorded checkout,
-and re-renders shared SVG templates such as the clear `launcher-vignette.svg`;
-the old `--refresh-selector` publisher option remains an alias for
-`--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
+`Super+Alt+R` syncs the recorded checkout when it is newer or a deployed file
+is missing. That deploy publishes both source PNGs and the shared SVG templates,
+including the clear `launcher-vignette.svg`, once. The key filters them again
+only when that publish did not run. The old `--refresh-selector` publisher
+option remains an alias for `--refresh-frames`. GTK surfaces, hover colors, text, and shadows derive from
 Wallust. Hyprland owns SwayNC's top-slide animation and backdrop blur, using the
 existing light compositor blur settings. The artwork itself stays sharp.
 

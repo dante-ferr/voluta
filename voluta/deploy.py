@@ -355,23 +355,67 @@ def write_managed(path, content, manifest, state, mode=None):
     manifest['files'][key] = digest(path)
 
 
-def sync_sources(current, manifest, state):
-    expected = set()
+def iter_managed_sources(root):
     for folder in SOURCES:
-        source = ROOT / folder
+        source = root / folder
         if not source.exists():
             continue
         for path in source.rglob('*'):
-            relative = path.relative_to(ROOT)
-            if not path.is_file() or path.is_symlink() or ignored(relative):
-                continue
-            destination = current / relative
-            expected.add(str(destination))
-            write_managed(destination, path.read_bytes(), manifest, state, path.stat().st_mode & 0o777)
+            relative = path.relative_to(root)
+            if path.is_file() and not path.is_symlink() and not ignored(relative):
+                yield path, relative
     for name in ('zshrc', 'zprofile', 'starship.toml'):
-        path = ROOT / name
-        expected.add(str(current / name))
-        write_managed(current / name, path.read_bytes(), manifest, state, 0o644)
+        path = root / name
+        if path.is_file() and not path.is_symlink():
+            yield path, Path(name)
+
+
+def _file_stat(path):
+    try:
+        st = path.stat()
+    except OSError:
+        return f'{path}:missing'
+    return f'{path}:{st.st_size}:{st.st_mtime_ns}'
+
+
+def checkout_status(root, current):
+    """Return a source stamp and whether any deployed copy is missing.
+
+    The stamp follows source size and mtime, so an unchanged checkout does not
+    read every file. A missing deployed file still requests a copy.
+    """
+    rows = []
+    missing = False
+    for path, relative in iter_managed_sources(root):
+        rows.append(f'{relative.as_posix()}:{_file_stat(path)}')
+        if not (current / relative).is_file():
+            missing = True
+    rows.sort()
+    return hashlib.sha256('\n'.join(rows).encode()).hexdigest(), missing
+
+
+def publish_stamp(config, root, policy):
+    """Identity of the palette, background policy, artwork, and publishers."""
+    from surfaces import ASSETS, MUSIC_FRAME, NOTIFICATION_FRAME, SELECTOR_FRAME, SESSION_FRAME
+    rows = [json.dumps(policy, sort_keys=True, separators=(',', ':'))]
+    rows.append(_file_stat(config / 'hypr/wallust/colors-shell.sh'))
+    assets = root / 'wallust/assets'
+    for name in (*ASSETS, 'patera.svg'):
+        rows.append(_file_stat(assets / name))
+    for relative in (SELECTOR_FRAME, NOTIFICATION_FRAME, MUSIC_FRAME, SESSION_FRAME,
+                     Path('voluta/surfaces.py'), Path('voluta/theme.py'), Path('voluta/menus.py')):
+        rows.append(_file_stat(root / relative))
+    return hashlib.sha256('\n'.join(rows).encode()).hexdigest()
+
+
+def sync_sources(current, manifest, state):
+    expected = set()
+    fixed_mode = {'zshrc', 'zprofile', 'starship.toml'}
+    for path, relative in iter_managed_sources(ROOT):
+        destination = current / relative
+        expected.add(str(destination))
+        mode = 0o644 if relative.as_posix() in fixed_mode else path.stat().st_mode & 0o777
+        write_managed(destination, path.read_bytes(), manifest, state, mode)
     # Stale managed files are removed only if unchanged; preserve later edits.
     for name in list(manifest['files']):
         path = Path(name)
@@ -451,8 +495,17 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     manifest = load_manifest(state)
     # Running inside the deployment must not copy that tree onto itself.
     # The command entry point re-executes the recorded checkout before this.
+    # An unchanged checkout keeps its deployed mtimes, so Waybar's makefile
+    # does not rebuild the shim just because the files were copied again.
     if ROOT.resolve() != current.resolve():
-        sync_sources(current, manifest, state)
+        stamp, missing = checkout_status(ROOT, current)
+        if missing or stamp != manifest.get('source_stamp'):
+            sync_sources(current, manifest, state)
+            stamp, missing = checkout_status(ROOT, current)
+        if missing:
+            manifest.pop('source_stamp', None)
+        else:
+            manifest['source_stamp'] = stamp
     # Quickshell confines local QML imports to each entrypoint's directory.
     # Both consumers link the one shared effect source into that import root.
     for consumer in ('rofi', 'swaync', 'music', 'session-menu'):
@@ -523,8 +576,11 @@ def _install(directory, host, skip_deps=False, dry_run=False):
                 raise ValueError('Voluta requires Wallust v4; install wallust-git before proceeding')
             subprocess.run([wallust, '-q', '-s', '--no-hooks', '-C', str(config / 'wallust/wallust.toml'), '--templates-dir', str(current / 'wallust/templates'), 'cs', str(current / 'wallust/colorschemes/imperium.json')], check=True)
         if palette.exists():
-            from theme import publish
-            publish(config=config, directory=directory, host=host)
+            stamp = publish_stamp(config, ROOT, settings['appearance']['background'])
+            if stamp != manifest.get('publish_stamp'):
+                from theme import publish
+                publish(config=config, directory=directory, host=host)
+                manifest['publish_stamp'] = publish_stamp(config, ROOT, settings['appearance']['background'])
         activate_system_modules(settings, manifest, skip_deps)
         atomic_write(state / 'install.json', manifest)
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
@@ -610,11 +666,15 @@ def deployment_lock():
         yield
 
 
-def refresh_session():
+def refresh_session(force_frames=False):
     if not os.environ.get('HYPRLAND_INSTANCE_SIGNATURE') or not shutil.which('hyprctl'):
         return
     script = locations()[0] / 'hypr/scripts/Refresh.sh'
     env = {**os.environ, 'VOLUTA_REFRESH_SKIP_SYNC': '1'}
+    # Install already published frames. Ask Refresh to filter them only when
+    # that publish did not finish, and to reload the session either way.
+    if force_frames:
+        env['VOLUTA_REFRESH_FORCE_FRAMES'] = '1'
     if script.is_file():
         result = subprocess.run(['bash', str(script)], env=env, check=False)
         if result.returncode != 0:
@@ -628,10 +688,10 @@ def install(directory, host, skip_deps=False, dry_run=False, no_session_refresh=
         return _install(directory, host, skip_deps, True)
     with deployment_lock():
         runtime_error = _install(directory, host, skip_deps, False)
-    # Refresh after the lock is released. Refresh.sh republishes frames, and
-    # that publisher takes the same lock.
+    # Refresh after the lock is released. Frame filtering takes that same lock,
+    # and only a deploy that failed before publish still needs it.
     if not no_session_refresh:
-        refresh_session()
+        refresh_session(force_frames=runtime_error is not None)
     if runtime_error:
         raise runtime_error
 
