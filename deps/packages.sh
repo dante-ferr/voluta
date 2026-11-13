@@ -101,11 +101,18 @@ ensure_arch_packages() (
         bash "$installer" "$log" || status=$?
     fi
     rm -f "$installer"
-    collect_missing_pkgs "$manifest" || status=1
-    if ((status != 0 || ${#MISSING_PKGS[@]} > 0)); then
-        echo "$label dependency installation failed. Still missing: ${MISSING_PKGS[*]:-none}. Log: $log" >&2
+    # Judge success by the packages that remain missing. A non-zero installer
+    # exit can follow a completed pacman transaction (sudo timeout on a later
+    # package, kitty closed after --needed no-ops, etc.); if every required
+    # package is present, the caller can continue and regenerate appearance.
+    collect_missing_pkgs "$manifest" || return 1
+    if ((${#MISSING_PKGS[@]} > 0)); then
+        echo "$label dependency installation failed. Still missing: ${MISSING_PKGS[*]}. Log: $log" >&2
         notify-send "$label dependency installation failed" "See $log" 2>/dev/null || true
         return 1
+    fi
+    if ((status != 0)); then
+        echo "$label dependencies are installed; ignoring installer exit status $status." >&2
     fi
     rm -f "$log"
 )
