@@ -1,4 +1,7 @@
 [Dolphin]
-ViewMode=2
+ViewMode=0
 PreviewsShown=true
 HiddenFilesShown=false
+SortRole=modificationtime
+SortOrder=1
+SortFoldersFirst=true

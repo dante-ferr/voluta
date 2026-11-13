@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "hypr/UserScripts/paint_dolphin_theme.sh"
-ICON_SOURCE = "/usr/share/icons/breeze-dark"
+ICON_SOURCE = "/usr/share/icons/Papirus"
 TIERS = ("normal", "large", "x-large", "xx-large")
 
 
@@ -203,14 +203,19 @@ def verify_colors(home: Path, expected_bg: str, label: str) -> None:
         for key in ("BackgroundNormal", "BackgroundAlternate"):
             value = groups.get(group_name, {}).get(key)
             check(value is not None, f"{label}: missing {group_name} {key}")
-            check(value[:3] == target or group_name != "Colors:View",
-                  f"{label}: {group_name} {key} differs from Dolphin background")
-            if group_name == "Colors:View":
-                check(value[3] == 0, f"{label}: {group_name} {key} opacity is wrong")
+            if group_name == "Colors:View" and key == "BackgroundAlternate":
+                check(value[3] == 40, f"{label}: {group_name} {key} opacity is wrong")
+                check(sum(value[:3]) >= sum(target),
+                      f"{label}: {group_name} {key} stripe is darker than the chrome base")
             else:
-                check(value[3] == 153, f"{label}: {group_name} {key} opacity is wrong")
-                check(sum(value[:3]) > sum(target),
-                      f"{label}: {group_name} {key} is not lighter than the chrome base")
+                check(value[:3] == target or group_name != "Colors:View",
+                      f"{label}: {group_name} {key} differs from Dolphin background")
+                if group_name == "Colors:View":
+                    check(value[3] == 0, f"{label}: {group_name} {key} opacity is wrong")
+                else:
+                    check(value[3] == 102, f"{label}: {group_name} {key} opacity is wrong")
+                    check(sum(value[:3]) > sum(target),
+                          f"{label}: {group_name} {key} is not lighter than the chrome base")
     selection = groups.get("Colors:Selection", {})
     check("BackgroundNormal" in selection and "ForegroundNormal" in selection, f"{label}: missing selection colors")
     check(contrast(selection["ForegroundNormal"], selection["BackgroundNormal"]) >= 4.5,
@@ -245,7 +250,7 @@ def verify_cache_refresh(base: Path, source: Path) -> None:
     icon_theme = home / ".local/share/icons/imperium"
     first_accent = (icon_theme / ".accent").read_text(encoding="utf-8").strip()
     check(bool(re.fullmatch(r"[0-9a-f]{6}", first_accent)), "first accent was not written to the generated icon theme")
-    check("#" + first_accent in (icon_theme / "scalable/places/folder.svg").read_text(encoding="utf-8"), "generated icon does not use its recorded accent")
+    check("#" + first_accent in (icon_theme / "64x64/places/folder.svg").read_text(encoding="utf-8"), "generated icon does not use its recorded accent")
 
     folder_two = base / "folder-two"
     folder_two.mkdir()
@@ -267,7 +272,7 @@ def verify_cache_refresh(base: Path, source: Path) -> None:
     check(regular_thumb.exists() and remote_thumb.exists() and malformed_thumb.exists(), "next accent refresh removed unrelated cache files")
     next_accent = (icon_theme / ".accent").read_text(encoding="utf-8").strip()
     check(next_accent != first_accent, "changed accent did not refresh the generated icon theme")
-    check("#" + next_accent in (icon_theme / "scalable/places/folder.svg").read_text(encoding="utf-8"), "refreshed icon does not use its recorded accent")
+    check("#" + next_accent in (icon_theme / "64x64/places/folder.svg").read_text(encoding="utf-8"), "refreshed icon does not use its recorded accent")
     check(len(list((home / ".local/share/konsole").glob("dolphin-terminal-live-*.profile"))) == 2, "obsolete live terminal profiles were not pruned")
 
 
@@ -300,8 +305,10 @@ def verify_existing_install(base: Path, source: Path) -> None:
         for mode in ("IconsMode", "CompactMode", "DetailsMode"):
             check(rc[mode]["UseSystemFont"] == "true", f"{mode}: local custom font overrides the shared font")
         check(rc["LocalSession"]["Path"] == "/tmp/local-folder", "migration removed local session state")
-        check(read(view)["Dolphin"]["ViewMode"] == "2", "existing view mode was not updated")
+        check(read(view)["Dolphin"]["ViewMode"] == "0", "existing view mode was not updated")
         check(read(view)["Dolphin"]["PreviewsShown"] == "true", "existing preview setting was not updated")
+        check(read(view)["Dolphin"]["SortRole"] == "modificationtime", "existing sort role was not updated")
+        check(read(view)["Dolphin"]["SortOrder"] == "1", "existing sort order was not updated")
         check(read(view)["Dolphin"]["LocalProperty"] == "keep", "unmanaged view state was removed")
         interface = read(qt)["Interface"]
         check(interface["stylesheets"] == str(config / "qt6ct/qss/imperium.qss"), "missing stylesheet key was not installed")
@@ -338,11 +345,11 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="dolphin-theme-check-") as temporary:
         base = Path(temporary)
         verify_worker_selection(base / "worker-selector")
-        icon_source = base / "breeze-dark"
-        (icon_source / "scalable/places").mkdir(parents=True)
-        (icon_source / "index.theme").write_text("[Icon Theme]\nName=Breeze Dark\n", encoding="utf-8")
-        (icon_source / "scalable/places/folder.svg").write_text(
-            '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#3DAEE9"/></svg>\n',
+        icon_source = base / "Papirus"
+        (icon_source / "64x64/places").mkdir(parents=True)
+        (icon_source / "index.theme").write_text("[Icon Theme]\nName=Papirus\n", encoding="utf-8")
+        (icon_source / "64x64/places/folder.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#5294e2"/></svg>\n',
             encoding="utf-8",
         )
 

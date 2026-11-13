@@ -12,6 +12,7 @@ kio-extras
 konsole
 breeze
 breeze-icons
+papirus-icon-theme
 kvantum
 qt6ct
 qt6-base

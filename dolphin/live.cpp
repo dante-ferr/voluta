@@ -5,11 +5,11 @@
 // PaletteChange. Wallpaper changes rewrite the scheme file under a new path
 // and this library points the running process at it.
 //
-// The file body uses 60% opacity. Toolbar and sidebar stay opaque in QSS.
-// Toolbar and sidebar chrome are painted opaque and darker in QSS so areas
-// read as distinct plates. A fully clear color is what turned some panels
-// black: an opaque widget flattens alpha 0 against black. Text, selection,
-// buttons, and tooltips stay fully opaque.
+// The file body uses ~47% opacity. The Places column and toolbar stay
+// translucent too, but denser (~90%) so that left pane reads above the files.
+// A fully clear color is what turned some panels black: an opaque widget
+// flattens alpha 0 against black. Text, selection, buttons, and tooltips stay
+// fully opaque.
 
 #include <QAbstractScrollArea>
 #include <QAbstractItemDelegate>
@@ -43,6 +43,7 @@
 #include <KIconLoader>
 #include <kde_terminal_interface.h>
 #include <QTimer>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include <chrono>
@@ -54,7 +55,9 @@
 
 namespace {
 
-constexpr int kBackgroundAlpha = 153; // 0.60. Chrome stays opaque in QSS.
+constexpr int kBackgroundAlpha = 102; // ~0.40 file body.
+constexpr int kChromeAlpha = 191; // 0.75 Places column and toolbar.
+constexpr int kStripeAlpha = 40; // faint alternating rows in the file view.
 constexpr int kPlacesSpacing = 0;
 constexpr int kPlacesIconSize = 22;
 constexpr int kPlacesExtraIconGap = 6;
@@ -702,6 +705,27 @@ public:
                 QTimer::singleShot(0, widget, clearFill);
             }
         }
+        if (watched->property("imperiumPlacesChrome").toBool()
+            && (event->type() == QEvent::PaletteChange || event->type() == QEvent::Show
+                || event->type() == QEvent::StyleChange)) {
+            if (auto *widget = qobject_cast<QWidget *>(watched)) {
+                const QColor fill = widget->property("imperiumPlacesFill").value<QColor>();
+                const auto restore = [widget = QPointer<QWidget>(widget), fill] {
+                    if (!widget || !fill.isValid()) {
+                        return;
+                    }
+                    QPalette chromePalette = widget->palette();
+                    chromePalette.setColor(QPalette::Window, fill);
+                    chromePalette.setColor(QPalette::Base, fill);
+                    chromePalette.setColor(QPalette::Button, fill);
+                    widget->setAttribute(Qt::WA_TranslucentBackground, true);
+                    widget->setAutoFillBackground(true);
+                    widget->setPalette(chromePalette);
+                };
+                restore();
+                QTimer::singleShot(0, widget, restore);
+            }
+        }
         return QObject::eventFilter(watched, event);
     }
 
@@ -782,21 +806,36 @@ private:
             qApp->setPalette(palette);
         }
         QPalette chromePalette = palette;
-        const QColor chrome = solid(colors.viewBg);
+        QColor chrome = solid(colors.viewBg);
+        chrome.setAlpha(kChromeAlpha);
         chromePalette.setColor(QPalette::Window, chrome);
         chromePalette.setColor(QPalette::Base, chrome);
         chromePalette.setColor(QPalette::Button, chrome);
-        const auto paintChrome = [&chromePalette, chrome](QWidget *widget) {
-            widget->setAttribute(Qt::WA_TranslucentBackground, false);
-            widget->setAutoFillBackground(true);
+        const auto paintChrome = [this, &chromePalette, chrome](QWidget *widget, bool placesColumn = false) {
+            // Keep chrome translucent; only denser than the file body.
+            widget->setAttribute(Qt::WA_TranslucentBackground, true);
+            // Places must auto-fill: its View palette is clear, so without a
+            // real fill the window glass shows through and matches the body.
+            widget->setAutoFillBackground(placesColumn);
             if (!sameColor(widget->palette(), chromePalette)) {
                 widget->setPalette(chromePalette);
             }
-            const QString chromeCss = QStringLiteral("background-color: %1;")
-                                          .arg(chrome.name(QColor::HexRgb));
+            const QString chromeCss = QStringLiteral("background-color: rgba(%1,%2,%3,%4);")
+                                          .arg(chrome.red())
+                                          .arg(chrome.green())
+                                          .arg(chrome.blue())
+                                          .arg(kChromeAlpha);
             if (widget->property("imperiumChrome").toString() != chromeCss) {
                 widget->setStyleSheet(chromeCss);
                 widget->setProperty("imperiumChrome", chromeCss);
+            }
+            if (placesColumn) {
+                widget->setProperty("imperiumPlacesChrome", true);
+                widget->setProperty("imperiumPlacesFill", chrome);
+                if (!widget->property("imperiumPlacesFilter").toBool()) {
+                    widget->installEventFilter(this);
+                    widget->setProperty("imperiumPlacesFilter", true);
+                }
             }
         };
 
@@ -836,8 +875,29 @@ private:
                 paintChrome(status);
             }
             if (auto *dock = qobject_cast<QDockWidget *>(widget)) {
-                dock->setContentsMargins(4, 2, dock->objectName() == QLatin1String("placesDock") ? 0 : 4, 4);
-                paintChrome(dock);
+                const bool placesDock = dock->objectName() == QLatin1String("placesDock");
+                dock->setContentsMargins(4, 2, placesDock ? 0 : 4, 4);
+                paintChrome(dock, placesDock);
+                if (placesDock) {
+                    // Sit a denser translucent plate behind Places. The view
+                    // itself stays clear so wallpaper shows through the plate
+                    // alpha instead of matching the file body glass.
+                    QWidget *content = dock->widget();
+                    if (content && content->objectName() != QLatin1String("imperiumPlacesPlate")) {
+                        auto *plate = new QWidget(dock);
+                        plate->setObjectName(QStringLiteral("imperiumPlacesPlate"));
+                        auto *layout = new QVBoxLayout(plate);
+                        layout->setContentsMargins(0, 0, 0, 0);
+                        layout->setSpacing(0);
+                        content->setParent(plate);
+                        layout->addWidget(content);
+                        dock->setWidget(plate);
+                        content = plate;
+                    }
+                    if (content) {
+                        paintChrome(content, true);
+                    }
+                }
             }
 
             auto *view = qobject_cast<QGraphicsView *>(widget);
@@ -859,25 +919,26 @@ private:
                 setInitialSidebarWidth(widget);
             }
             if (places) {
-                paintChrome(widget);
+                // Keep the Places list clear so the chrome plate behind it shows.
+                widget->setAttribute(Qt::WA_TranslucentBackground, true);
+                widget->setAutoFillBackground(false);
+                widget->setStyleSheet(QStringLiteral("background-color: transparent;"));
+                if (!sameColor(widget->palette(), palette)) {
+                    widget->setPalette(palette);
+                }
             } else if (!sameColor(widget->palette(), palette)) {
                 widget->setPalette(palette);
             }
-            widget->setAttribute(Qt::WA_TranslucentBackground, !places);
-            widget->setAutoFillBackground(places);
+            widget->setAttribute(Qt::WA_TranslucentBackground, true);
+            widget->setAutoFillBackground(false);
             if (auto *area = qobject_cast<QAbstractScrollArea *>(widget)) {
                 if (QWidget *viewport = area->viewport()) {
                     if (places) {
-                        viewport->setAttribute(Qt::WA_TranslucentBackground, false);
-                        viewport->setAutoFillBackground(true);
-                        if (!sameColor(viewport->palette(), chromePalette)) {
-                            viewport->setPalette(chromePalette);
-                        }
-                        const QString chromeCss = QStringLiteral("background-color: %1;")
-                                                      .arg(chrome.name(QColor::HexRgb));
-                        if (viewport->property("imperiumChrome").toString() != chromeCss) {
-                            viewport->setStyleSheet(chromeCss);
-                            viewport->setProperty("imperiumChrome", chromeCss);
+                        viewport->setAttribute(Qt::WA_TranslucentBackground, true);
+                        viewport->setAutoFillBackground(false);
+                        viewport->setStyleSheet(QStringLiteral("background-color: transparent;"));
+                        if (!sameColor(viewport->palette(), palette)) {
+                            viewport->setPalette(palette);
                         }
                     } else {
                         viewport->setAttribute(Qt::WA_TranslucentBackground, true);
@@ -950,9 +1011,17 @@ private:
                 if (graphics && graphics->inherits("DolphinItemListView")) {
                     QPalette body = palette;
                     const QColor fill = glass(colors.windowBg);
+                    QColor stripe = colors.windowBg;
+                    // Soften the stock zebra: lift slightly toward the text and
+                    // keep most of the wallpaper visible through the stripe.
+                    const QColor text = solid(colors.viewFg);
+                    stripe.setRed(qBound(0, 255, qRound(stripe.red() * 0.94 + text.red() * 0.06)));
+                    stripe.setGreen(qBound(0, 255, qRound(stripe.green() * 0.94 + text.green() * 0.06)));
+                    stripe.setBlue(qBound(0, 255, qRound(stripe.blue() * 0.94 + text.blue() * 0.06)));
+                    stripe.setAlpha(kStripeAlpha);
                     body.setColor(QPalette::Base, fill);
                     body.setColor(QPalette::Window, fill);
-                    body.setColor(QPalette::AlternateBase, fill);
+                    body.setColor(QPalette::AlternateBase, stripe);
                     if (!sameColor(graphics->palette(), body)) {
                         graphics->setPalette(body);
                     }

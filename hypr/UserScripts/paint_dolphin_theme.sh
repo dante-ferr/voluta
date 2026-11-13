@@ -215,9 +215,10 @@ os.makedirs(dolphin_theme, exist_ok=True)
 dolphin_tokens = {"@@BASE@@": hx(dolphin_bg), "@@MANTLE@@": hx(dolphin_bg)}
 dolphin_kv = fill(kv_in, dolphin_tokens).replace("layout_margin=4", "layout_margin=6", 1)
 dolphin_kv = dolphin_kv.replace("translucent_windows=false", "translucent_windows=true", 1)
-# Percent of opacity removed from the window fill. 40 leaves the file body
-# at 60%. Toolbar and sidebar paint their own opaque plates on top.
-dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=40", 1)
+# Percent of opacity removed from the window fill. 30 leaves the file body
+# near 70% before the body alpha is applied. Sidebar/toolbar stay denser
+# translucent plates on top of that fade.
+dolphin_kv = dolphin_kv.replace("reduce_window_opacity=0", "reduce_window_opacity=30", 1)
 dolphin_kv = dolphin_kv.replace("splitter_width=7", "splitter_width=0", 1)
 with open(os.path.join(dolphin_theme, "dolphin.kvconfig"), "w", encoding="utf-8") as handle:
     handle.write(dolphin_kv)
@@ -331,11 +332,18 @@ bg_hex = hx(mantle)
 # toward the foreground.
 chrome = dolphin_bg
 body = mix(dolphin_bg, text, 0.16)
-# 60% alpha. Chrome QSS stays opaque; only this fill lets the wallpaper through.
-body_alpha = 153
+# Body stays the clearer glass (~40%). The Places column stays translucent
+# too, but denser (75%) so that left pane still reads above the files.
+body_alpha = 102
+chrome_alpha = 191
+# Faint zebra: a soft lift toward the text, mostly clear.
+stripe = mix(body, text, 0.06)
+stripe_alpha = 40
 chrome_hex = hx(chrome)
+chrome_rgba = f"rgba({rgb(chrome)}, {chrome_alpha})"
 body_hex = hx(body)
 alt_hex = hx(alternate)
+stripe_rgba = f"rgba({rgb(stripe)}, {stripe_alpha})"
 sel_hex = hx(select_bg)
 sel_fg = hx(selection_text)
 hover_hex = hx(hover)
@@ -378,21 +386,21 @@ DolphinMainWindow {{
     padding: 6px;
 }}
 DolphinMainWindow QToolBar {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     border: none;
     padding: 3px 8px;
     spacing: 3px;
     margin: 0px;
 }}
 DolphinMainWindow QStatusBar {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     color: #{quiet};
     border: none;
     padding: 3px 10px;
     margin: 0px;
 }}
 DolphinMainWindow QDockWidget {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     color: #{ivory};
     border: none;
     titlebar-close-icon: none;
@@ -412,6 +420,14 @@ DolphinMainWindow QSplitter::handle {{
 DolphinMainWindow QDockWidget#placesDock {{
     margin-right: 0px;
     padding-right: 0px;
+    background-color: {chrome_rgba};
+}}
+DolphinMainWindow QWidget#imperiumPlacesPlate {{
+    background-color: {chrome_rgba};
+}}
+DolphinMainWindow KFilePlacesView,
+DolphinMainWindow KFilePlacesView::viewport {{
+    background-color: transparent;
 }}
 DolphinMainWindow QToolButton {{
     background-color: transparent;
@@ -426,7 +442,7 @@ DolphinMainWindow QToolButton:hover {{
     color: #{ivory};
 }}
 DolphinMainWindow QDockWidget::title {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     color: #{quiet};
     font-weight: 600;
     padding: 6px 10px 4px 10px;
@@ -444,7 +460,7 @@ DolphinMainWindow QDockWidget#infoDock::title {{
 DolphinMainWindow UrlNavigator,
 DolphinMainWindow KUrlNavigator,
 DolphinMainWindow DolphinTabWidget QTabBar {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     color: #{ivory};
     border: none;
     padding: 2px 6px;
@@ -505,7 +521,7 @@ TerminalPanel QScrollBar:horizontal {{
 }}
 QTreeView, QListView, QTableView, QColumnView {{
     background-color: #{bg_hex};
-    alternate-background-color: #{alt_hex};
+    alternate-background-color: {stripe_rgba};
     color: #{ivory};
     selection-background-color: #{sel_hex};
     selection-color: #{sel_fg};
@@ -520,7 +536,7 @@ DolphinMainWindow QListView,
 DolphinMainWindow QTableView,
 DolphinMainWindow QColumnView {{
     background-color: transparent;
-    alternate-background-color: transparent;
+    alternate-background-color: {stripe_rgba};
     color: #{ivory};
     border: none;
     padding: 4px;
@@ -540,7 +556,7 @@ QTreeView::item, QListView::item, QTableView::item {{
 DolphinMainWindow QTreeView::item,
 DolphinMainWindow QListView::item {{
     background-color: transparent;
-    alternate-background-color: transparent;
+    alternate-background-color: {stripe_rgba};
 }}
 QTreeView::item:hover, QListView::item:hover, QTableView::item:hover {{
     background-color: #{hover_hex};
@@ -552,7 +568,7 @@ QTreeView::item:selected:!active, QListView::item:selected:!active, QTableView::
     color: #{sel_fg};
 }}
 DolphinMainWindow KFilePlacesView {{
-    background-color: #{chrome_hex};
+    background-color: {chrome_rgba};
     qproperty-spacing: 1;
     padding: 2px 0px 4px 4px;
 }}
@@ -785,8 +801,8 @@ with open(os.path.join(scheme_dir, "Imperium.colors"), "w", encoding="utf-8") as
     handle.write(scheme)
 
 # A fresh filename misses KColorScheme's in-process cache. View backgrounds
-# stay clear. The window fill is the lifted body at 60% alpha so the
-# wallpaper shows through the files. Fully clear window backgrounds were
+# stay clear aside from a faint zebra. The window fill is the lifted body so
+# the wallpaper shows through the files. Fully clear window backgrounds were
 # flattened to black by opaque widgets. The shared Imperium scheme stays
 # opaque for every other Qt app.
 def clear_backgrounds(scheme_text):
@@ -802,11 +818,14 @@ def clear_backgrounds(scheme_text):
             if line.count(",") >= 2:
                 # Dolphin copies the view color onto the file surface and
                 # flattens a clear color to an opaque slab. The window and
-                # complementary fills carry the 60% body. The view stays the
+                # complementary fills carry the body alpha. The view stays the
                 # dark chrome base so the sidebar plate does not lighten.
                 key = line.split("=", 1)[0]
                 if group == "Colors:View":
-                    line = f"{key}={rgb(dolphin_bg)},0"
+                    if key == "BackgroundAlternate":
+                        line = f"{key}={rgb(stripe)},{stripe_alpha}"
+                    else:
+                        line = f"{key}={rgb(dolphin_bg)},0"
                 else:
                     line = f"{key}={rgb(body)},{body_alpha}"
         lines.append(line)
@@ -876,12 +895,15 @@ with open(kdeglobals, "w", encoding="utf-8") as handle:
     handle.writelines(kde_out)
 
 def paint_icons():
-    source = "/usr/share/icons/breeze-dark"
+    # Imperium is a Wallust-tinted Papirus. Papirus-Dark inherits most sizes
+    # from Papirus, so places and devices are recolored from that shared tree.
+    source = "/usr/share/icons/Papirus"
+    dark = "/usr/share/icons/Papirus-Dark"
     dest = os.path.join(home, ".local", "share", "icons", "imperium")
     stamp = os.path.join(dest, ".accent")
     preview_stamp = os.path.join(dest, ".folder-preview-accent")
     accent_hex = hx(icon_accent)
-    preview_token = accent_hex + ":workers-v2"
+    preview_token = accent_hex + ":papirus-v1"
     previous_accent = None
     previous_preview_accent = None
     if os.path.isfile(preview_stamp):
@@ -892,38 +914,110 @@ def paint_icons():
             previous_accent = handle.read().strip()
         if previous_accent == accent_hex and previous_preview_accent == preview_token:
             return
-    if not os.path.isdir(source):
+    if not os.path.isdir(source) and not os.path.isdir(dark):
         return
     os.makedirs(dest, exist_ok=True)
-    index_src = os.path.join(source, "index.theme")
+    index_src = os.path.join(dark if os.path.isdir(dark) else source, "index.theme")
     if os.path.isfile(index_src):
         with open(index_src, encoding="utf-8") as handle:
             index = handle.read()
         index = re.sub(r"(?m)^Name=.*$", "Name=Imperium", index, count=1)
+        inherit = "Papirus-Dark" if os.path.isdir(dark) else "Papirus"
         if "Inherits=" not in index:
-            index = index.replace("[Icon Theme]", "[Icon Theme]\nInherits=breeze-dark", 1)
+            index = index.replace("[Icon Theme]", f"[Icon Theme]\nInherits={inherit}", 1)
         else:
-            index = re.sub(r"(?m)^Inherits=.*$", "Inherits=breeze-dark", index, count=1)
+            index = re.sub(r"(?m)^Inherits=.*$", f"Inherits={inherit}", index, count=1)
         with open(os.path.join(dest, "index.theme"), "w", encoding="utf-8") as handle:
             handle.write(index)
-    needle = re.compile(r"#3[Dd][Aa][Ee][Ee]9")
-    for dirpath, _, filenames in os.walk(source):
-        for name in filenames:
-            if not name.endswith(".svg"):
+
+    # Papirus paints folders and many place marks with fixed blues and a small
+    # set of hue variants. Map those onto the wallpaper palette so Dolphin
+    # follows Wallust without flattening every icon to one accent.
+    paper = mix(text, mantle, 0.10)
+    accent_main = icon_accent
+    accent_dark = mix(icon_accent, mantle, 0.36)
+    accent_light = lighten(icon_accent, 0.22)
+    accent_deep = mix(icon_accent, mantle, 0.62)
+    positive = secondary
+    positive_dark = mix(secondary, mantle, 0.36)
+    warning = lighten(mix(secondary, negative, 0.35), 0.08)
+    warning_dark = mix(warning, mantle, 0.30)
+    alert = negative
+    alert_dark = mix(negative, mantle, 0.30)
+    violet = link
+    violet_dark = mix(link, mantle, 0.36)
+    grey = muted
+    grey_dark = mix(muted, mantle, 0.40)
+    ink = mix(mantle, text, 0.28)
+    ink_dark = mix(mantle, text, 0.18)
+    replacements = {
+        "#5294e2": "#" + hx(accent_main),
+        "#3a87e5": "#" + hx(accent_main),
+        "#4285f4": "#" + hx(accent_main),
+        "#2196f3": "#" + hx(accent_main),
+        "#4877b1": "#" + hx(accent_dark),
+        "#93c0ea": "#" + hx(accent_light),
+        "#1d344f": "#" + hx(accent_deep),
+        "#e25252": "#" + hx(alert),
+        "#f44336": "#" + hx(alert),
+        "#e84040": "#" + hx(alert),
+        "#bf4b4b": "#" + hx(alert_dark),
+        "#87b158": "#" + hx(positive),
+        "#4caf50": "#" + hx(positive),
+        "#60924b": "#" + hx(positive_dark),
+        "#f9bd30": "#" + hx(warning),
+        "#ff9800": "#" + hx(warning),
+        "#e19d00": "#" + hx(warning_dark),
+        "#ee923a": "#" + hx(warning),
+        "#dd772f": "#" + hx(warning_dark),
+        "#7e57c2": "#" + hx(violet),
+        "#9c40d3": "#" + hx(violet),
+        "#5d399b": "#" + hx(violet_dark),
+        "#8e8e8e": "#" + hx(grey),
+        "#727272": "#" + hx(grey_dark),
+        "#4f4f4f": "#" + hx(ink),
+        "#3f3f3f": "#" + hx(ink_dark),
+        "#00bcd4": "#" + hx(accent_light),
+        "#e4e4e4": "#" + hx(paper),
+        "#dcdcdc": "#" + hx(paper),
+    }
+    # Match only the hue keys when deciding whether to rewrite; paper is
+    # remapped together with those fills so plain grey glyphs stay stock.
+    hue_keys = [key for key in replacements if key not in ("#e4e4e4", "#dcdcdc")]
+    needle = re.compile("|".join(re.escape(key) for key in hue_keys), re.I)
+    paint = re.compile("|".join(re.escape(key) for key in replacements), re.I)
+
+    def tinted(match):
+        return replacements[match.group(0).lower()]
+
+    written = set()
+    for tree in (source, dark):
+        if not os.path.isdir(tree):
+            continue
+        for dirpath, _, filenames in os.walk(tree):
+            rel_dir = os.path.relpath(dirpath, tree)
+            parts = [] if rel_dir == "." else rel_dir.split(os.sep)
+            if len(parts) < 2 or parts[1] not in ("places", "devices"):
                 continue
-            src = os.path.join(dirpath, name)
-            try:
-                with open(src, encoding="utf-8") as handle:
-                    body = handle.read()
-            except (OSError, UnicodeError):
-                continue
-            if not needle.search(body):
-                continue
-            rel = os.path.relpath(src, source)
-            target = os.path.join(dest, rel)
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            with open(target, "w", encoding="utf-8") as handle:
-                handle.write(needle.sub("#" + accent_hex, body))
+            for name in filenames:
+                if not name.endswith(".svg"):
+                    continue
+                src = os.path.join(dirpath, name)
+                rel = os.path.relpath(src, tree)
+                if rel in written:
+                    continue
+                try:
+                    with open(src, encoding="utf-8") as handle:
+                        body = handle.read()
+                except (OSError, UnicodeError):
+                    continue
+                if not needle.search(body):
+                    continue
+                target = os.path.join(dest, rel)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, "w", encoding="utf-8") as handle:
+                    handle.write(paint.sub(tinted, body))
+                written.add(rel)
 
     # KIO's inode/directory thumbnail is a composite containing the current
     # folder icon. Remove only those composites when their tint changes; the
@@ -1345,7 +1439,7 @@ def push_open_windows(stylesheet):
 os.makedirs(os.path.dirname(live_conf), exist_ok=True)
 pending_conf = live_conf + "." + live_stamp
 with open(pending_conf, "w", encoding="utf-8") as handle:
-    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}:workers-v2\nterminal={terminal_live}\n")
+    handle.write(f"scheme={live_scheme}\nqss={qss_path}\nicons={hx(icon_accent)}:papirus-v1\nterminal={terminal_live}\n")
 os.replace(pending_conf, live_conf)
 
 if dolphin_enabled:

@@ -50,7 +50,13 @@ of Dolphin's 6px margin. The first launch uses a large details view, about 72%
 of the screen and at most 1280×800, with a 200px Places column. A later resize
 is kept. A saved maximize flag without a width is replaced, because that flag
 was opening the dialog at its small default size. Toolbar and sidebar chrome
-use a darker opaque plate over the lighter file body.
+use a denser translucent Places column and toolbar (75% opacity) over a
+clearer file body (~40% opacity). Alternating rows stay a faint stripe. Global
+view defaults are Icons mode, sorted by modification time with newest first.
+Icons are Papirus, recolored into the local `imperium` theme from the Wallust
+palette: folder blues become the wallpaper accent family, and Papirus's red,
+green, yellow, violet, and grey variants map onto the palette's accent,
+secondary, negative, and muted tones.
 
 The Qt/KDE font strings use Qt 6's explicit Normal weight (400). The live hook
 sets Oxanium Regular at 11 points for UI chrome; qt6ct/kdeglobals `fixed` and
@@ -75,8 +81,8 @@ Unwrapped processes and shell launchers are not treated as stale libraries.
 Refresh never kills an active Dolphin process or interrupts file transfers.
 
 Fonts and system Qt/KDE assets must also be installed on both hosts; the shared
-dependency list includes `ttf-oxanium`, `otf-monaspace`, Kvantum, Breeze, qt6ct
-and the build dependencies. `voluta update` installs newly selected dependencies
+dependency list includes `ttf-oxanium`, `otf-monaspace`, `papirus-icon-theme`,
+Kvantum, Breeze, qt6ct and the build dependencies. `voluta update` installs newly selected dependencies
 unless `--skip-deps` is used.
 Ark supplies the native Extract context menu for ZIP and other archives.
 Colors still follow each machine's wallpaper; screen scaling and differing
