@@ -1,0 +1,23 @@
+{
+  "wallpaper_root": "~/Pictures/Wallpapers",
+  "backend": "awww",
+  "transition_secs": 1.0,
+  "monitor": null,
+  "awww": {
+    "transition": "simple",
+    "fps": 30,
+    "angle": 45
+  },
+  "custom_css": null,
+  "post_command": "bash ~/.config/hypr/UserScripts/combined_wallust.sh \"$wallpaper\"",
+  "sidebar_width": 300,
+  "show_filenames": false,
+  "group_by": [],
+  "sort_by": "name_asc",
+  "search_query": "",
+  "filter_tag": null,
+  "filter_folder": [],
+  "zoom": 1.0,
+  "gui_scale": 1.0,
+  "sidebar_visible": true
+}

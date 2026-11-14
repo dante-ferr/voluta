@@ -21,7 +21,7 @@ fi
 
 echo ""
 echo -e "\e[1;33m════════════════════════════════════════════════════════════════════════════════\e[0m"
-echo -e "  \e[1;37m[m]\e[0m \e[0;33mHardware Monitor (Btop)\e[0m   │   \e[1;37m[w]\e[0m \e[0;33mWallpaper (Waypaper)\e[0m   │   \e[1;37m[a]\e[0m \e[0;33mApp Browser\e[0m   │   \e[1;37m[q]\e[0m \e[0;33mExit\e[0m"
+echo -e "  \e[1;37m[m]\e[0m \e[0;33mHardware Monitor (Btop)\e[0m   │   \e[1;37m[w]\e[0m \e[0;33mWallpaper (Walltag)\e[0m   │   \e[1;37m[a]\e[0m \e[0;33mApp Browser\e[0m   │   \e[1;37m[q]\e[0m \e[0;33mExit\e[0m"
 echo -e "\e[1;33m════════════════════════════════════════════════════════════════════════════════\e[0m"
 
 read -n 1 -s -r key
@@ -30,7 +30,7 @@ case "$key" in
         exec btop
         ;;
     w|W)
-        waypaper >/dev/null 2>&1 &
+        walltag >/dev/null 2>&1 &
         exit 0
         ;;
     a|A)

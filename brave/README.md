@@ -11,7 +11,7 @@ disable **Ultra dark theme** (called **Darker theme** in some releases). That
 mode replaces palette lightness with a fixed value and can make a very dark
 custom background brighter. Keep the normal Dark or Device scheme and GTK.
 
-Waypaper calls `combined_wallust.sh`. Wallust renders `colors-gtk.css`, then
+Walltag calls `combined_wallust.sh`. Wallust renders `colors-gtk.css`, then
 `paint_brave_theme.py` publishes a GTK theme and changes the theme name to
 notify running browsers. Each stylesheet gets a content-derived theme name so
 GTK cannot reuse an older named CSS provider when a palette changes.

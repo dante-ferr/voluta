@@ -53,7 +53,7 @@ end
 bind("SUPER + Return", hl.dsp.exec_cmd(settings.apps.terminal or "kitty"))
 bind("SUPER + E", hl.dsp.exec_cmd(settings.apps.file_manager or "dolphin"))
 bind("SUPER + B", hl.dsp.exec_cmd(settings.apps.browser or "gtk-launch firefox"))
-bind("SUPER + W", hl.dsp.exec_cmd("waypaper"))
+bind("SUPER + W", hl.dsp.exec_cmd("walltag"))
 bind("SUPER + D", hl.dsp.exec_cmd(home .. "/.config/rofi/launch-dashboard.sh"))
 bind("SUPER + SHIFT + Return", hl.dsp.exec_cmd(home .. "/.config/rofi/launch-dashboard.sh"))
 -- Launcher menu.

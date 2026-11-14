@@ -168,7 +168,8 @@ companion replace matching defaults; everything else inherits from
 
 The installer backs up replaced config directories/symlinks, copies maintained
 sources into the deployment tree, preserves generated palettes/display state,
-and merges only its integration hook into Waypaper's writable preferences.
+and merges only its integration hooks into Walltag's writable preferences
+(`post_command`, and `wallpaper_root` when the companion sets `paths.wallpapers`).
 Explicit wallpaper-path preferences win; GUI changes survive when that path is
 not explicitly overridden. Changed managed files receive backups before update.
 Core defaults update from the checkout without rewriting companion preferences.

@@ -58,10 +58,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd(Scripts .. "/StartWaybar.sh")
     hl.exec_cmd(Scripts .. "/StartTopGlow.sh")
 
-    -- Wallpaper restore without post_command: waypaper fires post_command once
-    -- per monitor in parallel, which used to stack duplicate waybars. Once restored,
-    -- combined_wallust refreshes the palette and desktop components synchronously.
-    hl.exec_cmd("sh -c 'waypaper --restore --no-post-command || true; bash " .. UserScripts .. "/combined_wallust.sh' &")
+    -- Wallpaper restore without post_command: startup runs combined_wallust once
+    -- after restore so palette refresh stays synchronous and does not stack waybars.
+    hl.exec_cmd("sh -c 'walltag --restore --no-post-command || true; bash " .. UserScripts .. "/combined_wallust.sh' &")
 
     hl.exec_cmd("playerctld daemon || true")
 

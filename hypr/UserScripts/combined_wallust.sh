@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # combined_wallust.sh - Generate wallust color schemes and reload desktop components
 #
-# Waypaper's post_command is fire-and-forget and can overlap a refresh already
+# Walltag's post_command is fire-and-forget and can overlap a refresh already
 # in progress. Callers queue requested paths; the holder combines them with the
 # current wallpaper on every active display before generating a palette.
 #
@@ -117,25 +117,21 @@ resolve_wallpapers() {
         ((${#wallpapers[@]} > 0)) && break
     done
 
-    # Waypaper state is useful during startup before the daemon query is ready.
+    # walltag state is useful during startup before the daemon query is ready.
     if ((${#wallpapers[@]} == 0)) && command -v python3 >/dev/null 2>&1; then
         while IFS= read -r wp; do add_wallpaper "$wp"; done < <(python3 -c '
-import configparser, os, sys
-active = sys.argv[1:]
-for conf in ("~/.local/state/waypaper/state.ini", "~/.config/waypaper/config.ini"):
-    p = configparser.ConfigParser()
-    try: p.read(os.path.expanduser(conf), "utf-8")
-    except Exception: continue
-    sec = "State" if p.has_section("State") else ("Settings" if p.has_section("Settings") else None)
-    if not sec: continue
-    mons = [x.strip() for x in p.get(sec, "monitors", fallback="").splitlines() if x.strip()]
-    walls = [x.strip() for x in p.get(sec, "wallpaper", fallback="").splitlines() if x.strip()]
-    mapping = dict(zip(mons, walls))
-    for m in active:
-        if mapping.get(m): print(mapping[m])
-    if mapping.get("All"): print(mapping["All"])
-    for w in walls: print(w)
-' "${monitors[@]}" 2>/dev/null)
+import json, os
+from pathlib import Path
+cfg = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "walltag/config.json"
+try:
+    root = Path(json.loads(cfg.read_text()).get("wallpaper_root", "")).expanduser()
+    state = json.loads((root / ".walltag/state.json").read_text())
+    path = Path(str(state.get("last_image", ""))).expanduser()
+    if path.is_file():
+        print(path)
+except Exception:
+    pass
+' 2>/dev/null)
     fi
 
     if ((${#wallpapers[@]} == 0)); then
@@ -246,7 +242,7 @@ do_refresh() {
     local wallpapers=("${@}") wp palette_image="$LOCK_DIR/imperium-wallust-palette.jpg"
 
     # Build a compact contact sheet so Wallust samples colors across every
-    # active display instead of only the last Waypaper post_command argument.
+    # active display instead of only the last Walltag post_command argument.
     if ((${#wallpapers[@]} > 1)) && command -v magick >/dev/null 2>&1; then
         if magick montage "${wallpapers[@]}" -thumbnail 512x512^ -gravity center \
             -extent 512x512 -tile 2x -geometry +0+0 "$palette_image" 2>/dev/null; then
@@ -316,7 +312,7 @@ do_refresh() {
     disown $! 2>/dev/null || true
 }
 
-# Let rapid per-monitor Waypaper hooks settle before sampling the live display set.
+# Let rapid per-monitor Walltag hooks settle before sampling the live display set.
 sleep 0.25
 while true; do
     requested=()

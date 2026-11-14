@@ -97,17 +97,30 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual((original / 'owner.txt').read_text(), 'existing user config')
         self.assertTrue(settings_path.exists())
 
-    def test_application_edits_backed_up_and_waypaper_preferences_survive(self):
+    def test_application_edits_backed_up_and_walltag_preferences_survive(self):
         self.run_cli('init')
         self.run_cli('install', '--skip-deps')
         config = self.home / '.config'
-        waypaper = config / 'waypaper/config.ini'
-        waypaper.write_text(waypaper.read_text().replace('~/Pictures/Wallpapers', '~/custom-pictures'))
+        walltag = config / 'walltag/config.json'
+        self.assertFalse((config / 'walltag').is_symlink())
+        data = json.loads(walltag.read_text())
+        data['wallpaper_root'] = '~/custom-pictures'
+        data['zoom'] = 1.25
+        walltag.write_text(json.dumps(data, indent=2) + '\n')
+        # Bump a tracked source so update resyncs and write_managed backs up edits.
+        settings = ROOT / 'hypr/UserConfigs/UserSettings.lua'
+        original = settings.read_text()
+        self.addCleanup(settings.write_text, original)
+        settings.write_text(original + '\n-- voluta-test-marker\n')
         managed = config / 'hypr/UserConfigs/UserSettings.lua'
         managed.write_text('-- local application edit\n')
         self.run_cli('update', '--skip-deps')
-        self.assertIn('~/custom-pictures', waypaper.read_text())
+        after = json.loads(walltag.read_text())
+        self.assertEqual(after['wallpaper_root'], '~/custom-pictures')
+        self.assertEqual(after['zoom'], 1.25)
+        self.assertIn('combined_wallust.sh', after['post_command'])
         self.assertNotEqual(managed.read_text(), '-- local application edit\n')
+        self.assertIn('voluta-test-marker', managed.read_text())
         backups = self.home / '.local/state/voluta/backups'
         self.assertTrue(any(p.is_file() and not p.is_symlink() and p.read_bytes() == b'-- local application edit\n' for p in backups.iterdir()))
 

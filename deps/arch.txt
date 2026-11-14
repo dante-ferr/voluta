@@ -23,7 +23,9 @@ zsh-autosuggestions
 
 # Wallpaper & theming
 capitaine-cursors
-waypaper-git|waypaper
+# walltag: Cargo binary (cargo install --path … or VOLUTA_WALLTAG_SRC); not in pacman
+gtk4
+libadwaita
 wallust-git|wallust
 awww|swww
 imagemagick

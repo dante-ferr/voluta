@@ -1,7 +1,6 @@
 """Publish architectural frames and the optional local New Tab gallery."""
 import argparse
 from colorsys import hls_to_rgb, rgb_to_hls
-import configparser
 import hashlib
 from io import BytesIO
 import json
@@ -355,18 +354,18 @@ def current_wallpaper(config):
                     return path
     except (OSError, subprocess.SubprocessError):
         pass
-    for filename in (Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local/state')) / 'waypaper/state.ini',
-                     config / 'waypaper/config.ini'):
-        parser = configparser.ConfigParser(interpolation=None)
-        try:
-            parser.read(filename)
-            for section in parser.sections():
-                for name in parser.get(section, 'wallpaper', fallback='').splitlines():
-                    path = Path(name.strip()).expanduser()
-                    if path.is_file():
-                        return path
-        except (OSError, configparser.Error):
-            continue
+    # walltag stores the last pick under the wallpaper root; config may use ~.
+    try:
+        walltag_cfg = json.loads((config / 'walltag/config.json').read_text())
+        root = Path(str(walltag_cfg.get('wallpaper_root', '')).strip()).expanduser()
+        state_file = root / '.walltag' / 'state.json'
+        if state_file.is_file():
+            state = json.loads(state_file.read_text())
+            path = Path(str(state.get('last_image', '')).strip()).expanduser()
+            if path.is_file():
+                return path
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        pass
     return None
 
 

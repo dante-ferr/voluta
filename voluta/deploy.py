@@ -11,10 +11,11 @@ import time
 
 from cli import ROOT, atomic_write, host_layer_path, layer_path, migrate_directory, resolve, read
 
-CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'waypaper', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
+CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'walltag', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave', 'packaging')
-BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'waypaper', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
+# walltag is a Cargo binary (not pacman); doctor and ensure_walltag install it from source.
+BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'gtk4', 'libadwaita', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'karere': ['karere-custom-css'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 # External theme consumers: Wallust always writes files. Limusic stays user-installed;
 # Karere theming of WhatsApp Web needs the karere feature (karere-custom-css).
@@ -78,6 +79,52 @@ def wallust_binary():
         if result.returncode == 0 and result.stdout.startswith('wallust 4.'):
             return str(candidate)
     return None
+
+
+def walltag_binary():
+    candidates = [
+        Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')) / 'bin/walltag',
+        shutil.which('walltag'),
+    ]
+    for candidate in candidates:
+        if candidate and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
+def walltag_source():
+    """Checkout used to `cargo install` walltag when no package exists yet."""
+    env = os.environ.get('VOLUTA_WALLTAG_SRC')
+    if env:
+        path = Path(env).expanduser()
+        if (path / 'Cargo.toml').is_file():
+            return path
+    for path in (
+        ROOT.parent / 'Code/projects/walltag',
+        Path.home() / 'Code/projects/walltag',
+        Path.home() / 'projects/walltag',
+        Path.home() / 'src/walltag',
+    ):
+        if (path / 'Cargo.toml').is_file():
+            return path
+    return None
+
+
+def ensure_walltag():
+    if walltag_binary():
+        return walltag_binary()
+    source = walltag_source()
+    cargo = shutil.which('cargo')
+    if source is None or cargo is None:
+        raise ValueError(
+            'walltag is missing from PATH. Install it with '
+            '`cargo install --path /path/to/walltag`, or set VOLUTA_WALLTAG_SRC.'
+        )
+    _run_visible([cargo, 'install', '--path', str(source), '--locked'])
+    binary = walltag_binary()
+    if not binary:
+        raise ValueError('cargo install walltag finished but walltag is still missing from PATH')
+    return binary
 
 
 def quickshell_works():
@@ -165,15 +212,23 @@ def doctor_report(settings, host, config=None):
         notes.insert(0, 'Missing selected packages: ' + ', '.join(missing))
     quickshell_ok = quickshell_works()
     wallust = wallust_binary()
+    walltag = walltag_binary()
     if not quickshell_ok and 'quickshell' not in missing:
         notes.insert(0, 'Quickshell is missing or cannot start; selector effects need a working quickshell.')
     if wallust is None and 'wallust-git' not in missing:
         notes.insert(0, 'Wallust v4 is missing; install wallust-git or put a v4 wallust on PATH.')
+    if walltag is None:
+        source = walltag_source()
+        if source is None:
+            notes.insert(0, 'walltag is missing; install with cargo install --path /path/to/walltag or set VOLUTA_WALLTAG_SRC.')
+        else:
+            notes.insert(0, f'walltag is missing; run make update (or cargo install --path {source}).')
     return {
         'host': host,
         'settings_valid': True,
         'missing_packages': missing,
         'wallust_v4': wallust is not None,
+        'walltag': walltag is not None,
         'quickshell_ok': quickshell_ok,
         'kvm': os.access('/dev/kvm', os.R_OK | os.W_OK),
         'theme_only_consumers': consumers,
@@ -198,6 +253,7 @@ def format_doctor_report(report):
         'Core',
         f"  settings          {_doctor_mark(report['settings_valid'])}",
         f"  Wallust v4        {_doctor_mark(report['wallust_v4'])}",
+        f"  walltag           {_doctor_mark(report.get('walltag', False))}",
         f"  Quickshell        {_doctor_mark(report['quickshell_ok'])}",
         f"  KVM (/dev/kvm)    {'yes' if report['kvm'] else 'no'}",
     ]
@@ -225,7 +281,12 @@ def format_doctor_report(report):
         lines.extend(['', 'Notes'])
         for note in notes:
             lines.append(f"  - {note}")
-    healthy = not report['missing_packages'] and report['quickshell_ok'] and report['wallust_v4']
+    healthy = (
+        not report['missing_packages']
+        and report['quickshell_ok']
+        and report['wallust_v4']
+        and report.get('walltag', False)
+    )
     lines.extend(['', 'Result: ' + ('healthy' if healthy else 'needs attention')])
     return '\n'.join(lines) + '\n'
 
@@ -524,40 +585,38 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         destination_generated = current / name / 'wallust'
         if previous_generated.is_dir() and previous_generated.resolve() != destination_generated.resolve():
             shutil.copytree(previous_generated, destination_generated, dirs_exist_ok=True)
-        if name != 'waypaper':
+        if name != 'walltag':
             link(config / name, current / name, manifest, state)
     # Scope the low-latency GTK renderer to SwayNC, including D-Bus activation.
     launcher = json.dumps(str(current / 'swaync/launch.sh').replace('%', '%%'), ensure_ascii=False)
     service = '[Service]\nExecStart=\nExecStart=/bin/sh ' + launcher + '\n'
     write_managed(config / 'systemd/user/swaync.service.d/10-voluta.conf', service.encode(), manifest, state)
-    # Waypaper's GUI owns its preferences. Update only the integration hook.
-    path = config / 'waypaper/config.ini'
-    if (config / 'waypaper').is_symlink():
-        old = backup(config / 'waypaper', state)
-        shutil.copytree(Path(old).resolve(), config / 'waypaper', symlinks=False)
+    # Walltag's GUI owns its preferences. Update only the integration hooks.
+    path = config / 'walltag/config.json'
+    if (config / 'walltag').is_symlink():
+        old = backup(config / 'walltag', state)
+        shutil.copytree(Path(old).resolve(), config / 'walltag', symlinks=False)
     path.parent.mkdir(parents=True, exist_ok=True)
-    parser = configparser.ConfigParser(interpolation=None)
+    data = {}
     if path.exists():
-        parser.read(path)
-    if not parser.has_section('Settings'):
-        parser.add_section('Settings')
-    parser.set('Settings', 'post_command', f'bash "{config}/hypr/UserScripts/combined_wallust.sh" "$wallpaper"')
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            data = {}
+    if not isinstance(data, dict):
+        data = {}
+    data['post_command'] = f'bash "{config}/hypr/UserScripts/combined_wallust.sh" "$wallpaper"'
     shared_layer = layer_path(directory, 'settings')
     host_layer = host_layer_path(directory, host)
     explicit_paths = {
         **(read(shared_layer).get('paths', {}) if shared_layer else {}),
         **(read(host_layer).get('paths', {}) if host_layer else {}),
     }
-    if 'wallpapers' in explicit_paths or not parser.has_option('Settings', 'folder'):
-        parser.set('Settings', 'folder', settings['paths']['wallpapers'])
-    if not parser.has_option('Settings', 'wallpaper'):
-        parser.set('Settings', 'wallpaper', str(current / 'hypr/assets/school-of-athens.jpg'))
-    if not parser.has_option('Settings', 'backend'):
-        parser.set('Settings', 'backend', 'swww')
-    import io
-    output = io.StringIO()
-    parser.write(output)
-    write_managed(path, output.getvalue().encode(), manifest, state)
+    if 'wallpapers' in explicit_paths or 'wallpaper_root' not in data:
+        data['wallpaper_root'] = settings['paths']['wallpapers']
+    if 'backend' not in data:
+        data['backend'] = 'awww'
+    write_managed(path, (json.dumps(data, indent=2) + '\n').encode(), manifest, state)
     for name in ('zshrc', 'zprofile'):
         link(Path.home() / ('.' + name), current / name, manifest, state)
     link(config / 'starship.toml', current / 'starship.toml', manifest, state)
@@ -574,6 +633,7 @@ def _install(directory, host, skip_deps=False, dry_run=False):
     try:
         if not skip_deps:
             dependencies(settings)
+            ensure_walltag()
             subprocess.run(['make', '-C', str(current / 'waybar')], check=True)
             subprocess.run(['make', '-C', str(current / 'gsimplecal')], check=True)
             subprocess.run(['systemctl', '--user', 'daemon-reload'], check=False)
@@ -792,13 +852,19 @@ def dispatch(args, directory, host):
         elif args.command == 'deps':
             settings, _ = resolve(directory, host)
             dependencies(settings)
+            ensure_walltag()
             print('Voluta dependencies are ready.')
         elif args.command == 'doctor':
             settings, _ = resolve(directory, host)
             report = doctor_report(settings, host)
             sys.stdout.write(format_doctor_report(report))
             # Theme-only consumer notes are advisory; only selected deps fail the check.
-            return int(bool(report['missing_packages']) or not report['quickshell_ok'] or not report['wallust_v4'])
+            return int(
+                bool(report['missing_packages'])
+                or not report['quickshell_ok']
+                or not report['wallust_v4']
+                or not report.get('walltag', False)
+            )
         elif args.command == 'rgb':
             from rgb import apply
             results = apply(directory, host, args.dry_run, args.force)
