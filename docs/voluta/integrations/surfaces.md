@@ -221,9 +221,10 @@ projection canvas joins the native-sized sliding surface when the panel opens.
 On dismissal, the veil stays on the backdrop and fades out. The aperture stays
 on the sliding surface for the whole exit, on the same rectangle as the frame,
 and returns to the resident surface only after that slide finishes. The canvas
-pauses while hidden. Selector, music,
-and session exits are the shared 230ms item travel. The entrance is 170ms.
-The exit is a little slower than the entrance, and neither waits before moving. Neither menu maintains a separate copy of the blur or animation
+pauses while hidden. The selector keeps the shared 170ms entrance and 230ms
+item exit. Music and session read the same timings from `FramedEdgeMotion.qml`
+(280ms / 180ms entrance, 360ms / 300ms exit) and both dismiss through the same
+travel they used on entrance. Neither waits before moving. Neither menu maintains a separate copy of the blur or animation
 implementation.
 
 `swaync/watch-glass.py` is the native visibility/IPC adapter. It prewarms one

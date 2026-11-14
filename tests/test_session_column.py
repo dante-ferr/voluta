@@ -57,6 +57,7 @@ class SessionColumnTests(unittest.TestCase):
         self.assertNotIn('buttons-grid', (ROOT / 'swaync/config.json').read_text())
         self.assertIn('gridLeft - panel.framePadLeft', panel)
         self.assertIn('itemEnterFrom: -(panel.plateWidth + panel.gridLeft)', panel)
+        self.assertIn('FramedEdgeMotion', panel)
         self.assertIn('voluta-session-glass', panel)
         self.assertIn('prepare-shutdown', panel)
         self.assertIn('JetBrainsMono Nerd Font', panel)

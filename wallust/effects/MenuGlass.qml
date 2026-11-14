@@ -47,6 +47,8 @@ Item {
     // while this stays false so the compositor snapshots the glass in place.
     property bool surfaceMapped: false
     property bool parked: true
+    property int entranceTravel: 170
+    property int entranceFade: 110
     property int exitTravel: 230
     property int exitFade: 200
 
@@ -213,7 +215,7 @@ Item {
             veil.status !== Image.Ready)
             return;
         entranceStarted = true;
-        fadeVeil(1, 170);
+        fadeVeil(1, glass.entranceTravel);
         lastEntranceAt = Date.now();
         projection.requestPaint();
         ignition.arm();
@@ -297,8 +299,8 @@ Item {
 
     ParallelAnimation {
         id: entrance
-        NumberAnimation { target: glass.motionTarget; property: glass.itemAxis; to: 0; duration: 170; easing.type: Easing.OutCubic }
-        NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 1; duration: 110; easing.type: Easing.OutQuad }
+        NumberAnimation { target: glass.motionTarget; property: glass.itemAxis; to: 0; duration: glass.entranceTravel; easing.type: Easing.OutCubic }
+        NumberAnimation { target: glass.motionTarget; property: "opacity"; to: 1; duration: glass.entranceFade; easing.type: Easing.OutQuad }
     }
 
     SequentialAnimation {

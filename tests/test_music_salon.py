@@ -72,6 +72,8 @@ class MusicSalonTests(unittest.TestCase):
         self.assertIn('Glass.CavaBars', salon)
         self.assertIn('voluta-music-glass', salon)
         self.assertIn('itemAxis: "x"', salon)
+        self.assertIn('itemLeaveTo: panel.plateWidth + panel.gridRight', salon)
+        self.assertIn('FramedEdgeMotion', salon)
         self.assertIn('music-glass.png', salon)
         self.assertIn('plateGlass', shared)
         self.assertIn('property int exitTravel: 230', shared)

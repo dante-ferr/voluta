@@ -275,6 +275,8 @@ PanelWindow {
         }
     }
 
+    Glass.FramedEdgeMotion { id: edgeMotion }
+
     Glass.MenuGlass {
         id: glass
         anchors.fill: parent
@@ -289,6 +291,10 @@ PanelWindow {
         projectionX: panel.plateX
         projectionY: panel.plateY
         projectionOpacity: 0.30
+        entranceTravel: edgeMotion.entranceTravel
+        entranceFade: edgeMotion.entranceFade
+        exitTravel: edgeMotion.exitTravel
+        exitFade: edgeMotion.exitFade
         openState: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/voluta-session.open"
         itemAxis: "x"
         itemEnterFrom: -(panel.plateWidth + panel.gridLeft)
