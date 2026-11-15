@@ -57,11 +57,11 @@ headerbar:not(.chromium) label.subtitle {
     color: @voluta_muted;
 }
 
-headerbar button,
-headerbar menubutton,
-headerbar button.flat,
-headerbar button.image-button,
-button.flat {
+headerbar:not(.chromium) button,
+headerbar:not(.chromium) menubutton,
+headerbar:not(.chromium) button.flat,
+headerbar:not(.chromium) button.image-button,
+button.flat:not(.chromium) {
     background-color: transparent;
     background-image: none;
     color: @voluta_fg;
@@ -69,10 +69,10 @@ button.flat {
     box-shadow: none;
 }
 
-headerbar button:hover,
-headerbar menubutton:hover,
-button.flat:hover,
-button:hover,
+headerbar:not(.chromium) button:hover,
+headerbar:not(.chromium) menubutton:hover,
+button.flat:not(.chromium):hover,
+button:not(.chromium):hover,
 row:hover,
 row:selected {
     background-color: @voluta_hover;
@@ -112,17 +112,17 @@ preferencesgroup label.subtitle {
     color: @voluta_muted;
 }
 
-entry,
-textview,
-textview text {
+entry:not(.chromium),
+textview:not(.chromium),
+textview:not(.chromium) text {
     background-color: @voluta_raised;
     background-image: none;
     color: @voluta_fg;
     caret-color: @voluta_accent;
 }
 
-entry:focus,
-entry:focus-within,
+entry:not(.chromium):focus,
+entry:not(.chromium):focus-within,
 row:selected {
     border-color: @voluta_accent;
 }

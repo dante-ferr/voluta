@@ -39,8 +39,13 @@ menubar.chromium:backdrop label.chromium,
 menubar.chromium:backdrop label.title {
     color: @imperium_muted;
 }
+/* Omnibox text is textview.view text / entry. Omnibox icons are
+ * button.flat.scale image and button.image-button. The user sheet must not
+ * set those on .chromium, or a stale copy keeps the previous ink. */
 entry.chromium, textview.view.chromium, textview.view.chromium text.chromium,
-button.chromium, notebook.chromium tab.chromium:checked {
+button.chromium, button.flat.scale.chromium image.chromium,
+button.image-button.chromium, button.image-button.chromium image.chromium,
+notebook.chromium tab.chromium:checked {
     background-image: none;
     background-color: @imperium_surface;
     color: @imperium_fg;

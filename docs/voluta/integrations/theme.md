@@ -151,7 +151,9 @@ global GTK user stylesheet: flat header bars, menus, preferences, and controls
 use the shared background, ink, and accent. GTK loads it for every app on top
 of the active theme. The publisher then stamps the shared UI font. Karere
 reloads the GTK4 path while it is open. Text and controls stay opaque. Brave's
-published Imperium GTK theme stays separate for Chromium chrome.
+published Imperium GTK theme stays separate for Chromium chrome. The user
+sheet skips `.chromium` on header bars, titles, entries, text views, and flat
+buttons, so a theme reload can recolor Brave's tab titles and location bar.
 Brave's **Ultra dark theme / Darker theme** override must be off for the GTK
 background lightness to match; ordinary Dark mode can remain enabled.
 Existing transparency settings remain application-specific, so wallpaper behind

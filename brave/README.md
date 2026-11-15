@@ -33,8 +33,13 @@ Websites and the New Tab wallpaper keep their own appearance.
 The themes import the previous GTK theme and scope color overrides to
 Chromium's `.chromium` widgets. Selected tab titles are sampled from `label`,
 and inactive titles from `headerbar label.title`. The global GTK user sheet
-skips `.chromium` on those nodes so its higher priority cannot keep the
-previous ink. Other GTK applications retain their base theme.
+skips `.chromium` on those nodes, and on `entry`, `textview`, and flat
+buttons, so its higher priority cannot keep the previous ink. The location
+bar reads `entry` and `textview.view text`; its icons read
+`button.flat.scale image`. GTK loads that user sheet once per process, so
+Brave needs one restart after the sheet starts skipping those nodes.
+Later theme publishes recolor the location bar without another restart.
+Other GTK applications retain their base theme.
 A missing base theme falls back to GTK's bundled Adwaita/Default. GTK settings
 are merged, with originals backed up beside `settings.ini` using the suffix
 `.pre-imperium-brave`. Existing xsettingsd configuration is also backed up.
