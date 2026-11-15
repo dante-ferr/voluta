@@ -1,0 +1,39 @@
+/* Walltag loads this file from custom_css and reloads it when Wallust rewrites it. */
+/* Voluta publishes the shared background after Wallust renders this input. */
+@define-color imperium_source_bg {{background}};
+@define-color imperium_bg {{background}};
+@define-color imperium_fg {{foreground | lighten(0.30)}};
+@define-color imperium_accent {{color4 | lighten(0.30)}};
+@define-color imperium_muted mix(@imperium_bg, @imperium_fg, 0.70);
+@define-color imperium_border mix(@imperium_bg, @imperium_fg, 0.25);
+@define-color imperium_card mix(@imperium_bg, @imperium_fg, 0.04);
+@define-color imperium_popover mix(@imperium_bg, @imperium_fg, 0.06);
+
+@define-color window_bg_color @imperium_bg;
+@define-color window_fg_color @imperium_fg;
+@define-color view_bg_color @imperium_bg;
+@define-color view_fg_color @imperium_fg;
+@define-color headerbar_bg_color @imperium_bg;
+@define-color headerbar_fg_color @imperium_fg;
+@define-color headerbar_backdrop_color @imperium_bg;
+@define-color headerbar_shade_color transparent;
+@define-color card_bg_color @imperium_card;
+@define-color card_fg_color @imperium_fg;
+@define-color card_shade_color transparent;
+@define-color dialog_bg_color @imperium_bg;
+@define-color dialog_fg_color @imperium_fg;
+@define-color popover_bg_color @imperium_popover;
+@define-color popover_fg_color @imperium_fg;
+@define-color theme_bg_color @imperium_bg;
+@define-color theme_fg_color @imperium_fg;
+@define-color theme_text_color @imperium_fg;
+@define-color accent_color @imperium_accent;
+@define-color accent_bg_color @imperium_accent;
+@define-color accent_fg_color @imperium_bg;
+@define-color destructive_color @imperium_fg;
+@define-color destructive_bg_color mix(@imperium_bg, {{color1 | lighten(0.30)}}, 0.35);
+@define-color borders @imperium_border;
+@define-color outline @imperium_border;
+@define-color sidebar_bg_color @imperium_bg;
+@define-color sidebar_fg_color @imperium_fg;
+@define-color sidebar_backdrop_color @imperium_bg;

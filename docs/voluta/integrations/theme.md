@@ -117,6 +117,7 @@ Design-token consumers rewrite marked blocks or conf keys on publish:
 | Rofi `*.rasi` | `font:` family from mono |
 | GTK 3/4 `gtk.css` | Appended `@@voluta-design` ui font block |
 | Dolphin paint + live hook | QSS, qt6ct fonts, glass alphas from tokens / `theme.json` |
+| Walltag `colors-walltag.css` | Libadwaita tokens; `custom_css` reloads while the app is open |
 
 Limusic is an [external theme-only consumer](../architecture/integration_categories.md).
 Karere’s CSS is always written the same way, but WhatsApp Web injection needs the

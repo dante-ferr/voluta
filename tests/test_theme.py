@@ -75,6 +75,20 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("voluta_glass_chrome_alpha='191'", sh_export)
         self.assertFalse(self.publish(), "repeated publication must not darken twice or rewrite outputs")
 
+    def test_walltag_palette_tracks_shared_background(self):
+        walltag = self.write(
+            "walltag/wallust/colors-walltag.css",
+            "@define-color imperium_source_bg #0A1515;\n@define-color imperium_bg #0A1515;\n",
+        )
+        self.assertTrue(self.publish())
+        self.assertIn("imperium_bg #060e0e;", walltag.read_text())
+
+    def test_walltag_template_maps_libadwaita_tokens(self):
+        text = (ROOT / "wallust/templates/colors-walltag.css").read_text()
+        self.assertIn("@define-color window_bg_color @imperium_bg;", text)
+        self.assertIn("@define-color accent_color @imperium_accent;", text)
+        self.assertIn("@define-color imperium_bg {{background}};", text)
+
     def test_karere_canvas_is_opaque(self):
         text = (ROOT / "wallust/templates/colors-karere.css").read_text()
         self.assertIn("--WDS-systems-chat-background-wallpaper: var(--voluta-canvas) !important;", text)

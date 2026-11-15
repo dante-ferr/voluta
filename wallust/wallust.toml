@@ -82,6 +82,10 @@ karere_gtk.target = '~/.config/gtk-4.0/gtk.css'
 gtk3_user.template = 'colors-karere-gtk.css'
 gtk3_user.target = '~/.config/gtk-3.0/gtk.css'
 
+# Walltag watches this path from custom_css and reloads it on every palette refresh.
+walltag.template = 'colors-walltag.css'
+walltag.target = '~/.config/walltag/wallust/colors-walltag.css'
+
 #macchina.template = 'colors-macchina.toml'
 #macchina.target = '~/.config/macchina/themes/wallust.toml'
 

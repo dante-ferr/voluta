@@ -616,6 +616,9 @@ def _install(directory, host, skip_deps=False, dry_run=False):
         data['wallpaper_root'] = settings['paths']['wallpapers']
     if 'backend' not in data:
         data['backend'] = 'awww'
+    walltag_css = config / 'walltag/wallust/colors-walltag.css'
+    if not data.get('custom_css'):
+        data['custom_css'] = str(walltag_css)
     write_managed(path, (json.dumps(data, indent=2) + '\n').encode(), manifest, state)
     for name in ('zshrc', 'zprofile'):
         link(Path.home() / ('.' + name), current / name, manifest, state)

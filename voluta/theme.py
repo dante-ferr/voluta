@@ -135,7 +135,13 @@ def publish(config=None, cache=None, directory=None, host=None):
         return re.sub(r"^wc_bg='[0-9a-fA-F]{6}'", f"wc_bg='{color[1:]}'", text, flags=re.M)
 
     edit("hypr/wallust/colors-shell.sh", shell_colors)
-    for relative in ("waybar/wallust/colors-waybar.css", "swaync/wallust/colors-swaync.css", "wlogout/wallust/colors-wlogout.css", "hypr/wallust/colors-gtk.css"):
+    for relative in (
+        "waybar/wallust/colors-waybar.css",
+        "swaync/wallust/colors-swaync.css",
+        "wlogout/wallust/colors-wlogout.css",
+        "hypr/wallust/colors-gtk.css",
+        "walltag/wallust/colors-walltag.css",
+    ):
         def css(text):
             text = re.sub(r"(@define-color\s+(?:background|imperium_bg)\s+)#[0-9a-fA-F]{6}(\s*;)", lambda m: m[1] + color + m[2], text)
             return re.sub(r"(@define-color\s+(?:background-alt|veil)\s+rgba\()[^,]+,[^,]+,[^,]+,", lambda m: m[1] + rgb + ",", text)

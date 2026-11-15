@@ -8,7 +8,7 @@
     "fps": 30,
     "angle": 45
   },
-  "custom_css": null,
+  "custom_css": "~/.config/walltag/wallust/colors-walltag.css",
   "post_command": "bash ~/.config/hypr/UserScripts/combined_wallust.sh \"$wallpaper\"",
   "sidebar_width": 300,
   "show_filenames": false,
