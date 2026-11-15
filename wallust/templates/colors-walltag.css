@@ -1,5 +1,8 @@
 /* Walltag loads this file from custom_css and reloads it when Wallust rewrites it. */
 /* Voluta publishes the shared background after Wallust renders this input. */
+/* Adwaita paints from CSS variables. Assign them on every node, and also set
+ * plain background-color on Walltag chrome, so a USER-priority reload restyles
+ * without restarting the app. */
 @define-color imperium_source_bg {{background}};
 @define-color imperium_bg {{background}};
 @define-color imperium_fg {{foreground | lighten(0.30)}};
@@ -16,6 +19,7 @@
 @define-color headerbar_bg_color @imperium_bg;
 @define-color headerbar_fg_color @imperium_fg;
 @define-color headerbar_backdrop_color @imperium_bg;
+@define-color headerbar_border_color @imperium_border;
 @define-color headerbar_shade_color transparent;
 @define-color card_bg_color @imperium_card;
 @define-color card_fg_color @imperium_fg;
@@ -24,16 +28,74 @@
 @define-color dialog_fg_color @imperium_fg;
 @define-color popover_bg_color @imperium_popover;
 @define-color popover_fg_color @imperium_fg;
-@define-color theme_bg_color @imperium_bg;
-@define-color theme_fg_color @imperium_fg;
-@define-color theme_text_color @imperium_fg;
+@define-color shade_color transparent;
+@define-color scrollbar_outline_color @imperium_border;
 @define-color accent_color @imperium_accent;
 @define-color accent_bg_color @imperium_accent;
 @define-color accent_fg_color @imperium_bg;
-@define-color destructive_color @imperium_fg;
-@define-color destructive_bg_color mix(@imperium_bg, {{color1 | lighten(0.30)}}, 0.35);
 @define-color borders @imperium_border;
 @define-color outline @imperium_border;
 @define-color sidebar_bg_color @imperium_bg;
 @define-color sidebar_fg_color @imperium_fg;
 @define-color sidebar_backdrop_color @imperium_bg;
+@define-color sidebar_border_color @imperium_border;
+@define-color sidebar_shade_color transparent;
+@define-color secondary_sidebar_bg_color @imperium_bg;
+@define-color secondary_sidebar_fg_color @imperium_fg;
+@define-color secondary_sidebar_backdrop_color @imperium_bg;
+@define-color secondary_sidebar_border_color @imperium_border;
+@define-color secondary_sidebar_shade_color transparent;
+
+* {
+  --window-bg-color: @imperium_bg;
+  --window-fg-color: @imperium_fg;
+  --view-bg-color: @imperium_bg;
+  --view-fg-color: @imperium_fg;
+  --headerbar-bg-color: @imperium_bg;
+  --headerbar-fg-color: @imperium_fg;
+  --headerbar-backdrop-color: @imperium_bg;
+  --headerbar-border-color: @imperium_border;
+  --headerbar-shade-color: transparent;
+  --sidebar-bg-color: @imperium_bg;
+  --sidebar-fg-color: @imperium_fg;
+  --sidebar-backdrop-color: @imperium_bg;
+  --sidebar-border-color: @imperium_border;
+  --sidebar-shade-color: transparent;
+  --secondary-sidebar-bg-color: @imperium_bg;
+  --secondary-sidebar-fg-color: @imperium_fg;
+  --secondary-sidebar-backdrop-color: @imperium_bg;
+  --secondary-sidebar-border-color: @imperium_border;
+  --secondary-sidebar-shade-color: transparent;
+  --card-bg-color: @imperium_card;
+  --card-fg-color: @imperium_fg;
+  --card-shade-color: transparent;
+  --dialog-bg-color: @imperium_bg;
+  --dialog-fg-color: @imperium_fg;
+  --popover-bg-color: @imperium_popover;
+  --popover-fg-color: @imperium_fg;
+  --shade-color: transparent;
+  --scrollbar-outline-color: @imperium_border;
+  --accent-bg-color: @imperium_accent;
+  --accent-fg-color: @imperium_bg;
+  --accent-color: @imperium_accent;
+  --border-color: @imperium_border;
+}
+
+window,
+window.background,
+.background,
+.walltag-main-shell,
+.walltag-sidebar-shell,
+.walltag-gallery-root,
+toolbarview,
+headerbar,
+.walltag-topbar {
+  background-color: @imperium_bg;
+  color: @imperium_fg;
+}
+
+.walltag-sidebar preferencesgroup > box > list,
+.walltag-sidebar preferencesgroup list.boxed-list {
+  background-color: @imperium_card;
+  border-color: mix(@imperium_bg, @imperium_fg, 0.06);
+}

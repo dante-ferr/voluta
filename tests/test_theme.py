@@ -88,6 +88,9 @@ class ThemeTests(unittest.TestCase):
         self.assertIn("@define-color window_bg_color @imperium_bg;", text)
         self.assertIn("@define-color accent_color @imperium_accent;", text)
         self.assertIn("@define-color imperium_bg {{background}};", text)
+        self.assertIn("--window-bg-color: @imperium_bg;", text)
+        self.assertIn("--accent-bg-color: @imperium_accent;", text)
+        self.assertIn("background-color: @imperium_bg;", text)
 
     def test_karere_canvas_is_opaque(self):
         text = (ROOT / "wallust/templates/colors-karere.css").read_text()
