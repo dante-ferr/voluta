@@ -7,13 +7,13 @@
  */
 
 {% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
-{% set ink = foreground | lighten(0.30) %}
+{% set ink = foreground | lighten(0.42) %}
 
 @define-color voluta_bg {{background}};
 @define-color voluta_fg {{ink}};
 @define-color voluta_accent {{accent}};
 @define-color voluta_raised mix(@voluta_bg, @voluta_fg, 0.08);
-@define-color voluta_muted mix(@voluta_bg, @voluta_fg, 0.62);
+@define-color voluta_muted mix(@voluta_bg, @voluta_fg, 0.74);
 @define-color voluta_line mix(@voluta_bg, @voluta_fg, 0.16);
 @define-color voluta_hover mix(@voluta_bg, @voluta_accent, 0.22);
 

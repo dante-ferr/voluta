@@ -11,7 +11,7 @@
  */
 
 {% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
-{% set ink = foreground | lighten(0.30) %}
+{% set ink = foreground | lighten(0.42) %}
 
 :root,
 :root .color-refresh,
@@ -23,7 +23,7 @@
 
     --voluta-canvas: {{background}};
     --voluta-ink: {{ink}};
-    --voluta-muted: color-mix(in oklab, {{ink}} 70%, {{background}});
+    --voluta-muted: color-mix(in oklab, {{ink}} 82%, {{background}});
     --voluta-accent: {{accent}};
     --voluta-raised: color-mix(in oklab, {{ink}} 8%, {{background}});
     --voluta-line: color-mix(in oklab, {{ink}} 14%, {{background}});
