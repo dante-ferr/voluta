@@ -36,6 +36,37 @@ def command(*args):
     return result.stdout.strip()
 
 
+def previous_theme(target):
+    root = DATA / "themes"
+    if not root.is_dir():
+        return None
+    candidates = []
+    for path in root.iterdir():
+        if not path.is_dir() or path.name == target or not managed_theme(path.name):
+            continue
+        try:
+            candidates.append((path.stat().st_mtime, path.name))
+        except OSError:
+            continue
+    candidates.sort(reverse=True)
+    return candidates[0][1] if candidates else None
+
+
+def publish_theme_name(gsettings, target, renotify):
+    """Tell running GTK clients the theme name changed.
+
+    A second write of the same name does not emit SettingChanged. Chromium
+    then keeps the palette it sampled at the previous signal, which is what
+    happens when a wallpaper refresh publishes the name and Hyprland reload
+    drops that signal. Step through the previous palette, then return.
+    """
+    current = command(gsettings, "get", "org.gnome.desktop.interface", "gtk-theme").strip("'")
+    if renotify and current == target:
+        step = previous_theme(target) or "Adwaita"
+        command(gsettings, "set", "org.gnome.desktop.interface", "gtk-theme", step)
+    command(gsettings, "set", "org.gnome.desktop.interface", "gtk-theme", target)
+
+
 def settings(version):
     path = CONFIG / f"gtk-{version}.0/settings.ini"
     parser = configparser.ConfigParser(interpolation=None, strict=False)
@@ -103,6 +134,7 @@ def warn_darker_mode():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render-only", action="store_true", help="write themes without changing settings or contacting the session")
+    parser.add_argument("--renotify", action="store_true", help="emit a fresh theme-name signal when the session already has this palette")
     args = parser.parse_args()
     palette = CONFIG / "hypr/wallust/colors-gtk.css"
     if not palette.is_file():
@@ -169,7 +201,7 @@ def main():
                 config.write(handle)
 
     if not args.render_only:
-        command(gsettings, "set", "org.gnome.desktop.interface", "gtk-theme", target)
+        publish_theme_name(gsettings, target, args.renotify)
         # GTK on XWayland consumes XSettings; native Wayland consumes the portal.
         if os.environ.get("DISPLAY") and shutil.which("xsettingsd"):
             path = CONFIG / "xsettingsd/xsettingsd.conf"

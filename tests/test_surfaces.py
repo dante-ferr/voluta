@@ -41,6 +41,23 @@ class SurfaceTests(unittest.TestCase):
         self.assertEqual(before, self.settings.read_bytes())
         return lookup
 
+    def test_wallpaper_query_prefers_awww_over_swww(self):
+        image = self.root / 'awww.png'
+        image.write_bytes(b'awww')
+        calls = []
+
+        def fake_run(args, **kwargs):
+            calls.append(args[0])
+            class Result:
+                returncode = 0
+                stdout = f'image: {image}\n' if args[0] == 'awww' else 'image: /missing/swww.png\n'
+            return Result()
+
+        with patch.object(surfaces.subprocess, 'run', fake_run):
+            found = surfaces.current_wallpaper(self.config)
+        self.assertEqual(calls, ['awww'])
+        self.assertEqual(found, image)
+
     def test_core_frames_without_browser_activation(self):
         lookup = self.publish(False)
         lookup.assert_not_called()

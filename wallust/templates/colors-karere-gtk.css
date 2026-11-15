@@ -17,16 +17,19 @@
 @define-color voluta_line mix(@voluta_bg, @voluta_fg, 0.16);
 @define-color voluta_hover mix(@voluta_bg, @voluta_accent, 0.22);
 
-window,
-window.background,
-.background {
+/* Chromium adds .chromium to every widget it samples. Leave those colors to
+ * the Imperium theme, which is republished when the palette changes. This
+ * sheet is a higher priority and would otherwise freeze tab titles. */
+window:not(.chromium),
+window.background:not(.chromium),
+.background:not(.chromium) {
     background-color: @voluta_bg;
     color: @voluta_fg;
 }
 
-headerbar,
-.titlebar,
-headerbar.default-decoration {
+headerbar:not(.chromium),
+.titlebar:not(.chromium),
+headerbar.default-decoration:not(.chromium) {
     background-color: @voluta_bg;
     background-image: none;
     color: @voluta_fg;
@@ -37,20 +40,20 @@ headerbar.default-decoration {
     padding: 2px 8px;
 }
 
-headerbar:backdrop,
-.titlebar:backdrop {
+headerbar:not(.chromium):backdrop,
+.titlebar:not(.chromium):backdrop {
     background-color: @voluta_bg;
     color: @voluta_muted;
 }
 
-headerbar .title,
-headerbar label.title {
+headerbar:not(.chromium) .title,
+headerbar:not(.chromium) label.title {
     color: @voluta_fg;
     font-weight: 600;
 }
 
-headerbar .subtitle,
-headerbar label.subtitle {
+headerbar:not(.chromium) .subtitle,
+headerbar:not(.chromium) label.subtitle {
     color: @voluta_muted;
 }
 

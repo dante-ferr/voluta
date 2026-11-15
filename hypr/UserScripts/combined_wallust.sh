@@ -292,21 +292,24 @@ do_refresh() {
         }
     fi
 
-    local brave_paint
-    brave_paint="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/UserScripts/paint_brave_theme.py"
-    [[ -r $brave_paint ]] || brave_paint="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/paint_brave_theme.py"
-    if [[ -r $brave_paint ]]; then
-        /usr/bin/python3 "$brave_paint" || echo "combined_wallust: Brave GTK refresh failed" >&2
-    fi
-
     write_waybar_angel_css
     launch_waybar
-    # Close fd 9 in the child so hyprctl/swaync cannot inherit the flock.
+    # Keep this process's copy of the lock until Brave is notified. Hyprland
+    # reload drops an in-flight settings-portal signal, so the theme name has
+    # to be published after reload. hyprctl must not inherit the lock fd.
     (
-        exec 9>&-
-        # Let the wallpaper fade start so reload is not fighting the compositor.
         sleep 0.5
-        reload_hyprland
+        (
+            exec 9>&-
+            reload_hyprland
+        )
+        local brave_paint
+        brave_paint="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/UserScripts/paint_brave_theme.py"
+        [[ -r $brave_paint ]] || brave_paint="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/paint_brave_theme.py"
+        if [[ -r $brave_paint ]]; then
+            /usr/bin/python3 "$brave_paint" --renotify || echo "combined_wallust: Brave GTK refresh failed" >&2
+        fi
+        exec 9>&-
         finish_refresh
     ) &
     disown $! 2>/dev/null || true

@@ -344,16 +344,28 @@ def refresh_frames():
             atomic_write(state / 'install.json', manifest)
 
 
+def wallpaper_from_query(stdout):
+    for line in stdout.splitlines():
+        if 'image: ' not in line:
+            continue
+        path = Path(line.split('image: ', 1)[1].strip()).expanduser()
+        if path.is_file():
+            return path
+    return None
+
+
 def current_wallpaper(config):
-    try:
-        result = subprocess.run(['swww', 'query'], capture_output=True, text=True, timeout=3)
-        for line in result.stdout.splitlines():
-            if 'image: ' in line:
-                path = Path(line.split('image: ', 1)[1].strip()).expanduser()
-                if path.is_file():
-                    return path
-    except (OSError, subprocess.SubprocessError):
-        pass
+    # Walltag's default backend is awww. A stale swww daemon must not win.
+    for daemon in ('awww', 'swww'):
+        try:
+            result = subprocess.run([daemon, 'query'], capture_output=True, text=True, timeout=3)
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if result.returncode != 0 and not result.stdout:
+            continue
+        found = wallpaper_from_query(result.stdout)
+        if found:
+            return found
     # walltag stores the last pick under the wallpaper root; config may use ~.
     try:
         walltag_cfg = json.loads((config / 'walltag/config.json').read_text())

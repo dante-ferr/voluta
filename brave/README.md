@@ -13,8 +13,11 @@ custom background brighter. Keep the normal Dark or Device scheme and GTK.
 
 Walltag calls `combined_wallust.sh`. Wallust renders `colors-gtk.css`, then
 `paint_brave_theme.py` publishes a GTK theme and changes the theme name to
-notify running browsers. Each stylesheet gets a content-derived theme name so
-GTK cannot reuse an older named CSS provider when a palette changes.
+notify running browsers. Hyprland is reloaded before that notification.
+A theme-name signal sent earlier is dropped, and Brave keeps the previous
+palette until the next real name change. Each stylesheet gets a
+content-derived theme name so GTK cannot reuse an older named CSS provider
+when a palette changes.
 GTK 3 and GTK 4, including dark variants, are generated. Native Wayland uses
 GSettings/the settings portal; XWayland uses xsettingsd.
 
@@ -28,7 +31,10 @@ retains some styling for active vertical tabs and its native group accents.
 Websites and the New Tab wallpaper keep their own appearance.
 
 The themes import the previous GTK theme and scope color overrides to
-Chromium's `.chromium` widgets. Other GTK applications retain their base theme.
+Chromium's `.chromium` widgets. Selected tab titles are sampled from `label`,
+and inactive titles from `headerbar label.title`. The global GTK user sheet
+skips `.chromium` on those nodes so its higher priority cannot keep the
+previous ink. Other GTK applications retain their base theme.
 A missing base theme falls back to GTK's bundled Adwaita/Default. GTK settings
 are merged, with originals backed up beside `settings.ini` using the suffix
 `.pre-imperium-brave`. Existing xsettingsd configuration is also backed up.

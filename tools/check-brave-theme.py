@@ -75,6 +75,10 @@ with tempfile.TemporaryDirectory(prefix="check-brave-theme-") as temporary:
     assert json.loads(theme.STATE.read_text())["original"]["3"] == "Existing"
     theme.main()
     assert changes == [first, second, second], "unchanged content must keep its immutable theme name"
+    (theme.DATA / "themes" / first).touch()
+    sys.argv = [str(spec.origin), "--renotify"]
+    theme.main()
+    assert changes[-2:] == [first, second], "renotify must leave the current palette and emit a new name"
 
     palette.write_text("{{background}}")
     try:
@@ -82,7 +86,7 @@ with tempfile.TemporaryDirectory(prefix="check-brave-theme-") as temporary:
         raise AssertionError("unrendered palette was accepted")
     except SystemExit:
         pass
-    assert len(changes) == 3, "bad palette changed the session theme"
+    assert len(changes) == 5, "bad palette changed the session theme"
 
     # Parse the actual generated CSS with both installed GTK versions. No GUI
     # connection is needed to validate the scoped overrides.

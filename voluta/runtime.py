@@ -28,6 +28,21 @@ def publish_sddm(config):
     os.replace(name, target)
 
 
+def wallpaper_refresh_busy():
+    """True while combined_wallust still owns the palette refresh lock."""
+    runtime = os.environ.get('XDG_RUNTIME_DIR') or f'/run/user/{os.getuid()}'
+    path = Path(runtime) / 'imperium-combined-wallust.lock'
+    if not path.exists():
+        return False
+    try:
+        with path.open('a+') as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(handle, fcntl.LOCK_UN)
+    except BlockingIOError:
+        return True
+    return False
+
+
 def watch():
     runtime = os.environ.get('XDG_RUNTIME_DIR')
     instance = os.environ.get('HYPRLAND_INSTANCE_SIGNATURE', '')
@@ -47,7 +62,11 @@ def watch():
                 config = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
                 palette = config / 'hypr/wallust/colors-shell.sh'
                 signature = (palette.stat().st_mtime_ns, json.dumps(settings, sort_keys=True))
-                if signature != previous or time.monotonic() - last_try > 30:
+                # The wallpaper hook publishes the browser theme after Hyprland
+                # reloads. Painting while it holds the lock emits the theme name
+                # early, and that signal is dropped.
+                defer = signature != previous and settings['features']['browser'] and wallpaper_refresh_busy()
+                if not defer and (signature != previous or time.monotonic() - last_try > 30):
                     if signature != previous and settings['features']['sddm']:
                         publish_sddm(config)
                     from rgb import apply
@@ -55,7 +74,7 @@ def watch():
                     if signature != previous and settings['features']['browser']:
                         script = ROOT / 'hypr/UserScripts/paint_brave_theme.py'
                         if script.exists():
-                            subprocess.run([sys.executable, str(script)], timeout=30, check=False)
+                            subprocess.run(['/usr/bin/python3', str(script)], timeout=30, check=False)
                     previous, last_try = signature, time.monotonic()
                 if time.monotonic() - last_keepalive >= 1.6:
                     last_keepalive = time.monotonic()
