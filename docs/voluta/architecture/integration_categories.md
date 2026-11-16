@@ -31,6 +31,12 @@ tools, fonts, and a default terminal plus file-manager experience.
 These are not toggled with `voluta feature`. Disabling them is outside the
 optional-module contract.
 
+Walltag comes from the self-hosted pacman repository at
+https://dante-ferr.github.io/walltag/. `voluta deps` / `voluta install` registers
+that repo from `deps/walltag.conf` and installs `walltag` so later updates
+arrive with `pacman -Syu`. Set `VOLUTA_WALLTAG_FROM=src` (and optionally
+`VOLUTA_WALLTAG_SRC`) for a local `cargo install` instead.
+
 ## Core palette consumers
 
 Wallust templates that feed Voluta-owned UI. Targets sit under the deployed

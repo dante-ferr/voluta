@@ -63,6 +63,7 @@ class DoctorTests(unittest.TestCase):
         with patch.object(deploy, 'missing_packages', return_value=[]), \
              patch.object(deploy, 'quickshell_works', return_value=True), \
              patch.object(deploy, 'wallust_binary', return_value='/usr/bin/wallust'), \
+             patch.object(deploy, 'walltag_binary', return_value='/usr/bin/walltag'), \
              patch.object(deploy.shutil, 'which', return_value='/usr/bin/pacman'), \
              patch.object(deploy, 'THEME_ONLY_CONSUMERS', (
                  {
@@ -75,7 +76,7 @@ class DoctorTests(unittest.TestCase):
                      'ready_note': 'ready',
                  },
              )), \
-             patch.object(deploy, 'package_installed', return_value=False), \
+             patch.object(deploy, 'package_installed', side_effect=lambda name: name == 'walltag'), \
              patch.object(deploy, 'any_binary_present', return_value=False):
             (self.config / 'limusic').mkdir()
             (self.config / 'limusic/matugen.css').write_text('x\n')
@@ -85,11 +86,14 @@ class DoctorTests(unittest.TestCase):
         self.assertIn('install Limusic yourself', report['notes'])
         self.assertTrue(report['quickshell_ok'])
         self.assertTrue(report['wallust_v4'])
+        self.assertTrue(report['walltag'])
 
     def test_doctor_reports_missing_selected_packages(self):
         with patch.object(deploy, 'missing_packages', return_value=['waybar']), \
              patch.object(deploy, 'quickshell_works', return_value=True), \
              patch.object(deploy, 'wallust_binary', return_value='/usr/bin/wallust'), \
+             patch.object(deploy, 'walltag_binary', return_value='/usr/bin/walltag'), \
+             patch.object(deploy, 'package_installed', return_value=True), \
              patch.object(deploy.shutil, 'which', return_value='/usr/bin/pacman'), \
              patch.object(deploy, 'THEME_ONLY_CONSUMERS', ()):
             report = deploy.doctor_report({'features': {}}, 'frank', config=self.config)
