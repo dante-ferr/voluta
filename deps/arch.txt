@@ -23,7 +23,7 @@ zsh-autosuggestions
 
 # Wallpaper & theming
 capitaine-cursors
-# walltag: Cargo binary (cargo install --path … or VOLUTA_WALLTAG_SRC); not in pacman
+# walltag: pacman repo (make deps); dev override: VOLUTA_WALLTAG_FROM=src
 gtk4
 libadwaita
 wallust-git|wallust

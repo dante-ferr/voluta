@@ -14,7 +14,7 @@ from cli import ROOT, atomic_write, host_layer_path, layer_path, migrate_directo
 CONFIGS = ('hypr', 'waybar', 'kitty', 'rofi', 'wallust', 'fastfetch', 'swaync', 'music', 'session-menu', 'walltag', 'wlogout', 'xdg-desktop-portal', 'gsimplecal')
 # Theme sources and runtime support must remain siblings in the installed tree.
 SOURCES = (*CONFIGS, 'voluta', 'bin', 'dolphin', 'kvantum', 'deps', 'sddm', 'integrations', 'brave', 'packaging')
-# walltag is a Cargo binary (not pacman); doctor and ensure_walltag install it from source.
+# walltag: default install from the Walltag pacman repo (deps/walltag.conf); VOLUTA_WALLTAG_FROM=src for cargo.
 BASE_PACKAGES = ['hyprland', 'uwsm', 'hypridle', 'hyprlock', 'hyprsunset', 'waybar', 'gsimplecal', 'python', 'python-pillow', 'librsvg', 'json-glib', 'swaync', 'wlogout', 'kitty', 'rofi', 'quickshell', 'zsh', 'starship', 'wallust-git', 'swww', 'imagemagick', 'fastfetch', 'chafa', 'cliphist', 'wl-clipboard', 'wtype', 'grim', 'slurp', 'tesseract', 'tesseract-data-eng', 'playerctl', 'brightnessctl', 'btop', 'rofimoji', 'nwg-displays', 'jq', 'pipewire', 'wireplumber', 'ttf-jetbrains-mono', 'ttf-jetbrains-mono-nerd', 'ttf-firacode-nerd', 'make', 'gcc', 'pkgconf', 'gtk3', 'gtk4', 'libadwaita', 'xdg-utils', 'qt6ct', 'kvantum', 'breeze-icons', 'capitaine-cursors', 'dolphin', 'xdg-desktop-portal-hyprland', 'xdg-desktop-portal-gtk']
 MODULE_PACKAGES = {'dolphin': 'deps/dolphin.txt', 'rgb': ['openrgb', 'python-hidapi'], 'browser': ['gsettings-desktop-schemas', 'xsettingsd'], 'karere': ['karere-custom-css'], 'obs': ['obs-cmd'], 'developer_shell': ['fzf', 'zsh-autosuggestions'], 'sddm': ['sddm'], 'session_restore': ['dbus'], 'rice_switch': []}
 # External theme consumers: Wallust always writes files. Limusic stays user-installed;
@@ -81,7 +81,18 @@ def wallust_binary():
     return None
 
 
+WALLTAG_PACMAN_INCLUDE = 'Include = /etc/pacman.d/walltag'
+
+
+def walltag_install_mode():
+    return os.environ.get('VOLUTA_WALLTAG_FROM', 'pacman').strip().lower()
+
+
 def walltag_binary():
+    if package_installed('walltag'):
+        usr = Path('/usr/bin/walltag')
+        if usr.is_file() and os.access(usr, os.X_OK):
+            return str(usr)
     candidates = [
         Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo')) / 'bin/walltag',
         shutil.which('walltag'),
@@ -110,21 +121,84 @@ def walltag_source():
     return None
 
 
-def ensure_walltag():
-    if walltag_binary():
+def walltag_pacman_repo_ready():
+    repo_file = Path('/etc/pacman.d/walltag')
+    pacman_conf = Path('/etc/pacman.conf')
+    if not repo_file.is_file() or not pacman_conf.is_file():
+        return False
+    return WALLTAG_PACMAN_INCLUDE in pacman_conf.read_text()
+
+
+def ensure_walltag_pacman_repo():
+    src = ROOT / 'deps/walltag.conf'
+    if not src.is_file():
+        raise ValueError('missing Walltag pacman repo file: ' + str(src))
+    sudo = [] if os.geteuid() == 0 else ['sudo']
+    _run_visible([*sudo, 'install', '-Dm644', str(src), '/etc/pacman.d/walltag'])
+    if walltag_pacman_repo_ready():
+        return
+    append = f'grep -qF {json.dumps(WALLTAG_PACMAN_INCLUDE)} /etc/pacman.conf || printf "%s\\n" {json.dumps(WALLTAG_PACMAN_INCLUDE)} >> /etc/pacman.conf'
+    _run_visible([*sudo, 'sh', '-c', append])
+
+
+def _remove_cargo_walltag():
+    cargo_home = Path(os.environ.get('CARGO_HOME', Path.home() / '.cargo'))
+    cargo_bin = cargo_home / 'bin/walltag'
+    if not cargo_bin.exists():
+        return
+    cargo = shutil.which('cargo')
+    if cargo:
+        subprocess.run([cargo, 'uninstall', 'walltag'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if cargo_bin.is_symlink() or cargo_bin.exists():
+        cargo_bin.unlink(missing_ok=True)
+    local_link = Path.home() / '.local/bin/walltag'
+    if local_link.is_symlink() and local_link.resolve() == cargo_bin.resolve():
+        local_link.unlink(missing_ok=True)
+
+
+def _ensure_walltag_cargo(*, force=False):
+    if not force and walltag_binary():
         return walltag_binary()
     source = walltag_source()
     cargo = shutil.which('cargo')
     if source is None or cargo is None:
         raise ValueError(
-            'walltag is missing from PATH. Install it with '
-            '`cargo install --path /path/to/walltag`, or set VOLUTA_WALLTAG_SRC.'
+            'walltag is missing from PATH. Set VOLUTA_WALLTAG_SRC to a checkout, '
+            'or use the default pacman repo (make deps).'
         )
-    _run_visible([cargo, 'install', '--path', str(source), '--locked'])
+    command = [cargo, 'install', '--path', str(source), '--locked']
+    if force:
+        command.append('--force')
+    _run_visible(command)
     binary = walltag_binary()
     if not binary:
         raise ValueError('cargo install walltag finished but walltag is still missing from PATH')
     return binary
+
+
+def _install_walltag_package():
+    ensure_walltag_pacman_repo()
+    sudo = [] if os.geteuid() == 0 else ['sudo']
+    # Refresh the Walltag database after first repo setup.
+    _run_visible([*sudo, 'pacman', '-Sy', '--noconfirm'])
+    # Omit --needed so deps/update can pick up new releases from the Walltag repo.
+    result = _run_visible([*sudo, 'pacman', '-S', '--noconfirm', 'walltag'])
+    if result.returncode != 0:
+        raise ValueError('pacman could not install walltag from the Walltag repo')
+    _remove_cargo_walltag()
+    binary = walltag_binary()
+    if not binary:
+        raise ValueError('walltag package installed but the binary is still missing from PATH')
+    return binary
+
+
+def ensure_walltag():
+    mode = walltag_install_mode()
+    if mode == 'src':
+        return _ensure_walltag_cargo(force=not walltag_binary())
+    if not shutil.which('pacman'):
+        return _ensure_walltag_cargo()
+    return _install_walltag_package()
 
 
 def quickshell_works():
@@ -218,11 +292,14 @@ def doctor_report(settings, host, config=None):
     if wallust is None and 'wallust-git' not in missing:
         notes.insert(0, 'Wallust v4 is missing; install wallust-git or put a v4 wallust on PATH.')
     if walltag is None:
-        source = walltag_source()
-        if source is None:
-            notes.insert(0, 'walltag is missing; install with cargo install --path /path/to/walltag or set VOLUTA_WALLTAG_SRC.')
+        if walltag_install_mode() == 'src':
+            source = walltag_source()
+            if source is None:
+                notes.insert(0, 'walltag is missing; set VOLUTA_WALLTAG_SRC or install from ~/Code/projects/walltag.')
+            else:
+                notes.insert(0, f'walltag is missing; run make deps (cargo install --path {source}).')
         else:
-            notes.insert(0, f'walltag is missing; run make update (or cargo install --path {source}).')
+            notes.insert(0, 'walltag is missing; run make deps (pacman repo from deps/walltag.conf).')
     return {
         'host': host,
         'settings_valid': True,
