@@ -242,6 +242,10 @@ def resolve_command(client):
             return shlex.join(args), home
 
     # 4. Communication & Media
+    if "karere" in cls:
+        # /proc shows /usr/lib/karere/cef/karere after the wrapper execs. Relaunch
+        # via `karere` so GTK_IM_MODULE=gtk-im-context-simple stays set for dead keys.
+        return "karere", home
     if "discord" in cls or "vesktop" in cls or "webcord" in cls:
         return "vesktop" if "vesktop" in cls else "discord", home
     if "spotify" in cls:

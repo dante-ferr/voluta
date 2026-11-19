@@ -13,7 +13,7 @@
 
 pkgname=karere-custom-css
 pkgver=4.3.5
-pkgrel=4
+pkgrel=5
 pkgdesc="Karere with optional custom.css live reload"
 arch=('x86_64')
 url="https://github.com/riccardomarotti/karere"
@@ -182,8 +182,11 @@ package() {
     # because native Karere resolves ./locale.
     install -d "$pkgdir/usr/bin"
 
+    # Dead keys need the built-in simple IM on compositors without an IME.
+    # Session restore also re-execs this wrapper (see hypr session_manager).
     cat > "$pkgdir/usr/bin/karere" <<'EOF'
 #!/bin/sh
+export GTK_IM_MODULE="${GTK_IM_MODULE:-gtk-im-context-simple}"
 cd /usr/share/karere || exit 1
 exec /usr/lib/karere/cef/karere "$@"
 EOF
