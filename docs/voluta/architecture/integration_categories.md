@@ -71,6 +71,7 @@ install the app through `MODULE_PACKAGES`.
 | Consumer | Written path | Who consumes it |
 | --- | --- | --- |
 | Limusic | `~/.config/limusic/matugen.css` | Limusic when its wallpaper-palette / Matugen setting is on |
+| Vesktop | `~/.config/vesktop/themes/voluta.theme.css` | Vencord, which reloads the file live once `make vesktop` enables the theme |
 | Karere CSS | `~/.config/karere/custom.css` | Only `karere-custom-css` injects into WhatsApp Web; stock `karere` ignores the file |
 
 If the app is absent, the files are inert. Limusic stays user-installed.

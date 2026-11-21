@@ -2,6 +2,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
@@ -117,6 +118,22 @@ class ThemeTests(unittest.TestCase):
         self.assertNotIn(".voluta headerbar", gtk)
         self.assertNotIn("window.voluta-canvas", gtk)
         self.assertNotIn("opacity:", gtk)
+
+    def test_vesktop_follows_the_shared_background(self):
+        template = (ROOT / "wallust/templates/colors-vesktop.css").read_text()
+        self.assertIn("--voluta-glass: {{background}}99;", template)
+        self.assertIn("--voluta-canvas: {{background}};", template)
+        self.assertIsNone(re.search(r"#[0-9a-fA-F]{3,8}\b", template), "no fixed colors")
+        self.publish()
+        css = self.write("vesktop/themes/voluta.theme.css", "--voluta-glass: #0A151599;\n--voluta-canvas: #0A1515;\n--voluta-accent: #54222B;\n")
+        self.assertTrue(self.publish())
+        text = css.read_text()
+        self.assertIn("--voluta-glass: #060e0e99;", text)
+        self.assertIn("--voluta-canvas: #060e0e;", text)
+        self.assertIn("--voluta-accent: #54222B;", text)
+        self.assertIn("--font-primary: \"Oxanium\"", text)
+        self.assertIn("/* @@voluta-design:start */", text)
+        self.assertFalse(self.publish())
 
     def test_limusic_song_layer_does_not_show_the_page_under_it(self):
         text = (ROOT / "wallust/templates/colors-limusic.css").read_text()

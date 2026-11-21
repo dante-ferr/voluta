@@ -17,6 +17,7 @@ from design import (
     replace_marked_block,
     resolve_design,
     swaync_tokens_block,
+    vesktop_font_block,
     theme_css,
     theme_sh,
 )
@@ -58,9 +59,9 @@ def write_changed(path, text):
     return True
 
 
-def _ensure_gtk_design_block(text, design):
+def _ensure_gtk_design_block(text, design, body=None):
     start, end = "/* @@voluta-design:start */", "/* @@voluta-design:end */"
-    body = gtk_font_block(design)
+    body = body or gtk_font_block(design)
     if start in text and end in text:
         return replace_marked_block(text, "voluta-design", body)
     return text.rstrip() + f"\n\n{start}\n{body}{end}\n"
@@ -93,6 +94,9 @@ def publish_design(config, cache, design, background=None, background_rgb=None, 
     # Global GTK user stylesheets (Wallust output + design markers).
     for relative in ("gtk-4.0/gtk.css", "gtk-3.0/gtk.css"):
         edit(relative, lambda text: _ensure_gtk_design_block(text, design))
+
+    # Vesktop theme: Wallust rewrites the file, so re-append the shared font block.
+    edit("vesktop/themes/voluta.theme.css", lambda text: _ensure_gtk_design_block(text, design, vesktop_font_block(design)))
 
     # Disposable per-app copies of the CSS variables sheet.
     for relative in (
@@ -167,6 +171,7 @@ def publish(config=None, cache=None, directory=None, host=None):
         text = re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE)
         return text.replace(source_rgb, rgb)
     edit("limusic/matugen.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
+    edit("vesktop/themes/voluta.theme.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("karere/custom.css", replace_background)
     edit("gtk-4.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))
     edit("gtk-3.0/gtk.css", lambda text: re.sub(re.escape(source_color), color, text, flags=re.IGNORECASE))

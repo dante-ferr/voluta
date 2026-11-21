@@ -333,6 +333,23 @@ def gtk_font_block(design):
     )
 
 
+def vesktop_font_block(design):
+    ui = design["typography"]["ui"]
+    stack = css_font_stack(ui)
+    return (
+        "/* Shared UI font from appearance.typography.ui */\n"
+        ":root, .visual-refresh, body {\n"
+        f"    --font-primary: {stack};\n"
+        f"    --font-display: {stack};\n"
+        f"    --font-headline: {stack};\n"
+        f"    --font-code: {css_font_stack(design['typography']['mono'])};\n"
+        "}\n\n"
+        "body, input, textarea, button, select {\n"
+        f"    font-family: {stack};\n"
+        "}\n"
+    )
+
+
 def apply_kitty_fonts(text, design):
     mono = design["typography"]["mono"]
     family = mono["family"]

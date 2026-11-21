@@ -1,7 +1,7 @@
 ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 VOLUTA := $(ROOT)/bin/voluta
 
-.PHONY: help init dry-run install update deps doctor apply browser karere theme docs-serve
+.PHONY: help init dry-run install update deps doctor apply browser karere vesktop theme docs-serve
 
 help:
 	@printf '%s\n' \
@@ -14,6 +14,7 @@ help:
 		'make apply       Activate enabled integrations' \
 		'make browser     Enable Brave/Prismwing/Gallery publishing' \
 		'make karere      Install karere-custom-css for WhatsApp Web palette injection' \
+		'make vesktop     Deploy, theme, and enable Vesktop transparency' \
 		'make theme       Refresh Wallust consumers' \
 		'make docs-serve  Preview docs at http://localhost:3000'
 
@@ -54,6 +55,14 @@ karere:
 	@printf '%s\n' \
 		'karere-custom-css replaces stock karere and loads ~/.config/karere/custom.css.' \
 		'Reopen Karere if it was already running.'
+
+vesktop:
+	$(VOLUTA) update
+	@$(MAKE) --no-print-directory theme
+	@python3 $(ROOT)/tools/setup-vesktop.py
+	@printf '%s\n' \
+		'Vesktop reloads ~/.config/vesktop/themes/voluta.theme.css on every wallpaper change.' \
+		'Rerun this target after closing Vesktop if it was open.'
 
 theme:
 	@$(ROOT)/tools/refresh-theme.sh

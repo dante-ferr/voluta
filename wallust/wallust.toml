@@ -70,6 +70,10 @@ wlogout.target = '~/.config/wlogout/wallust/colors-wlogout.css'
 limusic.template = 'colors-limusic.css'
 limusic.target = '~/.config/limusic/matugen.css'
 
+# Vencord watches the Vesktop themes directory and reloads this file live.
+vesktop.template = 'colors-vesktop.css'
+vesktop.target = '~/.config/vesktop/themes/voluta.theme.css'
+
 # karere-custom-css injects this path into WhatsApp Web and reloads it live.
 karere.template = 'colors-karere.css'
 karere.target = '~/.config/karere/custom.css'

@@ -40,6 +40,15 @@ THEME_ONLY_CONSUMERS = (
         'incomplete_note': 'Stock Karere is installed; it does not load custom.css. Run: voluta feature enable karere (replaces it with karere-custom-css).',
         'ready_note': 'karere-custom-css injects ~/.config/karere/custom.css while Karere is open.',
     },
+    {
+        'name': 'vesktop',
+        'theme': 'vesktop/themes/voluta.theme.css',
+        'packages': ('vesktop', 'vesktop-bin'),
+        'binaries': ('vesktop',),
+        'inactive_note': 'Theme file present; install Vesktop yourself. Voluta does not install this app.',
+        'theme_missing_note': 'Vesktop is installed but ~/.config/vesktop/themes/voluta.theme.css is missing; close Vesktop and run make vesktop.',
+        'ready_note': 'Vesktop is installed; if colors or transparency are missing, close Vesktop and run make vesktop.',
+    },
 )
 
 

@@ -124,6 +124,20 @@ Karere’s CSS is always written the same way, but WhatsApp Web injection needs 
 optional `karere` feature. `voluta doctor` reports each app relative to its theme
 file.
 
+Vesktop is also an external theme-only consumer. Wallust writes
+`~/.config/vesktop/themes/voluta.theme.css` from `wallust/templates/colors-vesktop.css`,
+and Vencord reloads it on every change. Wallust renders from the deployed tree,
+so a new template needs a deployment first. Close Vesktop, then run
+`make vesktop`. It runs `voluta update`, refreshes the theme, and sets
+`enabledThemes` and `transparent` in `~/.config/vesktop/settings/settings.json`
+(a `.voluta-backup` copy is kept). Vesktop has no Linux toggle for
+transparency, and it rewrites that file on exit, so the target refuses to edit
+it while Vesktop runs. Start Vesktop afterward. The sidebar uses 90% opacity (`e6`) and the chat body 60% (`99`).
+Cards, inputs, menus, and modals stay opaque.
+The publisher replaces the extracted background with the resolved base.
+Discord renames its CSS variables and classes often, so the template sets both
+the old and new variable names and matches classes by prefix.
+
 Limusic reads `~/.config/limusic/matugen.css` while **Matugen** (named **Wallpaper
 palette** in newer builds) is on under Settings, Appearance. Wallust writes that
 file from `wallust/templates/colors-limusic.css` on every palette refresh, and

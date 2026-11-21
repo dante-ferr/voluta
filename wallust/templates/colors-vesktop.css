@@ -1,0 +1,228 @@
+/* Vesktop (Discord) wallpaper palette. Wallust writes
+ * ~/.config/vesktop/themes/voluta.theme.css.
+ *
+ * Vencord watches the themes directory and reloads this file on every change,
+ * so the palette follows the wallpaper without a restart. Enable the theme once
+ * under Vesktop **Themes**, and turn on the Vesktop **Transparent window**
+ * setting so the compositor can blend the wallpaper.
+ *
+ * The accent matches Limusic and Karere: color12 lifted on a dark palette.
+ * The shared background publisher replaces the extracted background with the
+ * resolved base. Window layers (chat, channel list, server rail) append e6
+ * (90% opacity) on the sidebar and 99 (60%) on the chat body. Cards, inputs, popouts, and modals stay opaque so text stays
+ * readable and menus never show the page behind them.
+ */
+
+{% set accent = color12 | lighten(0.35) if style == "dark" else color4 | lighten(0.30) %}
+{% set ink = foreground | lighten(0.30) %}
+
+:root,
+.theme-dark,
+.theme-darker,
+.theme-midnight,
+.theme-light,
+.visual-refresh,
+.visual-refresh.theme-dark,
+.visual-refresh.theme-light {
+    color-scheme: dark;
+
+    --voluta-glass: {{background}}99;
+    --voluta-glass-side: {{background}}e6;
+    --voluta-canvas: {{background}};
+    --voluta-ink: {{ink}};
+    --voluta-muted: color-mix(in oklab, {{ink}} 70%, {{background}});
+    --voluta-faint: color-mix(in oklab, {{ink}} 45%, {{background}});
+    --voluta-accent: {{accent}};
+    --voluta-raised: color-mix(in oklab, {{ink}} 6%, {{background}});
+    --voluta-overlay: color-mix(in oklab, {{ink}} 9%, {{background}});
+    --voluta-hover: color-mix(in oklab, {{ink}} 8%, transparent);
+    --voluta-active: color-mix(in oklab, {{ink}} 14%, transparent);
+    --voluta-selected: color-mix(in oklab, {{accent}} 22%, transparent);
+    --voluta-line: color-mix(in oklab, {{ink}} 14%, {{background}});
+    --voluta-line-soft: color-mix(in oklab, {{ink}} 9%, transparent);
+    --voluta-radius: 12px;
+
+    /* Nested layers stay clear. Only the sidebar and chat roots paint the glass,
+       because stacked 65% layers compound to an opaque window. */
+    --background-base-lowest: transparent;
+    --background-base-lower: transparent;
+    --background-base-low: transparent;
+    --background-primary: transparent;
+    --background-secondary: transparent;
+    --background-secondary-alt: transparent;
+    --background-tertiary: transparent;
+    --bg-base-primary: transparent;
+    --bg-base-secondary: transparent;
+    --bg-base-tertiary: transparent;
+    --chat-background-default: transparent;
+    --home-background: transparent;
+    --background-nested-floating: var(--voluta-overlay);
+
+    /* Opaque surfaces. */
+    --background-surface-high: var(--voluta-raised);
+    --background-surface-higher: var(--voluta-overlay);
+    --background-surface-highest: var(--voluta-overlay);
+    --bg-surface-raised: var(--voluta-raised);
+    --bg-surface-overlay: var(--voluta-overlay);
+    --background-floating: var(--voluta-overlay);
+    --background-accent: var(--voluta-overlay);
+    --channeltextarea-background: var(--voluta-raised);
+    --input-background: var(--voluta-raised);
+    --search-popout-option-fade: transparent;
+    --card-primary-bg: var(--voluta-raised);
+    --card-secondary-bg: var(--voluta-raised);
+    --modal-background: var(--voluta-overlay);
+    --modal-footer-background: var(--voluta-raised);
+    --scrollbar-thin-thumb: var(--voluta-line);
+    --scrollbar-thin-track: transparent;
+    --scrollbar-auto-thumb: var(--voluta-line);
+    --scrollbar-auto-track: transparent;
+    --scrollbar-auto-scrollbar-color-thumb: var(--voluta-line);
+    --scrollbar-auto-scrollbar-color-track: transparent;
+
+    /* Hover, active, and selected states. */
+    --background-modifier-hover: var(--voluta-hover);
+    --background-modifier-active: var(--voluta-active);
+    --background-modifier-selected: var(--voluta-selected);
+    --background-modifier-accent: var(--voluta-line-soft);
+    --background-mod-subtle: var(--voluta-hover);
+    --background-mod-normal: var(--voluta-active);
+    --background-mod-strong: var(--voluta-active);
+
+    /* Text and icons. */
+    --text-default: var(--voluta-ink);
+    --text-normal: var(--voluta-ink);
+    --text-strong: var(--voluta-ink);
+    --text-muted: var(--voluta-muted);
+    --text-subtle: var(--voluta-faint);
+    --text-secondary: var(--voluta-muted);
+    --text-tertiary: var(--voluta-faint);
+    --text-link: var(--voluta-accent);
+    --text-brand: var(--voluta-accent);
+    --header-primary: var(--voluta-ink);
+    --header-secondary: var(--voluta-muted);
+    --interactive-normal: var(--voluta-muted);
+    --interactive-hover: var(--voluta-ink);
+    --interactive-active: var(--voluta-ink);
+    --interactive-muted: var(--voluta-faint);
+    --channels-default: var(--voluta-muted);
+    --icon-default: var(--voluta-muted);
+    --icon-strong: var(--voluta-ink);
+    --icon-subtle: var(--voluta-faint);
+
+    /* Accent and borders. */
+    --brand-experiment: var(--voluta-accent);
+    --brand-experiment-hover: color-mix(in oklab, var(--voluta-accent) 85%, {{ink}});
+    --brand-500: var(--voluta-accent);
+    --brand-360: var(--voluta-accent);
+    --brand-400: color-mix(in oklab, var(--voluta-accent) 85%, {{ink}});
+    --brand-560: color-mix(in oklab, var(--voluta-accent) 85%, {{background}});
+    --brand-600: color-mix(in oklab, var(--voluta-accent) 70%, {{background}});
+    --button-filled-brand-background: var(--voluta-accent);
+    --button-filled-brand-background-hover: color-mix(in oklab, var(--voluta-accent) 85%, {{ink}});
+    --button-filled-brand-text: {{background}};
+    --focus-primary: var(--voluta-accent);
+    --border-subtle: var(--voluta-line-soft);
+    --border-normal: var(--voluta-line);
+    --border-strong: var(--voluta-line);
+    --border-faint: var(--voluta-line-soft);
+    --mention-foreground: var(--voluta-accent);
+    --mention-background: color-mix(in oklab, var(--voluta-accent) 18%, transparent);
+    --mention-background-hover: color-mix(in oklab, var(--voluta-accent) 30%, transparent);
+}
+
+/* The title bar strip has no element of its own to paint, so the root draws it.
+   It sits under the app, which stays clear there, and matches the sidebar. */
+html {
+    background: linear-gradient(var(--voluta-glass-side), var(--voluta-glass-side)) top / 100% 32px no-repeat !important;
+}
+
+/* Let the compositor blend the wallpaper through the window. */
+body,
+#app-mount,
+[class*="appMount_"],
+[class*="app_"][class*="bg_"],
+[class*="bg__"],
+[class*="appAsidePanelWrapper_"],
+[class*="content_"][class*="page_"] {
+    background: transparent !important;
+}
+
+/* One glass layer per region. Nested layers stay clear, or the alpha compounds. */
+[class^="sidebar_"] {
+    background-color: var(--voluta-glass-side);
+}
+
+[class^="chat_"],
+[class^="sidebar_"] ~ [class^="page_"] {
+    background-color: var(--voluta-glass);
+}
+
+[class*="sidebarList_"],
+[class*="privateChannels_"],
+[class*="chatContent_"],
+[class*="guilds_"],
+[class*="membersWrap_"] {
+    background-color: transparent;
+}
+
+/* Title bar and app chrome. */
+[class*="bar_"][class*="titleBar"],
+[class*="titleBar_"],
+[class*="typeWindows_"],
+[class*="wrapper_"][class*="titleBar"] {
+    background: transparent !important;
+}
+
+/* Hairlines instead of heavy shadows. */
+[class*="chat_"],
+[class*="sidebar_"],
+[class*="members_"] {
+    border-color: var(--voluta-line-soft) !important;
+}
+
+/* Rounded panels and inputs, as in the Dolphin and Limusic themes. */
+[class*="channelTextArea_"],
+[class*="textArea_"] {
+    border-radius: var(--voluta-radius);
+    background-color: var(--voluta-raised);
+}
+
+[class*="searchBar_"],
+[class*="search_"] [class*="DraftEditor"] {
+    border-radius: var(--voluta-radius);
+}
+
+[class*="layer_"] [class*="menu_"],
+[class*="popout_"],
+[class*="modal_"][class*="root"],
+[class*="tooltip_"] {
+    background-color: var(--voluta-overlay) !important;
+    border: 1px solid var(--voluta-line);
+    border-radius: var(--voluta-radius);
+}
+
+/* Selected channel and server states follow the accent. */
+[class*="modeSelected_"],
+[class*="selected_"][class*="channel"] {
+    background-color: var(--voluta-selected) !important;
+}
+
+[class*="pill_"] span,
+[class*="item_"][class*="selected"] [class*="pill"] > span {
+    background-color: var(--voluta-accent) !important;
+}
+
+::selection {
+    background-color: color-mix(in oklab, var(--voluta-accent) 40%, transparent);
+}
+
+/* Thin, palette-colored scrollbars. */
+::-webkit-scrollbar-thumb {
+    background-color: var(--voluta-line) !important;
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent !important;
+}
